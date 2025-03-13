@@ -12,6 +12,7 @@
  */
 import io.gitlab.arturbosch.detekt.DetektPlugin
 import io.gitlab.arturbosch.detekt.extensions.DetektExtension
+import org.codehaus.groovy.tools.shell.util.Logger.io
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.testretry.TestRetryPlugin
 import org.jetbrains.dokka.gradle.DokkaPlugin
@@ -50,7 +51,7 @@ allprojects {
     }
     tasks.withType<Jar> {
         manifest {
-            attributes["Implementation-Title"] = project.name
+            attributes["Implementation-Title"] = project.getArchivesName()
             attributes["Implementation-Version"] = project.version
         }
     }

@@ -1,8 +1,4 @@
-spring:
-  data:
-    mongodb:
-      # DEV 环境
-      uri: mongodb://natty:natty_123123@82.157.139.228:27017/natty
+
 
 
 wow:

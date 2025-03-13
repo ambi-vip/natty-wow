@@ -56,6 +56,7 @@ dependencies {
     implementation("me.ahoo.wow:wow-mongo")
 //    implementation("me.ahoo.wow:wow-elasticsearch")
     implementation("me.ahoo.wow:wow-mock")
+//    https://docs.spring.io/spring-boot/reference/actuator/loggers.html
     implementation("me.ahoo.wow:wow-opentelemetry")
     implementation("me.ahoo.wow:wow-webflux")
     implementation("me.ahoo.wow:wow-spring-boot-starter")
@@ -71,6 +72,7 @@ dependencies {
 //    implementation("me.ahoo.cosky:cosky-spring-cloud-starter-discovery")
 //    implementation("me.ahoo.cosky:cosky-spring-cloud-starter-config")
     implementation("org.springframework.boot:spring-boot-starter-data-mongodb-reactive")
+//    implementation("me.ahoo.cocache:cocache-spring-boot-starter")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
