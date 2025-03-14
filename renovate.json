@@ -25,7 +25,7 @@
   "gradle": {
     "fileMatch": ["\\.gradle\\.kts$", "libs\\.versions\\.toml$"]
   },
-  "ignorePaths": ["**/buildSrc/**", "**/samples/**"],
+  "ignorePaths": ["**/buildSrc/**", "**/code-coverage-report/**", "**/document/**", "**/config/**"],
   "dependencyDashboard": true,
   "prConcurrentLimit": 5,
   "prHourlyLimit": 10
