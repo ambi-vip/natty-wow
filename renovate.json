@@ -1,6 +1,32 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:base"
-  ]
+  "extends": ["config:recommended"],
+  "enabledManagers": ["gradle"],
+  "packageRules": [
+    {
+      "matchManagers": ["gradle"],
+      "matchFileNames": ["**/build.gradle.kts", "gradle/libs.versions.toml"],
+      "groupName": "Kotlin 生态依赖更新",
+      "automerge": true,
+      "automergeType": "branch",
+      "schedule": ["after 9am on Monday"]
+    },
+    {
+      "matchPackagePatterns": ["^org\\.jetbrains\\.kotlin:"],
+      "groupName": "Kotlin 核心库更新",
+      "allowedVersions": "<2.0.22"
+    },
+    {
+      "matchPackagePatterns": ["^org\\.jetbrains\\.kotlinx:"],
+      "groupName": "Kotlin 扩展库更新（协程/序列化）",
+      "allowedVersions": "<2.0"
+    }
+  ],
+  "gradle": {
+    "fileMatch": ["\\.gradle\\.kts$", "libs\\.versions\\.toml$"]
+  },
+  "ignorePaths": ["**/buildSrc/**", "**/samples/**"],
+  "dependencyDashboard": true,
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 10
 }
