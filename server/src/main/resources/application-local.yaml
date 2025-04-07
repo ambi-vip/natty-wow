@@ -1,0 +1,36 @@
+spring:
+  data:
+    mongodb:
+      # 或者分离配置：
+      host: 82.157.139.228
+      port: 27017
+      database: natty
+      username: mongo_f5AhsX
+      password: mongo_bmJMYy
+      authentication-database: admin
+
+wow:
+  kafka:
+    enabled: false
+  command:
+    bus:
+      type: in_memory
+  event:
+    bus:
+      type: in_memory
+  eventsourcing:
+    store:
+      storage: mongo
+    snapshot:
+      storage: mongo
+    state:
+      bus:
+        type: in_memory
+  mongo:
+    enabled: true
+    auto-init-schema: true
+    event-stream-database: natty
+    snapshot-database: natty
+    prepare-database: natty
+
+

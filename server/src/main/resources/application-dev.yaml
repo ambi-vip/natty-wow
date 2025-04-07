@@ -1,0 +1,24 @@
+
+wow:
+  kafka:
+    enabled: false
+  command:
+    bus:
+      type: in_memory
+  event:
+    bus:
+      type: in_memory
+  eventsourcing:
+    store:
+      storage: mongo
+    snapshot:
+      storage: mongo
+    state:
+      bus:
+        type: in_memory
+  mongo:
+    enabled: true
+    auto-init-schema: true
+    event-stream-database: natty
+    snapshot-database: natty
+    prepare-database: natty

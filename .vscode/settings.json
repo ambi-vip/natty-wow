@@ -1,0 +1,15 @@
+{
+    "files.exclude": {
+        ".gradle": true,
+        ".idea": true,
+        ".kotlin": true,
+        "**/LICENSE": true,
+        "**/__pycache__": true,
+        "**/migrations": true,
+    },
+
+    "search.exclude": {
+    },
+    "java.configuration.updateBuildConfiguration": "interactive",
+}
+
