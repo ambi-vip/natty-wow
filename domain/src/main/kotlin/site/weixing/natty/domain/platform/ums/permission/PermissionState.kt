@@ -9,16 +9,16 @@ import site.weixing.natty.platform.api.ums.PermissionUpdated
 class PermissionState(override val id: String) : Identifier {
     var name: String? = null
         private set
-        
+
     var code: String? = null
         private set
-        
+
     var description: String? = null
         private set
-        
+
     var parentId: String? = null
         private set
-        
+
     var type: PermissionType = PermissionType.MENU
         private set
 
@@ -39,4 +39,4 @@ class PermissionState(override val id: String) : Identifier {
         event.parentId?.let { parentId = it }
         event.type?.let { type = it }
     }
-} 
+}

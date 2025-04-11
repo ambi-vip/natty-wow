@@ -29,6 +29,23 @@ spring:
   profiles:
     active: local
 
+  security:
+    oauth2:
+      client:
+        registration:
+          casdoor:
+            client-id: e488d4ebb2cbc7f6db01
+            client-secret: ac9056df025f189c613e7b0c4be081b8c1822c52
+            scope: read,write
+            authorization-grant-type: authorization_code
+            redirect-uri: http://localhost:8080/login/oauth2/code/custom
+        provider:
+          casdoor:
+            authorization-uri: http://localhost:8000/login/oauth/authorize
+            token-uri: http://localhost:8000/api/login/oauth/access_token
+            user-info-uri: http://localhost:8000/api/get-account
+            user-name-attribute: name
+
 logging:
   level:
     me.ahoo.wow: debug
@@ -58,3 +75,41 @@ wow:
     state:
       bus:
         type: in_memory
+
+
+
+casdoor:
+  endpoint: https://ums.weixing.site
+  client-id: 33e732310f3103cca423
+  client-secret: ea746955da672c7c0bb2539bee374ddf1cc3f2a1
+  certificate: |
+    -----BEGIN CERTIFICATE-----
+    MIIE2TCCAsGgAwIBAgIDAeJAMA0GCSqGSIb3DQEBCwUAMCYxDjAMBgNVBAoTBWFk
+    bWluMRQwEgYDVQQDDAtjZXJ0X29hMXpuaTAeFw0yNTAyMjMwNzI5MzBaFw00NTAy
+    MjMwNzI5MzBaMCYxDjAMBgNVBAoTBWFkbWluMRQwEgYDVQQDDAtjZXJ0X29hMXpu
+    aTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBANgo08GD0/YSREB1DQXo
+    pZWzCFi+93yAF/q1kKsuE5Pt1SSdDgNpxz8tKwO6Q0mp45xnv2LKzNlxT2pPgChS
+    pxSX9KPV+WnnroOWYS9113/yma4K2RZrwgN2yzPCcIT/YDY3h/KTJMJyXSY4L7gL
+    I5McoKpqK+zKr2FFFby5ExMRi13Av8VnArprKO3uzdUhjcFVb/FgmNyn7H2xVySk
+    MMMB4X08/aNWMofamo/NKMJstuSQS8f638CCSlKiD19vWqaOJa5ZnhN+QoRi3Twr
+    ztL+IAJyPPsRRHA9QDA8pcX1ryp6rYx1jn7FWRnGet/zi5g/CZ2IgzJthe17aQ3E
+    0SexBgFC4KvKR3tvLKSPbCii8dqoky2Rtl5HURkCjnczSFZeOINN8VI5KGNFDBRM
+    fsoBxCjF0VgQh/kGJolVlWT61IsD4SdgrNrDv51Xy0LJvblzAmWpw+oMjhZjlwCp
+    I0537xkhiWuY+capePkgnDL8/aDgxcLAk4iRbVRIC0x8Pxk9AUVvR/hAFSLpR88Y
+    4lwPArKHM+18tydJ//IWq7kwD2yRyw9E+iYaK7TdmfBLeHomMiDV9IXg/qT12KG8
+    hl92OAdOILNioE9XHoUTPp3wgqZPjlkglm5VZ3sq9F89nH4bLVtIGTqlRpWJQE6e
+    c8ziGKl28/zRtF3K6Y87L0HbAgMBAAGjEDAOMAwGA1UdEwEB/wQCMAAwDQYJKoZI
+    hvcNAQELBQADggIBAFCdekKnT2NBhmXNGg0x7Copf8k2bwR7eno0SGzsy2+08p5M
+    aFEh09j6HI6nHwv8dWSVpJLm62zOL9a7N/ISzf8jC+rbqhpm1L8SK3mWcEiN53l2
+    FqGtd7dCCD1CBaV8Q3vl8c3ph5cPeCk46ERICG7KBFfelNsqc0dZBg+t2XKlBs55
+    sBnEkEVaixcBA8QxCP5gO+l3gVkRRVNnvbRdHakC6SPuMiMPg8Rq5gCKmo7r88EI
+    kWfwkzJpRcT/FNmKB6IatK5GNCAa05S90ocJo+q0PcvKBA9uqse3T7FbQuqrQafc
+    AjAwEKFSIsJ6AmTVWT/pq/1DifUYeUXKChdgwhZHpQQ9+40lA36zOCukzMHJZtN3
+    Loc/2MfcWCSmFYXXPUrFzqnDCCn4FqrS6PgLdXvWYobjSxyyQfaNWsa9fMbAgsf8
+    bKu2V+bb0dAJMZoX6jxYXeXkCkpTaGuN16tx7VZywmMeVOzT0N4SyZ2lmhhP1My9
+    SszKiO7QcgNsB/RLoZLlkC7OxfbTT7pCOhUyAsqyS4cq67rr9asGkN5hmL5cVU3S
+    o1qkHSoZmPTe+ff2tB9mEkb6jt9dZODnWFOXJYySDa08+037nY/Z/6F8qIY6j+Nk
+    eRP1KQidJLVoID2HkQ93SIuuZrmIuzP7U+HFN/xJQxXCWU8hGyj9jZfC0K47
+    -----END CERTIFICATE-----
+  organization-name: built-in
+  application-name: app-built-in

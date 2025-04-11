@@ -13,11 +13,11 @@ import me.ahoo.wow.api.annotation.CreateAggregate
 data class CreateRole(
     @field:NotBlank
     val name: String,
-    
+
     val code: String? = null,
-    
+
     val description: String? = null,
-    
+
     val permissionIds: List<String> = emptyList()
 )
 
@@ -27,15 +27,15 @@ data class CreateRole(
     summary = "更新角色"
 )
 data class UpdateRole(
-    @CommandRoute.PathVariable 
+    @CommandRoute.PathVariable
     val id: String,
-    
+
     val name: String? = null,
-    
+
     val code: String? = null,
-    
+
     val description: String? = null,
-    
+
     val permissionIds: List<String>? = null
 )
 
@@ -51,4 +51,4 @@ data class RoleUpdated(
     val code: String?,
     val description: String?,
     val permissionIds: List<String>?
-) 
+)

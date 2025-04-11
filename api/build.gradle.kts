@@ -4,6 +4,7 @@ plugins {
 dependencies {
     api(platform(project(":dependencies")))
     ksp(platform(project(":dependencies")))
+    api(libs.casdoor)
     api(libs.swagger.annotations)
     api("me.ahoo.wow:wow-api")
     api("me.ahoo.wow:wow-apiclient")

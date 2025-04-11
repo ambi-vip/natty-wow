@@ -13,14 +13,14 @@ import me.ahoo.wow.api.annotation.CreateAggregate
 data class CreatePermission(
     @field:NotBlank
     val name: String,
-    
+
     @field:NotBlank
     val code: String,
-    
+
     val description: String? = null,
-    
+
     val parentId: String? = null,
-    
+
     val type: PermissionType = PermissionType.MENU
 )
 
@@ -30,17 +30,17 @@ data class CreatePermission(
     summary = "更新权限"
 )
 data class UpdatePermission(
-    @CommandRoute.PathVariable 
+    @CommandRoute.PathVariable
     val id: String,
-    
+
     val name: String? = null,
-    
+
     val code: String? = null,
-    
+
     val description: String? = null,
-    
+
     val parentId: String? = null,
-    
+
     val type: PermissionType? = null
 )
 
@@ -64,4 +64,4 @@ data class PermissionUpdated(
     val description: String?,
     val parentId: String?,
     val type: PermissionType?
-) 
+)

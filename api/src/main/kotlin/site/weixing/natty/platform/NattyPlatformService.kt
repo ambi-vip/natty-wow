@@ -1,12 +1,12 @@
 package site.weixing.natty.platform
 
 import me.ahoo.wow.api.annotation.BoundedContext
-import site.weixing.natty.platform.api.ums.CreateUser
-import site.weixing.natty.platform.api.ums.CreateRole
-import site.weixing.natty.platform.api.ums.CreatePermission
 import site.weixing.natty.platform.NattyPlatformService.PERMISSION_AGGREGATE_NAME
 import site.weixing.natty.platform.NattyPlatformService.ROLE_AGGREGATE_NAME
 import site.weixing.natty.platform.NattyPlatformService.USER_AGGREGATE_NAME
+import site.weixing.natty.platform.api.ums.CreatePermission
+import site.weixing.natty.platform.api.ums.CreateRole
+import site.weixing.natty.platform.api.ums.CreateUser
 
 @BoundedContext(
     name = NattyPlatformService.SERVICE_NAME,

@@ -32,4 +32,4 @@ class Role(private val state: RoleState) {
             permissionIds = command.permissionIds
         )
     }
-} 
+}

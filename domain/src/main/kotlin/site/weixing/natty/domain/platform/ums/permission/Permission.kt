@@ -34,4 +34,4 @@ class Permission(private val state: PermissionState) {
             type = command.type
         )
     }
-} 
+}

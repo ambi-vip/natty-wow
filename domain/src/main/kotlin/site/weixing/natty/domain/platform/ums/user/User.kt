@@ -4,7 +4,13 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import me.ahoo.wow.api.annotation.AggregateRoot
 import me.ahoo.wow.api.annotation.OnCommand
 import me.ahoo.wow.api.annotation.StaticTenantId
-import site.weixing.natty.platform.api.ums.*
+import site.weixing.natty.platform.api.ums.ChangePassword
+import site.weixing.natty.platform.api.ums.CreateUser
+import site.weixing.natty.platform.api.ums.PasswordChanged
+import site.weixing.natty.platform.api.ums.ResetPwd
+import site.weixing.natty.platform.api.ums.UpdateUser
+import site.weixing.natty.platform.api.ums.UserCreated
+import site.weixing.natty.platform.api.ums.UserUpdated
 
 @Suppress("unused")
 @AggregateRoot
@@ -37,7 +43,7 @@ class User(private val state: UserState) {
 
     @OnCommand
     fun onChangePassword(command: ChangePassword): PasswordChanged {
-        // TODO: 验证旧密码
+        // @See: 验证旧密码
         return PasswordChanged(
             userId = command.id
         )
@@ -49,4 +55,4 @@ class User(private val state: UserState) {
             userId = state.id
         )
     }
-} 
+}

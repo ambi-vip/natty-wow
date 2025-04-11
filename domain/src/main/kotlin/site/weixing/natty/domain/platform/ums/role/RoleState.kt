@@ -8,13 +8,13 @@ import site.weixing.natty.platform.api.ums.RoleUpdated
 class RoleState(override val id: String) : Identifier {
     var name: String? = null
         private set
-        
+
     var code: String? = null
         private set
-        
+
     var description: String? = null
         private set
-        
+
     var permissionIds: List<String> = emptyList()
         private set
 
@@ -33,4 +33,4 @@ class RoleState(override val id: String) : Identifier {
         event.description?.let { description = it }
         event.permissionIds?.let { permissionIds = it }
     }
-} 
+}

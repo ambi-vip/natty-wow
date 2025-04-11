@@ -35,7 +35,7 @@ data class CreateUser(
     summary = "更新用户"
 )
 data class UpdateUser(
-    @CommandRoute.PathVariable 
+    @CommandRoute.PathVariable
     val id: String,
 
     val email: String? = null,
@@ -55,12 +55,12 @@ data class UpdateUser(
     summary = "修改密码"
 )
 data class ChangePassword(
-    @CommandRoute.PathVariable 
+    @CommandRoute.PathVariable
     val id: String,
-    
+
     @field:NotBlank
     val oldPassword: String,
-    
+
     @field:NotBlank
     val newPassword: String
 )
@@ -106,4 +106,4 @@ data class UserUpdated(
 
 data class PasswordChanged(
     val userId: String
-) 
+)

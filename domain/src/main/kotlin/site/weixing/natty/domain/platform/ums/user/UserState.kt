@@ -9,22 +9,22 @@ import site.weixing.natty.platform.api.ums.UserUpdated
 class UserState(override val id: String) : Identifier {
     var username: String? = null
         private set
-        
+
     var email: String? = null
         private set
-        
+
     var phone: String? = null
         private set
-        
+
     var nickname: String? = null
         private set
-        
+
     var password: String? = null
         private set
-        
+
     var status: UserStatus = UserStatus.ENABLED
         private set
-        
+
     var roleIds: List<String> = emptyList()
         private set
 
@@ -46,4 +46,4 @@ class UserState(override val id: String) : Identifier {
         event.status?.let { status = it }
         event.roleIds?.let { roleIds = it }
     }
-} 
+}
