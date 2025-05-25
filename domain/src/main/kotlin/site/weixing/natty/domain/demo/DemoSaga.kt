@@ -1,8 +1,8 @@
 package site.weixing.natty.domain.demo
 
 import me.ahoo.wow.api.annotation.OnEvent
+import me.ahoo.wow.api.annotation.StatelessSaga
 import me.ahoo.wow.api.modeling.AggregateId
-import me.ahoo.wow.spring.stereotype.StatelessSaga
 import site.weixing.natty.demo.api.demo.DemoCreated
 import site.weixing.natty.demo.api.demo.UpdateDemo
 

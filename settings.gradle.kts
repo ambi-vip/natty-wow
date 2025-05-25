@@ -5,7 +5,21 @@ rootProject.name = "natty-wow"
 
 fileTree(rootDir) {
     include("**/*.gradle.kts")
-    exclude("build", ".idea", "**/gradle", "config", "document", ".github", "deploy", "settings.gradle.kts", "buildSrc", "/build.gradle.kts", ".", "out")
+    exclude(
+        "build",
+        ".idea",
+        "**/gradle",
+        "config",
+        "document",
+        ".github",
+        "deploy",
+        "settings.gradle.kts",
+        "buildSrc",
+        "/build.gradle.kts",
+        "example",
+        ".",
+        "out"
+    )
 }.forEach {
     val projectPath = it.parentFile.absolutePath
         .replace(rootDir.absolutePath, "")
