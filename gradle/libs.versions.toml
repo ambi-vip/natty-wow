@@ -1,26 +1,25 @@
 [versions]
 # libraries
-spring-boot = "3.4.4"
-cosid = "2.12.2"
-wow = "5.9.5"
-coapi = "1.10.5"
-cocache = "3.6.5"
+spring-boot = "3.4.6"
+cosid = "2.12.5"
+wow = "5.15.8"
+coapi = "1.11.5"
+cocache = "3.8.1"
 cosec = "2.13.0"
-cosky = "4.8.6"
-simba = "2.8.5"
-guava = "33.4.6-jre"
-kotlin-logging = "7.0.5"
-swagger = "2.2.29"
+cosky = "4.8.8"
+simba = "2.8.8"
+guava = "33.4.8-jre"
+kotlin-logging = "7.0.7"
+swagger = "2.2.32"
 hamcrest = "3.0"
-mockk = "1.13.17"
-detekt-formatting = "1.23.8"
+mockk = "1.14.2"
 springdoc = "2.8.6"
 # plugins
 detekt = "1.23.8"
 dokka = "2.0.0"
-kotlin = "2.1.20"
+kotlin = "2.1.21"
 publish-plugin = "2.0.0"
-ksp = "2.1.20-1.0.32"
+ksp = "2.1.21-2.0.1"
 kover = "0.9.1"
 test-retry = "1.6.2"
 casdoor = "1.15.0"
@@ -40,7 +39,7 @@ swagger-annotations = { module = "io.swagger.core.v3:swagger-annotations", versi
 springdoc-openapi-starter-webflux-ui = { module = "org.springdoc:springdoc-openapi-starter-webflux-ui", version.ref = "springdoc" }
 hamcrest = { module = "org.hamcrest:hamcrest", version.ref = "hamcrest" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
-detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt-formatting" }
+detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 casdoor = { module = "org.casbin:casdoor-spring-boot-starter", version.ref = "casdoor" }
 
 [plugins]
