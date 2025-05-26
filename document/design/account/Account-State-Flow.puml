@@ -1,0 +1,22 @@
+@startuml Account-State-Flow
+
+!include ../layout.puml
+
+title
+账户状态流转 - Account State Flow
+__State Diagram__
+end title
+
+state ACTIVE: 账户正常活跃状态
+state LOCKED: 账户锁定状态
+state INACTIVE: 账户不活跃状态
+
+[*] --> ACTIVE: 创建账户
+
+ACTIVE --> LOCKED: 登录失败次数超过阈值
+ACTIVE --> INACTIVE: 管理员手动停用
+
+LOCKED --> ACTIVE: 管理员手动解锁\n或自动解锁时间到期
+INACTIVE --> ACTIVE: 管理员手动激活
+
+@enduml 

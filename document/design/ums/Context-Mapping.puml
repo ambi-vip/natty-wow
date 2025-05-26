@@ -1,0 +1,79 @@
+@startuml Context-Mapping
+!include ../layout.puml
+
+title 领域上下文映射 - Domain Context Mapping
+
+package "用户领域 (User Domain)" as UserDomain {
+    [User] <<Aggregate Root>> as UserAggregateRoot
+    [UserState] as UserState
+    UserAggregateRoot -down-> UserState : contains
+    note right of UserState
+      accountIds: Set<String>
+      primaryAccountId: String
+    end note
+}
+
+package "账户领域 (Account Domain)" as AccountDomain {
+    [Account] <<Aggregate Root>> as AccountAggregateRoot
+    [AccountState] as AccountState
+    AccountAggregateRoot -down-> AccountState : contains
+    note right of AccountState
+      userId: String (可空，临时账户)
+      isTemporary: Boolean
+    end note
+}
+
+package "权限领域 (Permission Domain)" as PermissionDomain {
+    [Role] <<Aggregate Root>> as RoleAggregateRoot
+    [Permission] <<Aggregate Root>> as PermissionAggregateRoot
+}
+
+package "认证领域 (Authentication Domain)" as AuthDomain {
+    [Session] <<Aggregate Root>> as SessionAggregateRoot
+    [Oauth2Client] <<Aggregate Root>> as Oauth2ClientAggregateRoot
+}
+
+package "审计日志领域 (Audit Domain)" as AuditDomain {
+    [AuditLog] <<Aggregate Root>> as AuditLogAggregateRoot
+}
+
+actor "外部用户" as ExternalUser
+actor "游客用户" as GuestUser
+
+note "用户为主实体\n账户为用户的访问方式\n支持临时账户" as N1
+UserDomain .. N1
+N1 .. AccountDomain
+
+AccountDomain -right[#blue]-> UserDomain : AccountRegisteredIntegrationEvent\n(通知用户关联新账户)
+UserDomain -down[#blue]-> AccountDomain : 先创建用户\n再创建关联账户
+AccountDomain ..> AccountDomain : 临时账户可直接创建\n无需关联用户
+GuestUser -down[#red]-> AccountDomain : 创建临时账户
+UserDomain -right[#green]-> AuditDomain : UserActionEvent\nLogin-Logout Events
+PermissionDomain -right[#blue]-> UserDomain : RoleAssignedEvent\nPermissionAssignedEvent
+AccountDomain -right[#blue]-> AuthDomain : LoginSucceededEvent
+AuthDomain -down[#green]-> UserDomain : SessionCreatedEvent
+ExternalUser -down-> AuthDomain
+AuthDomain -right-> AccountDomain : 认证请求
+
+note "账户类型" as N2
+AccountDomain .. N2
+note right of N2
+  1. 正式账户: 必须关联用户ID
+  2. 临时账户: 无需关联用户ID，可后续转换
+end note
+
+note "Saga协调器\n维护用户-账户\n数据一致性" as N3
+N3 -up-> AccountDomain
+N3 -down-> UserDomain
+
+note "临时账户转换流程" as N4
+GuestUser .. N4
+N4 .. UserDomain
+note right of N4
+  1. 游客浏览(临时账户)
+  2. 决定注册，创建用户
+  3. 转换临时账户为正式账户
+  4. 关联到新创建的用户
+end note
+
+@enduml 

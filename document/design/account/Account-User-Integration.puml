@@ -1,0 +1,238 @@
+@startuml Account-User-Integration
+!include ../layout.puml
+
+title 账户-用户领域集成 - Account-User Domain Integration
+
+actor "用户/管理员" as Actor
+participant "用户聚合根\nUser" as User
+participant "用户状态\nUserState" as UserState
+participant "账户聚合根\nAccount" as Account
+participant "账户状态\nAccountState" as AccountState
+participant "EventStore" as EventStore
+queue "DomainEventBus" as EventBus
+participant "AccountUserSaga" as AccountUserSaga
+
+== 先创建用户再创建账户流程 ==
+
+Actor -> User ++: CreateUser(nickname, email, phone)
+User -> UserState ++: 创建用户状态
+UserState -> UserState: 初始化状态，暂无关联账户
+User <-- UserState --: 返回状态
+User -> User: 生成UserCreated事件
+User -> EventStore ++: 保存UserCreated事件
+User <-- EventStore --: 保存成功
+User -> EventBus ++: 发布UserCreated事件
+EventBus --
+Actor <-- User --: 用户创建成功，返回userId
+
+Actor -> Account ++: CreateAccount(userId, accountType, identifier, credential, email, phone)
+Account -> AccountState ++: 创建账户状态
+AccountState -> AccountState: 初始化状态，并设置userId
+Account <-- AccountState --: 返回状态
+Account -> Account: 生成AccountCreated事件
+Account -> EventStore ++: 保存AccountCreated事件
+Account <-- EventStore --: 保存成功
+Account -> EventBus ++: 发布AccountCreated事件和AccountRegisteredIntegrationEvent
+
+EventBus -> AccountUserSaga ++: 接收AccountRegisteredIntegrationEvent
+AccountUserSaga -> User ++: LinkAccount(accountId, accountType, makePrimary=true)
+User -> UserState ++: 关联新创建的账户
+UserState -> UserState: 添加accountId到列表，设置为主账户
+User <-- UserState --: 返回状态
+User -> User: 生成AccountLinked事件
+User -> EventStore ++: 保存AccountLinked事件
+User <-- EventStore --: 保存成功
+User -> EventBus: 发布AccountLinked事件
+AccountUserSaga <-- User --: 账户关联成功
+EventBus <-- AccountUserSaga --: 处理完成
+
+Actor <-- Account --: 账户创建成功
+
+== 临时账户(游客模式)创建流程 ==
+
+Actor -> Account ++: CreateTemporaryAccount(accountType=GUEST, identifier=null, credential=null)
+Account -> AccountState ++: 创建临时账户状态
+AccountState -> AccountState: 初始化状态，设置isTemporary=true，userId=null
+Account <-- AccountState --: 返回状态
+Account -> Account: 生成AccountCreated事件(isTemporary=true)
+Account -> EventStore ++: 保存AccountCreated事件
+Account <-- EventStore --: 保存成功
+Account -> EventBus ++: 发布AccountCreated事件和AccountRegisteredIntegrationEvent(isTemporary=true)
+EventBus --
+Actor <-- Account --: 临时账户创建成功，返回访问令牌
+
+== 临时账户转换为正式账户流程 ==
+
+note over Actor, Account
+用户决定注册，将临时账户转为正式账户
+end note
+
+Actor -> User ++: CreateUser(nickname, email, phone)
+User -> UserState ++: 创建用户状态
+UserState -> UserState: 初始化状态，暂无关联账户
+User <-- UserState --: 返回状态
+User -> User: 生成UserCreated事件
+User -> EventStore ++: 保存UserCreated事件
+User <-- EventStore --: 保存成功
+User -> EventBus ++: 发布UserCreated事件
+EventBus --
+Actor <-- User --: 用户创建成功，返回userId
+
+Actor -> Account ++: ConvertTemporaryAccount(userId, email, phone)
+Account -> AccountState ++: 获取临时账户状态
+AccountState -> AccountState: 转换为正式账户，设置userId，isTemporary=false
+Account <-- AccountState --: 返回更新后的状态
+Account -> Account: 生成TemporaryAccountConverted事件
+Account -> EventStore ++: 保存TemporaryAccountConverted事件
+Account <-- EventStore --: 保存成功
+Account -> EventBus ++: 发布TemporaryAccountConvertedIntegrationEvent
+
+EventBus -> AccountUserSaga ++: 接收TemporaryAccountConvertedIntegrationEvent
+AccountUserSaga -> User ++: LinkAccount(accountId, accountType, makePrimary=true)
+User -> UserState ++: 关联转换后的账户
+UserState -> UserState: 添加accountId到列表，设置为主账户
+User <-- UserState --: 返回状态
+User -> User: 生成AccountLinked事件
+User -> EventStore ++: 保存AccountLinked事件
+User <-- EventStore --: 保存成功
+User -> EventBus: 发布AccountLinked事件
+AccountUserSaga <-- User --: 账户关联成功
+EventBus <-- AccountUserSaga --: 处理完成
+
+Actor <-- Account --: 临时账户转换成功
+
+== 临时账户登录流程 ==
+
+Actor -> Account ++: Login(identifier, credential)
+Account -> AccountState ++: 验证凭证
+AccountState -> AccountState: 校验凭证，发现是临时账户(isTemporary=true)
+Account <-- AccountState --: 验证成功，但是临时账户
+Account -> Account: 生成LoginSucceeded事件(isTemporary=true)
+Account -> EventStore ++: 保存LoginSucceeded事件
+Account <-- EventStore --: 保存成功
+Account -> EventBus ++: 发布LoginSucceeded事件
+EventBus --
+Actor <-- Account --: 临时账户登录成功，返回有限权限的会话token
+
+== 为现有用户添加额外账户 ==
+
+Actor -> User ++: GetUser(userId)
+User -> UserState ++: 获取用户状态
+User <-- UserState --: 返回状态
+Actor <-- User --: 返回用户信息
+
+Actor -> Account ++: CreateAccount(userId, accountType, identifier, credential, email, phone)
+Account -> AccountState ++: 创建账户状态
+AccountState -> AccountState: 初始化状态，并设置userId
+Account <-- AccountState --: 返回状态
+Account -> Account: 生成AccountCreated事件
+Account -> EventStore ++: 保存AccountCreated事件
+Account <-- EventStore --: 保存成功
+Account -> EventBus ++: 发布AccountCreated事件和AccountRegisteredIntegrationEvent
+
+EventBus -> AccountUserSaga ++: 接收AccountRegisteredIntegrationEvent
+AccountUserSaga -> User ++: LinkAccount(accountId, accountType, makePrimary=false)
+User -> UserState ++: 关联新创建的账户
+UserState -> UserState: 添加accountId到列表
+User <-- UserState --: 返回状态
+User -> User: 生成AccountLinked事件
+User -> EventStore ++: 保存AccountLinked事件
+User <-- EventStore --: 保存成功
+User -> EventBus: 发布AccountLinked事件
+AccountUserSaga <-- User --: 账户关联成功
+EventBus <-- AccountUserSaga --: 处理完成
+
+Actor <-- Account --: 新账户创建成功
+
+== 正式账户登录流程 ==
+
+Actor -> Account ++: Login(identifier, credential)
+Account -> AccountState ++: 验证凭证
+AccountState -> AccountState: 校验凭证并获取userId
+alt 凭证验证成功
+    Account <-- AccountState --: 验证成功，返回userId
+    Account -> Account: 生成LoginSucceeded事件(包含userId)
+    Account -> EventStore ++: 保存LoginSucceeded事件
+    Account <-- EventStore --: 保存成功
+    
+    Account -> User ++: 通过userId查询用户信息
+    User -> UserState ++: 获取用户状态
+    User <-- UserState --: 返回用户状态
+    Account <-- User --: 返回用户详细信息
+    
+    Account -> EventBus ++: 发布LoginSucceeded事件
+    EventBus --
+    
+    Actor <-- Account --: 登录成功，返回用户信息和会话token
+else 凭证验证失败
+    Account <-- AccountState --: 验证失败
+    Account -> Account: 生成LoginFailed事件
+    Account -> EventStore ++: 保存LoginFailed事件
+    Account <-- EventStore --: 保存成功
+    Account -> EventBus ++: 发布LoginFailed事件
+    EventBus --
+    Actor <-- Account --: 登录失败
+end
+
+== 账户邮箱变更流程 (同步用户信息) ==
+
+Actor -> Account ++: ChangeEmail(email, verificationCode)
+Account -> AccountState ++: 验证并更新邮箱
+AccountState -> AccountState: 更新邮箱
+Account <-- AccountState --: 返回状态
+Account -> Account: 生成AccountEmailChanged事件
+Account -> EventStore ++: 保存AccountEmailChanged事件
+Account <-- EventStore --: 保存成功
+Account -> EventBus ++: 发布AccountEmailChanged事件
+
+EventBus -> AccountUserSaga ++: 接收AccountEmailChanged
+AccountUserSaga -> User ++: 查找关联此账户的用户
+AccountUserSaga -> User: UpdateContactInfo(email)
+User -> UserState ++: 更新联系信息
+UserState -> UserState: 更新邮箱
+User <-- UserState --: 返回状态
+User -> User: 生成ContactInfoUpdated事件
+User -> EventStore ++: 保存ContactInfoUpdated事件
+User <-- EventStore --: 保存成功
+User -> EventBus: 发布ContactInfoUpdated事件
+AccountUserSaga <-- User --: 联系信息更新成功
+EventBus <-- AccountUserSaga --: 处理完成
+
+Actor <-- Account --: 邮箱变更成功
+
+== 账户锁定流程 (同步用户状态) ==
+
+Actor -> Account ++: LockAccount(reason)
+Account -> AccountState ++: 锁定账户
+AccountState -> AccountState: 更新状态为LOCKED
+Account <-- AccountState --: 返回状态
+Account -> Account: 生成AccountLocked事件
+Account -> EventStore ++: 保存AccountLocked事件
+Account <-- EventStore --: 保存成功
+Account -> EventBus ++: 发布AccountLocked事件
+
+EventBus -> AccountUserSaga ++: 接收AccountLocked
+AccountUserSaga -> User ++: 查找关联此账户的用户
+note right
+  如果是主账户被锁定，
+  则停用整个用户
+end note
+alt 锁定的是用户的主账户
+    AccountUserSaga -> User: DeactivateUser(reason)
+    User -> UserState ++: 停用用户
+    UserState -> UserState: 更新状态为INACTIVE
+    User <-- UserState --: 返回状态
+    User -> User: 生成UserStatusChanged事件
+    User -> EventStore ++: 保存UserStatusChanged事件
+    User <-- EventStore --: 保存成功
+    User -> EventBus: 发布UserStatusChanged事件
+else 锁定的是用户的非主账户
+    note right: 可以选择不执行额外操作
+    note right: 或者解除该账户与用户的关联
+end
+AccountUserSaga <-- User --: 用户状态更新完成
+EventBus <-- AccountUserSaga --: 处理完成
+
+Actor <-- Account --: 账户锁定成功
+
+@enduml 

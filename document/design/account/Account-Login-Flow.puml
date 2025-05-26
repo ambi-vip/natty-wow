@@ -1,0 +1,87 @@
+@startuml Account-Login-Flow
+!include ../layout.puml
+
+title 账户登录流程 - Account Login Flow
+
+actor User
+participant "Account\nAggregate" as Account
+participant "AccountState" as State
+participant "EventStore" as EventStore
+queue "DomainEventBus" as EventBus
+
+User -> Account: Login(username, password)
+activate Account
+
+Account -> State: 检查账户状态
+activate State
+alt 账户已锁定
+    Account <-- State: 返回锁定状态
+    User <-- Account: 登录失败(账户已锁定)
+else 账户状态正常
+    Account -> State: 验证密码
+    
+    alt 密码验证成功
+        Account -> Account: 生成LoginSucceeded事件
+        Account -> EventStore: 保存LoginSucceeded事件
+        activate EventStore
+        Account <-- EventStore: 保存成功
+        deactivate EventStore
+        
+        Account -> State: onSourcing(LoginSucceeded)
+        activate State
+        State -> State: 更新最后登录时间\n重置失败登录次数
+        Account <-- State: 状态已更新
+        deactivate State
+        
+        Account -> EventBus: 发布LoginSucceeded事件
+        activate EventBus
+        Account <-- EventBus: 事件已发布
+        deactivate EventBus
+        
+        User <-- Account: 登录成功
+    else 密码验证失败
+        Account -> Account: 生成LoginFailed事件
+        Account -> State: 增加失败登录计数
+        activate State
+        
+        alt 失败次数超过阈值
+            Account -> Account: 生成AccountLocked事件
+            Account -> EventStore: 保存LoginFailed和AccountLocked事件
+            activate EventStore
+            Account <-- EventStore: 保存成功
+            deactivate EventStore
+            
+            Account -> State: onSourcing(LoginFailed)\nonSourcing(AccountLocked)
+            State -> State: 更新失败次数\n更新账户状态为LOCKED
+            Account <-- State: 状态已更新
+            
+            Account -> EventBus: 发布LoginFailed和AccountLocked事件
+            activate EventBus
+            Account <-- EventBus: 事件已发布
+            deactivate EventBus
+            
+            User <-- Account: 登录失败(账户已锁定)
+        else 失败次数未超过阈值
+            Account -> EventStore: 保存LoginFailed事件
+            activate EventStore
+            Account <-- EventStore: 保存成功
+            deactivate EventStore
+            
+            Account -> State: onSourcing(LoginFailed)
+            State -> State: 更新失败登录次数
+            Account <-- State: 状态已更新
+            deactivate State
+            
+            Account -> EventBus: 发布LoginFailed事件
+            activate EventBus
+            Account <-- EventBus: 事件已发布
+            deactivate EventBus
+            
+            User <-- Account: 登录失败(密码错误)
+        end
+    end
+end
+
+deactivate Account
+
+@enduml 

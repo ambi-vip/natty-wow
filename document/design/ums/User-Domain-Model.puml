@@ -1,0 +1,234 @@
+@startuml User-Domain-Model
+!include ../layout.puml
+
+title 用户领域模型 - User Domain Model
+
+' 用户聚合状态
+class UserState {
+    ' 状态字段
+    id: String
+    primaryAccountId: String
+    nickname: String
+    avatar: String
+    gender: Gender
+    birthDate: LocalDate
+    contactInfo: ContactInfo
+    preferences: Map<String, String>
+    tags: List<String>
+    status: UserStatus
+    registerTime: LocalDateTime
+    lastActiveTime: LocalDateTime
+    level: Integer
+    ' 事件溯源方法
+    + onSourcing(userCreated: UserCreated)
+    + onSourcing(accountLinked: AccountLinked)
+    + onSourcing(accountUnlinked: AccountUnlinked)
+    + onSourcing(primaryAccountChanged: PrimaryAccountChanged)
+    + onSourcing(profileCompleted: ProfileCompleted)
+    + onSourcing(userStatusChanged: UserStatusChanged)
+    + onSourcing(userPreferenceChanged: UserPreferenceChanged)
+    + onSourcing(userTagsUpdated: UserTagsUpdated)
+    + onSourcing(userLevelChanged: UserLevelChanged)
+    + onSourcing(contactInfoUpdated: ContactInfoUpdated)
+}
+
+' 用户聚合根
+class User {
+    - state: UserState
+    ' 命令处理方法
+    + onCommand(createUser: CreateUser): UserCreated
+    + onCommand(linkAccount: LinkAccount): AccountLinked
+    + onCommand(unlinkAccount: UnlinkAccount): AccountUnlinked
+    + onCommand(changePrimaryAccount: ChangePrimaryAccount): PrimaryAccountChanged
+    + onCommand(completeProfile: CompleteProfile): ProfileCompleted
+    + onCommand(activateUser: ActivateUser): UserStatusChanged
+    + onCommand(deactivateUser: DeactivateUser): UserStatusChanged
+    + onCommand(updateContactInfo: UpdateContactInfo): ContactInfoUpdated
+    + onCommand(changePreference: ChangePreference): UserPreferenceChanged
+    + onCommand(updateTags: UpdateTags): UserTagsUpdated
+    + onCommand(changeLevel: ChangeLevel): UserLevelChanged
+}
+
+' 用户状态枚举
+enum UserStatus {
+    ACTIVE
+    INACTIVE
+    SUSPENDED
+    PENDING_ACTIVATION
+}
+
+' 性别枚举
+enum Gender {
+    MALE
+    FEMALE
+    OTHER
+    UNKNOWN
+}
+
+' 联系信息值对象
+class ContactInfo {
+    email: String
+    phone: String
+    address: String
+}
+
+' 命令
+interface CreateUser {
+    nickname: String
+    accountId: String
+    email: String
+    phone: String
+}
+
+interface LinkAccount {
+    accountId: String
+    accountType: String
+    makePrimary: Boolean
+}
+
+interface UnlinkAccount {
+    accountId: String
+}
+
+interface ChangePrimaryAccount {
+    accountId: String
+}
+
+interface CompleteProfile {
+    nickname: String
+    avatar: String
+    gender: Gender
+    birthDate: LocalDate
+}
+
+interface UpdateContactInfo {
+    email: String
+    phone: String
+    address: String
+}
+
+interface ActivateUser {
+}
+
+interface DeactivateUser {
+    reason: String
+}
+
+interface ChangePreference {
+    key: String
+    value: String
+}
+
+interface UpdateTags {
+    tags: List<String>
+    operation: TagOperation
+}
+
+interface ChangeLevel {
+    level: Integer
+}
+
+' 枚举
+enum TagOperation {
+    ADD
+    REMOVE
+    REPLACE
+}
+
+' 事件
+interface UserCreated {
+    nickname: String
+    accountId: String
+    registerTime: LocalDateTime
+}
+
+interface AccountLinked {
+    accountId: String
+    accountType: String
+    linkTime: LocalDateTime
+    isPrimary: Boolean
+}
+
+interface AccountUnlinked {
+    accountId: String
+    unlinkTime: LocalDateTime
+}
+
+interface PrimaryAccountChanged {
+    oldPrimaryAccountId: String
+    newPrimaryAccountId: String
+    changeTime: LocalDateTime
+}
+
+interface ProfileCompleted {
+    nickname: String
+    avatar: String
+    gender: Gender
+    birthDate: LocalDate
+}
+
+interface ContactInfoUpdated {
+    email: String
+    phone: String
+    address: String
+    updateTime: LocalDateTime
+}
+
+interface UserStatusChanged {
+    oldStatus: UserStatus
+    newStatus: UserStatus
+    reason: String
+    changeTime: LocalDateTime
+}
+
+interface UserPreferenceChanged {
+    key: String
+    value: String
+    changeTime: LocalDateTime
+}
+
+interface UserTagsUpdated {
+    tags: List<String>
+    operation: TagOperation
+    updateTime: LocalDateTime
+}
+
+interface UserLevelChanged {
+    oldLevel: Integer
+    newLevel: Integer
+    changeTime: LocalDateTime
+}
+
+' 关系
+UserState "1" --o User
+User ..> UserCreated : produces
+User ..> AccountLinked : produces
+User ..> AccountUnlinked : produces
+User ..> PrimaryAccountChanged : produces
+User ..> ProfileCompleted : produces
+User ..> UserStatusChanged : produces
+User ..> ContactInfoUpdated : produces
+User ..> UserPreferenceChanged : produces
+User ..> UserTagsUpdated : produces
+User ..> UserLevelChanged : produces
+
+CreateUser ..> User : handled by
+LinkAccount ..> User : handled by
+UnlinkAccount ..> User : handled by
+ChangePrimaryAccount ..> User : handled by
+CompleteProfile ..> User : handled by
+UpdateContactInfo ..> User : handled by
+ActivateUser ..> User : handled by
+DeactivateUser ..> User : handled by
+ChangePreference ..> User : handled by
+UpdateTags ..> User : handled by
+ChangeLevel ..> User : handled by
+
+UserState --* ContactInfo
+UpdateTags ..> TagOperation : uses
+UserTagsUpdated ..> TagOperation : uses
+UserState ..> Gender : uses
+UserState ..> UserStatus : uses
+UserStatusChanged ..> UserStatus : uses
+
+@enduml 

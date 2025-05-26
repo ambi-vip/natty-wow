@@ -1,0 +1,227 @@
+@startuml Account-Domain-Model
+!include ../layout.puml
+
+title 账户领域模型 - Account Domain Model
+
+' 账户聚合状态
+class AccountState {
+    ' 状态字段
+    id: String
+    userId: String?
+    isTemporary: Boolean
+    accountType: AccountType
+    identifier: String
+    credential: String
+    email: String?
+    phone: String?
+    status: AccountStatus
+    lastLoginTime: LocalDateTime
+    failedLoginAttempts: Int
+    createTime: LocalDateTime
+    expiryTime: LocalDateTime?
+    ' 事件溯源方法
+    + onSourcing(accountCreated: AccountCreated)
+    + onSourcing(accountConverted: TemporaryAccountConverted)
+    + onSourcing(credentialChanged: CredentialChanged)
+    + onSourcing(accountLocked: AccountLocked)
+    + onSourcing(accountUnlocked: AccountUnlocked)
+    + onSourcing(accountEmailChanged: AccountEmailChanged)
+    + onSourcing(accountPhoneChanged: AccountPhoneChanged)
+    + onSourcing(loginSucceeded: LoginSucceeded)
+    + onSourcing(loginFailed: LoginFailed)
+}
+
+' 账户聚合根
+class Account {
+    - state: AccountState
+    ' 命令处理方法
+    + onCommand(createAccount: CreateAccount): AccountCreated
+    + onCommand(createTemporaryAccount: CreateTemporaryAccount): AccountCreated
+    + onCommand(convertTemporaryAccount: ConvertTemporaryAccount): TemporaryAccountConverted
+    + onCommand(changeCredential: ChangeCredential): CredentialChanged
+    + onCommand(lockAccount: LockAccount): AccountLocked
+    + onCommand(unlockAccount: UnlockAccount): AccountUnlocked
+    + onCommand(changeEmail: ChangeEmail): AccountEmailChanged
+    + onCommand(changePhone: ChangePhone): AccountPhoneChanged
+    + onCommand(login: Login): List<DomainEvent>
+}
+
+' 账户类型枚举
+enum AccountType {
+    USERNAME_PASSWORD
+    EMAIL
+    PHONE
+    WECHAT
+    GITHUB
+    GOOGLE
+    APPLE
+    GUEST
+    TEMPORARY
+}
+
+' 账户状态枚举
+enum AccountStatus {
+    ACTIVE
+    LOCKED
+    INACTIVE
+    TEMPORARY
+}
+
+' 命令
+interface CreateAccount {
+    userId: String
+    accountType: AccountType
+    identifier: String
+    credential: String
+    email: String
+    phone: String
+}
+
+interface CreateTemporaryAccount {
+    accountType: AccountType
+    identifier: String?
+    credential: String?
+    expiryTime: LocalDateTime?
+}
+
+interface ConvertTemporaryAccount {
+    userId: String
+    email: String?
+    phone: String?
+}
+
+interface ChangeCredential {
+    oldCredential: String
+    newCredential: String
+}
+
+interface LockAccount {
+    reason: String
+}
+
+interface UnlockAccount {
+}
+
+interface ChangeEmail {
+    email: String
+    verificationCode: String
+}
+
+interface ChangePhone {
+    phone: String
+    verificationCode: String
+}
+
+interface Login {
+    identifier: String
+    credential: String
+}
+
+' 事件
+interface AccountCreated {
+    userId: String?
+    isTemporary: Boolean
+    accountType: AccountType
+    identifier: String?
+    credentialHash: String?
+    email: String?
+    phone: String?
+    createTime: LocalDateTime
+    expiryTime: LocalDateTime?
+}
+
+interface TemporaryAccountConverted {
+    userId: String
+    email: String?
+    phone: String?
+    conversionTime: LocalDateTime
+}
+
+interface CredentialChanged {
+    credentialHash: String
+    changeTime: LocalDateTime
+}
+
+interface AccountLocked {
+    reason: String
+    lockedAt: LocalDateTime
+}
+
+interface AccountUnlocked {
+    unlockedAt: LocalDateTime
+}
+
+interface AccountEmailChanged {
+    oldEmail: String
+    newEmail: String
+    changeTime: LocalDateTime
+}
+
+interface AccountPhoneChanged {
+    oldPhone: String
+    newPhone: String
+    changeTime: LocalDateTime
+}
+
+interface LoginSucceeded {
+    userId: String?
+    isTemporary: Boolean
+    loginAt: LocalDateTime
+}
+
+interface LoginFailed {
+    failedAt: LocalDateTime
+    reason: String
+    failedAttempts: Int
+}
+
+' 集成事件 - 用于与用户领域的集成
+interface AccountRegisteredIntegrationEvent {
+    userId: String?
+    isTemporary: Boolean
+    accountId: String
+    accountType: AccountType
+    identifier: String?
+    email: String?
+    phone: String?
+    createTime: LocalDateTime
+}
+
+interface TemporaryAccountConvertedIntegrationEvent {
+    accountId: String
+    userId: String
+    conversionTime: LocalDateTime
+}
+
+' 关系
+AccountState "1" --o Account
+Account ..> AccountCreated : produces
+Account ..> TemporaryAccountConverted : produces
+Account ..> CredentialChanged : produces
+Account ..> AccountLocked : produces
+Account ..> AccountUnlocked : produces
+Account ..> AccountEmailChanged : produces
+Account ..> AccountPhoneChanged : produces
+Account ..> LoginSucceeded : produces
+Account ..> LoginFailed : produces
+Account ..> AccountRegisteredIntegrationEvent : publishes
+Account ..> TemporaryAccountConvertedIntegrationEvent : publishes
+
+CreateAccount ..> Account : handled by
+CreateTemporaryAccount ..> Account : handled by
+ConvertTemporaryAccount ..> Account : handled by
+ChangeCredential ..> Account : handled by
+LockAccount ..> Account : handled by
+UnlockAccount ..> Account : handled by
+ChangeEmail ..> Account : handled by
+ChangePhone ..> Account : handled by
+Login ..> Account : handled by
+
+AccountState ..> AccountStatus : uses
+AccountState ..> AccountType : uses
+AccountCreated ..> AccountType : uses
+CreateAccount ..> AccountType : uses
+CreateTemporaryAccount ..> AccountType : uses
+AccountRegisteredIntegrationEvent ..> AccountType : uses
+
+@enduml 

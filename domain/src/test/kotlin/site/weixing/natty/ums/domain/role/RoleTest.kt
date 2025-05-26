@@ -1,0 +1,137 @@
+package site.weixing.natty.ums.domain.role
+
+import me.ahoo.wow.id.GlobalIdGenerator
+import me.ahoo.wow.test.aggregate.`when`
+import me.ahoo.wow.test.aggregateVerifier
+import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.equalTo
+import org.junit.jupiter.api.Test
+import site.weixing.natty.ums.api.role.CreateRole
+import site.weixing.natty.ums.api.role.DeleteRole
+import site.weixing.natty.ums.api.role.RoleCreated
+import site.weixing.natty.ums.api.role.RoleDeleted
+import site.weixing.natty.ums.api.role.RoleUpdated
+import site.weixing.natty.ums.api.role.UpdateRole
+
+class RoleTest {
+
+    @Test
+    fun onCreate() {
+        val command = CreateRole(
+            name = "Admin",
+            description = "Administrator role",
+            permissions = setOf("user:create", "user:update", "user:delete")
+        )
+
+        aggregateVerifier<Role, RoleState>()
+            .`when`(command)
+            .expectNoError()
+            .expectEventType(RoleCreated::class.java)
+            .expectState {
+                assertThat(it.name, equalTo(command.name))
+                assertThat(it.description, equalTo(command.description))
+                assertThat(it.permissions, equalTo(command.permissions))
+                assertThat(it.status, equalTo(RoleStatus.ACTIVE))
+            }
+            .verify()
+    }
+
+    @Test
+    fun onUpdate() {
+        val command = UpdateRole(
+            id = GlobalIdGenerator.generateAsString(),
+            name = "Updated Admin",
+            description = "Updated Administrator role",
+            permissions = setOf("user:create", "user:update", "user:delete", "user:view")
+        )
+
+        aggregateVerifier<Role, RoleState>()
+            .given(
+                RoleCreated(
+                    name = "Admin",
+                    description = "Administrator role",
+                    permissions = setOf("user:create", "user:update", "user:delete")
+                )
+            )
+            .`when`(command)
+            .expectNoError()
+            .expectEventType(RoleUpdated::class.java)
+            .expectState {
+                assertThat(it.name, equalTo(command.name))
+                assertThat(it.description, equalTo(command.description))
+                assertThat(it.permissions, equalTo(command.permissions))
+                assertThat(it.status, equalTo(RoleStatus.ACTIVE))
+            }
+            .verify()
+    }
+
+    @Test
+    fun onUpdate_whenDisabled_shouldThrowException() {
+        val command = UpdateRole(
+            id = GlobalIdGenerator.generateAsString(),
+            name = "Updated Admin",
+            description = "Updated Administrator role",
+            permissions = setOf("user:create", "user:update", "user:delete", "user:view")
+        )
+
+        aggregateVerifier<Role, RoleState>()
+            .given(
+                RoleCreated(
+                    name = "Admin",
+                    description = "Administrator role",
+                    permissions = setOf("user:create", "user:update", "user:delete")
+                ),
+                RoleDeleted(
+                    roleId = command.id
+                )
+            )
+            .`when`(command)
+            .expectErrorType(IllegalStateException::class.java)
+            .verify()
+    }
+
+    @Test
+    fun onDelete() {
+        val command = DeleteRole(
+            id = GlobalIdGenerator.generateAsString()
+        )
+
+        aggregateVerifier<Role, RoleState>()
+            .given(
+                RoleCreated(
+                    name = "Admin",
+                    description = "Administrator role",
+                    permissions = setOf("user:create", "user:update", "user:delete")
+                )
+            )
+            .`when`(command)
+            .expectNoError()
+            .expectEventType(RoleDeleted::class.java)
+            .expectState {
+                assertThat(it.status, equalTo(RoleStatus.DISABLED))
+            }
+            .verify()
+    }
+
+    @Test
+    fun onDelete_whenAlreadyDisabled_shouldThrowException() {
+        val command = DeleteRole(
+            id = GlobalIdGenerator.generateAsString()
+        )
+
+        aggregateVerifier<Role, RoleState>()
+            .given(
+                RoleCreated(
+                    name = "Admin",
+                    description = "Administrator role",
+                    permissions = setOf("user:create", "user:update", "user:delete")
+                ),
+                RoleDeleted(
+                    roleId = command.id
+                )
+            )
+            .`when`(command)
+            .expectErrorType(IllegalStateException::class.java)
+            .verify()
+    }
+}
