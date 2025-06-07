@@ -7,6 +7,8 @@ dependencies {
     api(project(":api"))
     api("me.ahoo.wow:wow-spring")
     api("io.github.oshai:kotlin-logging-jvm")
+    api("me.ahoo.wow:wow-compensation-api")
+    api("me.ahoo.wow:wow-compensation-core")
     ksp("me.ahoo.wow:wow-compiler")
     testImplementation("me.ahoo.wow:wow-test")
     testImplementation("io.projectreactor:reactor-test")

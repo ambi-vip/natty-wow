@@ -1,19 +1,19 @@
 [versions]
 # libraries
-spring-boot = "3.4.6"
-cosid = "2.12.5"
-wow = "5.15.8"
-coapi = "1.11.5"
-cocache = "3.8.1"
-cosec = "2.13.0"
+spring-boot = "3.5.0"
+cosid = "2.13.0"
+wow = "5.18.0"
+coapi = "1.12.0"
+cocache = "3.9.0"
+cosec = "2.16.1"
 cosky = "4.8.8"
 simba = "2.8.8"
 guava = "33.4.8-jre"
 kotlin-logging = "7.0.7"
 swagger = "2.2.32"
+springdoc = "2.8.8"
 hamcrest = "3.0"
 mockk = "1.14.2"
-springdoc = "2.8.6"
 # plugins
 detekt = "1.23.8"
 dokka = "2.0.0"
@@ -23,6 +23,7 @@ ksp = "2.1.21-2.0.1"
 kover = "0.9.1"
 test-retry = "1.6.2"
 casdoor = "1.15.0"
+jte = "3.2.1"
 
 [libraries]
 spring-boot-dependencies = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "spring-boot" }
@@ -36,11 +37,12 @@ simba-bom = { module = "me.ahoo.simba:simba-bom", version.ref = "simba" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
 kotlin-logging = { module = "io.github.oshai:kotlin-logging-jvm", version.ref = "kotlin-logging" }
 swagger-annotations = { module = "io.swagger.core.v3:swagger-annotations", version.ref = "swagger" }
-springdoc-openapi-starter-webflux-ui = { module = "org.springdoc:springdoc-openapi-starter-webflux-ui", version.ref = "springdoc" }
+springdoc-bom = { module = "org.springdoc:springdoc-openapi-bom", version.ref = "springdoc" }
 hamcrest = { module = "org.hamcrest:hamcrest", version.ref = "hamcrest" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 casdoor = { module = "org.casbin:casdoor-spring-boot-starter", version.ref = "casdoor" }
+jte = { module = "gg.jte:jte", version.ref = "jte" }
 
 [plugins]
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

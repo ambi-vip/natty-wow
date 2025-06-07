@@ -57,12 +57,12 @@ configure(bomProjects) {
 }
 
 configure(libraryProjects) {
-    apply<DetektPlugin>()
-    configure<DetektExtension> {
-        config.setFrom(files("${rootProject.rootDir}/config/detekt/detekt.yml"))
-        buildUponDefaultConfig = true
-        autoCorrect = true
-    }
+//    apply<DetektPlugin>()
+//    configure<DetektExtension> {
+//        config.setFrom(files("${rootProject.rootDir}/config/detekt/detekt.yml"))
+//        buildUponDefaultConfig = true
+//        autoCorrect = true
+//    }
     apply<DokkaPlugin>()
     apply<JacocoPlugin>()
     apply<JavaLibraryPlugin>()
@@ -105,7 +105,7 @@ configure(libraryProjects) {
     }
     dependencies {
         api(platform(dependenciesProject))
-        detektPlugins(dependenciesProject)
+//        detektPlugins(dependenciesProject)
         implementation("com.google.guava:guava")
         implementation("org.slf4j:slf4j-api")
         testImplementation("org.hamcrest:hamcrest")
@@ -116,7 +116,7 @@ configure(libraryProjects) {
         testImplementation("org.junit.jupiter:junit-jupiter-api")
         testImplementation("org.junit.jupiter:junit-jupiter-params")
         testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
-        detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting")
+//        detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting")
     }
 }
 

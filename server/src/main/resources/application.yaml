@@ -29,6 +29,22 @@ spring:
   profiles:
     active: local
 
+#  web:
+#    resources:
+#      static-locations:
+#        - classpath:compensation/
+#        - classpath:/META-INF/resources/
+#        - classpath:/resources/
+#        - classpath:/static/
+#        - classpath:/public/
+
+  autoconfigure:
+    exclude:
+      #      - org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfiguration
+      - org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchClientAutoConfiguration
+      - org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchRestClientAutoConfiguration
+      - org.springframework.boot.autoconfigure.elasticsearch.ReactiveElasticsearchClientAutoConfiguration
+
   security:
     oauth2:
       client:
@@ -76,7 +92,21 @@ wow:
       bus:
         type: in_memory
 
-
+cosec:
+  authentication:
+    enabled: true
+  jwt:
+    algorithm: hmac256
+    secret: lK39(gbo#aI0OALI5k!y3YCd#ziy6n_5
+    token-validity:
+      access: PT10M  # 10分钟
+      refresh: P7D   # 7天
+  authorization:
+    enabled: false
+    local-policy:
+      enabled: true
+      init-repository: true
+      locations: classpath:cosec-policy/*-policy.json
 
 casdoor:
   endpoint: https://ums.weixing.site
@@ -113,3 +143,8 @@ casdoor:
     -----END CERTIFICATE-----
   organization-name: built-in
   application-name: app-built-in
+
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn

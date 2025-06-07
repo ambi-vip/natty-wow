@@ -2,12 +2,15 @@ spring:
   data:
     mongodb:
       # 或者分离配置：
-      host: 82.157.139.228
+      host: 127.0.0.1
       port: 27017
       database: natty
-      username: mongo_f5AhsX
-      password: mongo_bmJMYy
       authentication-database: admin
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/simba_db
+    username: root
+    password: 123456
 
 wow:
   kafka:
@@ -34,3 +37,8 @@ wow:
     prepare-database: natty
 
 
+simba:
+  redis:
+    enable: true
+  jdbc:
+    enable: false

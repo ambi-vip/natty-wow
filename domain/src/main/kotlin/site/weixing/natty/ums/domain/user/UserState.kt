@@ -2,6 +2,7 @@ package site.weixing.natty.ums.domain.user
 
 import me.ahoo.wow.api.Identifier
 import me.ahoo.wow.api.annotation.OnSourcing
+import reactor.core.publisher.Mono
 import site.weixing.natty.ums.api.user.UserCreated
 
 class UserState(override val id: String) : Identifier {

@@ -1,15 +1,16 @@
 package site.weixing.natty.domain.demo
 
 import me.ahoo.wow.api.annotation.OnEvent
-import me.ahoo.wow.api.annotation.StatelessSaga
 import me.ahoo.wow.api.modeling.AggregateId
+import me.ahoo.wow.spring.stereotype.StatelessSagaComponent
+import org.slf4j.LoggerFactory
 import site.weixing.natty.demo.api.demo.DemoCreated
 import site.weixing.natty.demo.api.demo.UpdateDemo
 
-@StatelessSaga
+@StatelessSagaComponent
 class DemoSaga {
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(DemoSaga::class.java)
+        private val log = LoggerFactory.getLogger(DemoSaga::class.java)
     }
 
     @OnEvent

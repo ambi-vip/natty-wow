@@ -1,0 +1,69 @@
+{
+  "id": "id",
+  "name": "name",
+  "category": "category",
+  "description": "description",
+  "type": "global",
+  "tenantId": "tenantId",
+  "condition": {
+    "bool": {
+      "and": [
+        {
+          "rateLimiter": {
+            "permitsPerSecond": 10
+          }
+        }
+      ]
+    }
+  },
+  "statements": [
+    {
+      "action": {
+        "path": {
+          "pattern": "/user/#{principal.id}/*",
+          "options": {
+            "caseSensitive": false,
+            "separator": "/",
+            "decodeAndParseSegments": false
+          }
+        }
+      }
+    },
+    {
+      "name": "Anonymous",
+      "action": [
+        "/auth/**",
+        "/auth/**"
+      ],
+      "condition": {
+        "bool": {
+          "and": [
+            {
+              "authenticated": {
+                "negate": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "SwaggerAccess",
+      "action": [
+        "/swagger-ui/**",
+        "/v3/**"
+      ],
+      "condition": {
+        "bool": {
+          "and": [
+            {
+              "authenticated": {
+                "negate": true
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

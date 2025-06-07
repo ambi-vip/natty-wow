@@ -40,9 +40,9 @@ dependencies {
     ksp("me.ahoo.wow:wow-compiler")
     implementation("io.netty:netty-all")
     implementation(project(":domain"))
+    implementation(project(":security"))
 
-    implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
+
 
 //    implementation("me.ahoo.wow:wow-kafka")
     implementation("me.ahoo.wow:wow-mongo")
@@ -56,19 +56,30 @@ dependencies {
     implementation("org.springdoc:springdoc-openapi-starter-webflux-ui")
     implementation("me.ahoo.cosid:cosid-mongo")
 //    implementation("me.ahoo.cosid:cosid-spring-redis")
-//    implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
+    implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
     implementation("me.ahoo.cosid:cosid-spring-boot-starter")
-//    implementation("me.ahoo.cosec:cosec-webflux")
-//    implementation("me.ahoo.cosec:cosec-spring-boot-starter")
+
+    // cosky
 //    implementation("me.ahoo.cosky:cosky-spring-cloud-starter-discovery")
 //    implementation("me.ahoo.cosky:cosky-spring-cloud-starter-config")
+
     implementation("org.springframework.boot:spring-boot-starter-data-mongodb-reactive")
 //    implementation("me.ahoo.cocache:cocache-spring-boot-starter")
+    implementation("me.ahoo.simba:simba-spring-boot-starter")
+    implementation("me.ahoo.simba:simba-spring-redis")
+
+
+//    implementation("mysql:mysql-connector-java") // 使用合适的版本
+//    implementation("org.springframework.boot:spring-boot-starter-jdbc")
+
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     kapt("org.springframework.boot:spring-boot-configuration-processor")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+
+    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui")
+    implementation("com.github.xiaoymin:knife4j-openapi3-ui:4.5.0")
 
 }
 

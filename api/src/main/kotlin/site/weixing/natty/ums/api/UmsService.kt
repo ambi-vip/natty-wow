@@ -18,6 +18,7 @@ import site.weixing.natty.ums.api.role.CreateRole
 object UmsService {
     const val SERVICE_NAME = "ums-service"
     const val SERVICE_ALIAS = "ums"
+    const val IDENTITY_TYPE = "USER"
     const val ACCOUNT_AGGREGATE_NAME = "account"
     const val USER_AGGREGATE_NAME = "user"
     const val ROLE_AGGREGATE_NAME = "role"

@@ -20,6 +20,9 @@ class Demo(private val state: DemoState) {
 
     @OnCommand
     fun onUpdate(command: UpdateDemo): DemoUpdated {
+        if (command.data == "updated") {
+            throw RuntimeException("xxxx")
+        }
         return DemoUpdated(
             data = command.data
         )

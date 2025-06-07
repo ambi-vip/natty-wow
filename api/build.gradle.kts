@@ -15,4 +15,5 @@ dependencies {
     api("io.projectreactor:reactor-core")
     implementation("org.springframework:spring-web")
     ksp("me.ahoo.wow:wow-compiler")
+    api("me.ahoo.wow:wow-compensation-core")
 }

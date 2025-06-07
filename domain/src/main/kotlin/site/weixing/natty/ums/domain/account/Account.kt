@@ -1,7 +1,12 @@
 package site.weixing.natty.ums.domain.account
 
+import jdk.jfr.Registered
 import me.ahoo.wow.api.annotation.AggregateRoot
 import me.ahoo.wow.api.annotation.OnCommand
+import me.ahoo.wow.api.annotation.OnError
+import me.ahoo.wow.infra.prepare.PrepareKeyFactory
+import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toMono
 import site.weixing.natty.ums.api.account.AccountCreated
 import site.weixing.natty.ums.api.account.AccountDeleted
 import site.weixing.natty.ums.api.account.AccountLocked
@@ -20,12 +25,32 @@ import site.weixing.natty.ums.api.account.UpdateAccount
 class Account(private val state: AccountState) {
 
     @OnCommand
-    fun onCreate(command: CreateAccount): AccountCreated {
-        return AccountCreated(
-            username = command.username,
-            email = command.email,
-            phone = command.phone
-        )
+    fun onCreate(command: CreateAccount,
+                 usernamePrepare: UsernamePrepare
+                 ): Mono<AccountCreated> {
+        return usernamePrepare.usingPrepare(
+            key = command.username,
+            value = UsernameIndexValue(
+                userId = state.id,
+                password = "encodedPassword",
+            ),
+        ) {
+            require(it) {
+                "username[${command.username}] is already registered."
+            }
+            AccountCreated(
+                username = command.username,
+                email = command.email,
+                phone = command.phone
+            ).toMono()
+        }
+    }
+
+    @OnError
+    fun onError(createAccount: CreateAccount, error: Throwable): Mono<Void> {
+        // 自定义错误处理逻辑
+        // 可以记录日志、发送通知、发送失败时间 补偿 saga 等
+        return Mono.empty()
     }
 
     @OnCommand

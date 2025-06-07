@@ -8,6 +8,7 @@ dependencies {
     api(platform(libs.cosec.bom))
     api(platform(libs.cosky.bom))
     api(platform(libs.simba.bom))
+    api(platform(libs.springdoc.bom))
     constraints {
         api(libs.guava)
         api(libs.kotlin.logging)
@@ -16,5 +17,6 @@ dependencies {
         api(libs.mockk)
         api(libs.detekt.formatting)
         api(libs.casdoor)
+        api(libs.jte)
     }
 }
