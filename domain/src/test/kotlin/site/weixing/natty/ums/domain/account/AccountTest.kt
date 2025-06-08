@@ -6,20 +6,28 @@ import me.ahoo.wow.test.aggregateVerifier
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.junit.jupiter.api.Test
-import site.weixing.natty.ums.api.account.AccountCreated
-import site.weixing.natty.ums.api.account.AccountDeleted
-import site.weixing.natty.ums.api.account.AccountLocked
-import site.weixing.natty.ums.api.account.AccountUnlocked
-import site.weixing.natty.ums.api.account.AccountUpdated
-import site.weixing.natty.ums.api.account.AssignRole
-import site.weixing.natty.ums.api.account.CreateAccount
-import site.weixing.natty.ums.api.account.DeleteAccount
-import site.weixing.natty.ums.api.account.LockAccount
-import site.weixing.natty.ums.api.account.RoleAssigned
-import site.weixing.natty.ums.api.account.UnlockAccount
-import site.weixing.natty.ums.api.account.UpdateAccount
+import site.weixing.natty.api.ums.account.AccountCreated
+import site.weixing.natty.api.ums.account.AccountDeleted
+import site.weixing.natty.api.ums.account.AccountLocked
+import site.weixing.natty.api.ums.account.AccountUnlocked
+import site.weixing.natty.api.ums.account.AccountUpdated
+import site.weixing.natty.api.ums.account.AssignRole
+import site.weixing.natty.api.ums.account.CreateAccount
+import site.weixing.natty.api.ums.account.DeleteAccount
+import site.weixing.natty.api.ums.account.LockAccount
+import site.weixing.natty.api.ums.account.RoleAssigned
+import site.weixing.natty.api.ums.account.UnlockAccount
+import site.weixing.natty.api.ums.account.UpdateAccount
+import site.weixing.natty.TestPrepareKeyFactory
+import site.weixing.natty.domain.ums.account.Account
+import site.weixing.natty.domain.ums.account.AccountState
+import site.weixing.natty.domain.ums.account.AccountStatus
+import site.weixing.natty.domain.ums.account.UsernamePrepare
+
 
 class AccountTest {
+
+    private val usernamePrepare = UsernamePrepare(TestPrepareKeyFactory.create())
 
     @Test
     fun onCreate() {
@@ -32,6 +40,7 @@ class AccountTest {
         )
 
         aggregateVerifier<Account, AccountState>()
+            .inject(usernamePrepare)
             .`when`(command)
             .expectNoError()
             .expectEventType(AccountCreated::class.java)

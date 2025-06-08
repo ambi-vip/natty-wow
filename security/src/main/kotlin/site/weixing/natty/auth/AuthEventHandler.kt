@@ -3,8 +3,8 @@ package site.weixing.natty.auth
 import me.ahoo.wow.api.annotation.OnEvent
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
-import site.weixing.natty.auth.api.AuthAuthenticated
-import site.weixing.natty.auth.api.TokenRefreshed
+import site.weixing.natty.api.auth.AuthAuthenticated
+import site.weixing.natty.api.auth.TokenRefreshed
 
 @Component
 class AuthEventHandler {

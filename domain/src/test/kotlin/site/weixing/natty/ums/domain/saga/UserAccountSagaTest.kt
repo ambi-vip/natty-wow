@@ -4,7 +4,8 @@ import me.ahoo.wow.test.SagaVerifier.sagaVerifier
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.junit.jupiter.api.Test
-import site.weixing.natty.ums.api.account.CreateAccount
+import site.weixing.natty.domain.ums.saga.UserAccountSaga
+import site.weixing.natty.api.ums.account.CreateAccount
 import site.weixing.natty.ums.api.user.UserCreated
 
 class UserAccountSagaTest {

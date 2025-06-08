@@ -16,7 +16,7 @@ dependencies {
         api(libs.hamcrest)
         api(libs.mockk)
         api(libs.detekt.formatting)
-        api(libs.casdoor)
+//        api(libs.casdoor)
         api(libs.jte)
     }
 }

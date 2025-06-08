@@ -5,6 +5,9 @@ import me.ahoo.wow.test.aggregateVerifier
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.junit.jupiter.api.Test
+import site.weixing.natty.domain.ums.permission.Permission
+import site.weixing.natty.domain.ums.permission.PermissionState
+import site.weixing.natty.domain.ums.permission.PermissionStatus
 import site.weixing.natty.ums.api.permission.CreatePermission
 import site.weixing.natty.ums.api.permission.PermissionCreated
 import site.weixing.natty.ums.api.permission.PermissionType

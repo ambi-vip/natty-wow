@@ -6,9 +6,9 @@ import me.ahoo.cosec.authentication.CompositeAuthentication
 import me.ahoo.cosec.token.TokenCompositeAuthentication
 import me.ahoo.cosec.token.TokenConverter
 import reactor.core.publisher.Mono
-import site.weixing.natty.auth.domain.commands.AuthenticatedToken
-import site.weixing.natty.auth.domain.commands.AuthenticationManager
-import site.weixing.natty.auth.domain.commands.CredentialsToken
+import site.weixing.natty.domain.auth.commands.AuthenticatedToken
+import site.weixing.natty.domain.auth.commands.AuthenticationManager
+import site.weixing.natty.domain.auth.commands.CredentialsToken
 
 /**
  * Desc

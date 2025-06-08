@@ -1,7 +1,7 @@
 package site.weixing.natty.server.compensation.configuration
 
-import site.weixing.natty.compensation.domain.DefaultNextRetryAtCalculator
-import site.weixing.natty.compensation.domain.NextRetryAtCalculator
+import site.weixing.natty.domain.compensation.DefaultNextRetryAtCalculator
+import site.weixing.natty.domain.compensation.NextRetryAtCalculator
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration

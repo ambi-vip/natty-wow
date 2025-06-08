@@ -1,0 +1,84 @@
+@startuml
+
+' 实体类
+class User {
+  + id: String
+  + email: String
+  + password: String
+  + is_admin: Boolean
+  + first_name: String
+  + last_name: String
+  + email_verified: Boolean
+  + created_at: DateTime
+  + updated_at: DateTime
+}
+
+class Auth {
+  + token: String
+  + refresh_token: String
+  + expires_at: DateTime
+}
+
+class Session {
+  + id: String
+  + user_id: String
+  + token: String
+  + expires_at: DateTime
+}
+
+' 值对象
+class PasswordReset {
+  + token: String
+  + email: String
+  + expires_at: DateTime
+}
+
+class EmailVerification {
+  + token: String
+  + email: String
+  + expires_at: DateTime
+}
+
+' 服务
+class AuthService {
+  + login(email: String, password: String): Auth
+  + register(email: String, password: String): Auth
+  + logout(): void
+  + resetPassword(token: String, password: String): void
+  + verifyEmail(token: String): void
+  + requestPasswordReset(email: String): void
+  + resendVerificationEmail(email: String): void
+}
+
+' 仓储接口
+interface UserRepository {
+  + findById(id: String): User
+  + findByEmail(email: String): User
+  + save(user: User): void
+  + delete(id: String): void
+}
+
+interface AuthRepository {
+  + save(auth: Auth): void
+  + findByToken(token: String): Auth
+  + delete(token: String): void
+}
+
+interface SessionRepository {
+  + create(session: Session): void
+  + findByToken(token: String): Session
+  + delete(id: String): void
+}
+
+' 关系
+User "1" -- "1" Auth
+User "1" -- "*" Session
+User "1" -- "*" PasswordReset
+User "1" -- "*" EmailVerification
+
+AuthService ..> UserRepository
+AuthService ..> AuthRepository
+AuthService ..> SessionRepository
+
+
+@enduml

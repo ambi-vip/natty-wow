@@ -1,8 +1,8 @@
 package site.weixing.natty.domain.demo
 
 import me.ahoo.wow.api.annotation.BoundedContext
-import site.weixing.natty.demo.NattyService
+import site.weixing.natty.api.demo.DemoService
 
 @Suppress("unused")
-@BoundedContext(name = NattyService.SERVICE_NAME)
+@BoundedContext(name = DemoService.SERVICE_NAME)
 object DemoBoundedContext

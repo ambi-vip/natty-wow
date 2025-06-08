@@ -2,8 +2,8 @@ package site.weixing.natty.domain.demo
 
 import me.ahoo.wow.api.Identifier
 import me.ahoo.wow.api.annotation.OnSourcing
-import site.weixing.natty.demo.api.demo.DemoCreated
-import site.weixing.natty.demo.api.demo.DemoUpdated
+import site.weixing.natty.api.demo.demo.DemoCreated
+import site.weixing.natty.api.demo.demo.DemoUpdated
 
 class DemoState(override val id: String) : Identifier {
     var data: String? = null

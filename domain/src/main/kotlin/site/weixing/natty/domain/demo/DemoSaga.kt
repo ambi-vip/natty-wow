@@ -4,8 +4,8 @@ import me.ahoo.wow.api.annotation.OnEvent
 import me.ahoo.wow.api.modeling.AggregateId
 import me.ahoo.wow.spring.stereotype.StatelessSagaComponent
 import org.slf4j.LoggerFactory
-import site.weixing.natty.demo.api.demo.DemoCreated
-import site.weixing.natty.demo.api.demo.UpdateDemo
+import site.weixing.natty.api.demo.demo.DemoCreated
+import site.weixing.natty.api.demo.demo.UpdateDemo
 
 @StatelessSagaComponent
 class DemoSaga {

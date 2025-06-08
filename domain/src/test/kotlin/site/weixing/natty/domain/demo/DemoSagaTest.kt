@@ -4,8 +4,8 @@ import me.ahoo.wow.test.SagaVerifier.sagaVerifier
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.junit.jupiter.api.Test
-import site.weixing.natty.demo.api.demo.DemoCreated
-import site.weixing.natty.demo.api.demo.UpdateDemo
+import site.weixing.natty.api.demo.demo.DemoCreated
+import site.weixing.natty.api.demo.demo.UpdateDemo
 
 class DemoSagaTest {
 

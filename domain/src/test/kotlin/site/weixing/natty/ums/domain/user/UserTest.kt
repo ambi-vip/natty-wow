@@ -6,6 +6,9 @@ import me.ahoo.wow.test.aggregateVerifier
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.junit.jupiter.api.Test
+import site.weixing.natty.domain.ums.user.User
+import site.weixing.natty.domain.ums.user.UserState
+import site.weixing.natty.domain.ums.user.UserStatus
 import site.weixing.natty.ums.api.user.CreateUser
 import site.weixing.natty.ums.api.user.UserCreated
 

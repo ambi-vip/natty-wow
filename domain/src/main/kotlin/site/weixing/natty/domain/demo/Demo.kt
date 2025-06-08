@@ -2,10 +2,10 @@ package site.weixing.natty.domain.demo
 
 import me.ahoo.wow.api.annotation.AggregateRoot
 import me.ahoo.wow.api.annotation.OnCommand
-import site.weixing.natty.demo.api.demo.CreateDemo
-import site.weixing.natty.demo.api.demo.DemoCreated
-import site.weixing.natty.demo.api.demo.DemoUpdated
-import site.weixing.natty.demo.api.demo.UpdateDemo
+import site.weixing.natty.api.demo.demo.CreateDemo
+import site.weixing.natty.api.demo.demo.DemoCreated
+import site.weixing.natty.api.demo.demo.DemoUpdated
+import site.weixing.natty.api.demo.demo.UpdateDemo
 
 @Suppress("unused")
 @AggregateRoot

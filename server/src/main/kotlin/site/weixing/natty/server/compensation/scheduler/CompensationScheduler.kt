@@ -7,7 +7,7 @@ import me.ahoo.simba.schedule.ScheduleConfig
 import me.ahoo.wow.command.CommandGateway
 import me.ahoo.wow.command.toCommandMessage
 import me.ahoo.wow.compensation.api.PrepareCompensation
-import site.weixing.natty.compensation.domain.FindNextRetry
+import site.weixing.natty.domain.compensation.FindNextRetry
 import org.springframework.context.SmartLifecycle
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono

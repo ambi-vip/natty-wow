@@ -1,6 +1,6 @@
 package site.weixing.natty.server.ums.auth
 
-import site.weixing.natty.auth.domain.commands.IdentityAuthentication
+import site.weixing.natty.domain.auth.commands.IdentityAuthentication
 
 /**
  * Desc

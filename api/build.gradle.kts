@@ -4,7 +4,7 @@ plugins {
 dependencies {
     api(platform(project(":dependencies")))
     ksp(platform(project(":dependencies")))
-    api(libs.casdoor)
+//    api(libs.casdoor)
     api(libs.swagger.annotations)
     api("me.ahoo.wow:wow-api")
     api("me.ahoo.wow:wow-apiclient")
@@ -15,5 +15,6 @@ dependencies {
     api("io.projectreactor:reactor-core")
     implementation("org.springframework:spring-web")
     ksp("me.ahoo.wow:wow-compiler")
-    api("me.ahoo.wow:wow-compensation-core")
+    api("me.ahoo.wow:wow-compensation-api")
+//    api("me.ahoo.wow:wow-compensation-core")
 }

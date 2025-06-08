@@ -1,17 +1,17 @@
 package site.weixing.natty.auth
 
 import reactor.core.publisher.Mono
-import site.weixing.natty.auth.api.AuthAuthenticated
-import site.weixing.natty.auth.api.AuthInvalidated
-import site.weixing.natty.auth.api.Authenticate
-import site.weixing.natty.auth.api.GrantType
-import site.weixing.natty.auth.api.Logout
-import site.weixing.natty.auth.api.RefreshToken
+import site.weixing.natty.api.auth.AuthAuthenticated
+import site.weixing.natty.api.auth.AuthInvalidated
+import site.weixing.natty.api.auth.Authenticate
+import site.weixing.natty.api.auth.GrantType
+import site.weixing.natty.api.auth.Logout
+import site.weixing.natty.api.auth.RefreshToken
 import site.weixing.natty.auth.authorization.CoCredentialsToken
 import site.weixing.natty.auth.authorization.SimpleCompositeToken
-import site.weixing.natty.auth.domain.AuthHandler
-import site.weixing.natty.auth.domain.commands.AuthenticationManager
-import site.weixing.natty.auth.domain.commands.CredentialsToken
+import site.weixing.natty.domain.auth.AuthHandler
+import site.weixing.natty.domain.auth.commands.AuthenticationManager
+import site.weixing.natty.domain.auth.commands.CredentialsToken
 
 /**
  * Desc

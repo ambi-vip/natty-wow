@@ -115,6 +115,7 @@ configure(libraryProjects) {
         testImplementation("ch.qos.logback:logback-classic")
         testImplementation("org.junit.jupiter:junit-jupiter-api")
         testImplementation("org.junit.jupiter:junit-jupiter-params")
+        testImplementation("org.junit.platform:junit-platform-launcher")
         testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 //        detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting")
     }
