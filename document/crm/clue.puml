@@ -1,0 +1,212 @@
+@startuml Clue Aggregate
+
+' 样式设置
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam linetype ortho
+
+package "Clue Domain" {
+    ' 聚合根
+    class ClueAggregate {
+        +createClue(command: CreateClueCommand)
+        +updateClue(command: UpdateClueCommand)
+        +deleteClue(command: DeleteClueCommand)
+        +transformClue(command: TransformClueCommand)
+        +transferClue(command: TransferClueCommand)
+        +addFollowUp(command: AddClueFollowUpCommand)
+        +addTransformRecord(command: AddClueTransformRecordCommand)
+    }
+
+    ' 实体
+    class Clue {
+        +id: Long
+        +name: String
+        +followUpStatus: Boolean
+        +contactLastTime: LocalDateTime
+        +contactLastContent: String
+        +contactNextTime: LocalDateTime
+        +ownerUserId: Long
+        +transformStatus: Boolean
+        +customerId: Long
+        +mobile: String
+        +telephone: String
+        +qq: String
+        +wechat: String
+        +email: String
+        +areaId: Integer
+        +detailAddress: String
+        +industryId: Integer
+        +level: Integer
+        +source: Integer
+        +remark: String
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+    }
+
+    class ClueFollowUp {
+        +id: Long
+        +clueId: Long
+        +content: String
+        +nextTime: LocalDateTime
+        +creatorId: Long
+        +createTime: LocalDateTime
+    }
+
+    class ClueTransformRecord {
+        +id: Long
+        +clueId: Long
+        +customerId: Long
+        +transformType: Integer
+        +transformReason: String
+        +creatorId: Long
+        +createTime: LocalDateTime
+    }
+
+    ' 值对象
+    class ClueAssignRule {
+        +id: Long
+        +ruleType: Integer
+        +ruleContent: String
+        +enabled: Boolean
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+    }
+
+    ' 命令
+    class CreateClueCommand {
+        +name: String
+        +ownerUserId: Long
+        +mobile: String
+        +telephone: String
+        +qq: String
+        +wechat: String
+        +email: String
+        +areaId: Integer
+        +detailAddress: String
+        +industryId: Integer
+        +level: Integer
+        +source: Integer
+        +remark: String
+    }
+
+    class UpdateClueCommand {
+        +id: Long
+        +name: String
+        +followUpStatus: Boolean
+        +contactLastTime: LocalDateTime
+        +contactLastContent: String
+        +contactNextTime: LocalDateTime
+        +ownerUserId: Long
+        +mobile: String
+        +telephone: String
+        +qq: String
+        +wechat: String
+        +email: String
+        +areaId: Integer
+        +detailAddress: String
+        +industryId: Integer
+        +level: Integer
+        +source: Integer
+        +remark: String
+    }
+
+    class DeleteClueCommand {
+        +id: Long
+    }
+
+    class TransformClueCommand {
+        +id: Long
+        +customerId: Long
+        +transformType: Integer
+        +transformReason: String
+    }
+
+    class TransferClueCommand {
+        +id: Long
+        +newOwnerUserId: Long
+    }
+
+    class AddClueFollowUpCommand {
+        +clueId: Long
+        +content: String
+        +nextTime: LocalDateTime
+    }
+
+    class AddClueTransformRecordCommand {
+        +clueId: Long
+        +customerId: Long
+        +transformType: Integer
+        +transformReason: String
+    }
+
+    ' 事件
+    class ClueCreatedEvent {
+        +clueId: Long
+        +name: String
+        +ownerUserId: Long
+        +mobile: String
+        +telephone: String
+        +qq: String
+        +wechat: String
+        +email: String
+        +areaId: Integer
+        +detailAddress: String
+        +industryId: Integer
+        +level: Integer
+        +source: Integer
+        +remark: String
+    }
+
+    class ClueTransformedEvent {
+        +clueId: Long
+        +customerId: Long
+        +ownerUserId: Long
+        +transformType: Integer
+        +transformReason: String
+    }
+
+    class ClueTransferredEvent {
+        +clueId: Long
+        +oldOwnerUserId: Long
+        +newOwnerUserId: Long
+    }
+
+    class ClueFollowUpAddedEvent {
+        +clueId: Long
+        +followUpId: Long
+        +content: String
+        +nextTime: LocalDateTime
+    }
+
+    class ClueTransformRecordAddedEvent {
+        +clueId: Long
+        +recordId: Long
+        +customerId: Long
+        +transformType: Integer
+        +transformReason: String
+    }
+}
+
+' 关系定义
+ClueAggregate "1" -- "0..*" Clue : 管理 >
+Clue "1" -- "0..*" ClueFollowUp : 包含 >
+Clue "1" -- "0..*" ClueTransformRecord : 包含 >
+Clue "1" -- "1" ClueAssignRule : 配置 >
+
+' 命令与聚合根的关系
+CreateClueCommand ..> ClueAggregate : 触发 >
+UpdateClueCommand ..> ClueAggregate : 触发 >
+DeleteClueCommand ..> ClueAggregate : 触发 >
+TransformClueCommand ..> ClueAggregate : 触发 >
+TransferClueCommand ..> ClueAggregate : 触发 >
+AddClueFollowUpCommand ..> ClueAggregate : 触发 >
+AddClueTransformRecordCommand ..> ClueAggregate : 触发 >
+
+' 事件与聚合根的关系
+ClueCreatedEvent ..> ClueAggregate : 发布 >
+ClueTransformedEvent ..> ClueAggregate : 发布 >
+ClueTransferredEvent ..> ClueAggregate : 发布 >
+ClueFollowUpAddedEvent ..> ClueAggregate : 发布 >
+ClueTransformRecordAddedEvent ..> ClueAggregate : 发布 >
+
+@enduml 

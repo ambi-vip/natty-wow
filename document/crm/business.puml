@@ -1,0 +1,221 @@
+@startuml Business Aggregate
+
+' 样式设置
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam linetype ortho
+
+package "Business Domain" {
+    ' 聚合根
+    class BusinessAggregate {
+        +createBusiness(command: CreateBusinessCommand)
+        +updateBusiness(command: UpdateBusinessCommand)
+        +deleteBusiness(command: DeleteBusinessCommand)
+        +updateBusinessStatus(command: UpdateBusinessStatusCommand)
+        +transferBusiness(command: TransferBusinessCommand)
+        +addProduct(command: AddBusinessProductCommand)
+        +removeProduct(command: RemoveBusinessProductCommand)
+        +addFollowUp(command: AddBusinessFollowUpCommand)
+        +updateStatusRule(command: UpdateBusinessStatusRuleCommand)
+    }
+
+    ' 实体
+    class Business {
+        +id: Long
+        +name: String
+        +customerId: Long
+        +amount: BigDecimal
+        +statusTypeId: Long
+        +statusId: Long
+        +ownerUserId: Long
+        +expectedDealTime: LocalDateTime
+        +source: Integer
+        +isEnd: Boolean
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+        +remark: String
+    }
+
+    class BusinessProduct {
+        +id: Long
+        +businessId: Long
+        +productId: Long
+        +quantity: Integer
+        +price: BigDecimal
+        +amount: BigDecimal
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+    }
+
+    class BusinessFollowUp {
+        +id: Long
+        +businessId: Long
+        +content: String
+        +nextTime: LocalDateTime
+        +creatorId: Long
+        +createTime: LocalDateTime
+    }
+
+    ' 值对象
+    class BusinessStatus {
+        +id: Long
+        +typeId: Long
+        +name: String
+        +isEnd: Boolean
+        +sort: Integer
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+    }
+
+    class BusinessStatusType {
+        +id: Long
+        +name: String
+        +sort: Integer
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+    }
+
+    class BusinessStatusRule {
+        +id: Long
+        +typeId: Long
+        +fromStatusId: Long
+        +toStatusId: Long
+        +condition: String
+        +enabled: Boolean
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+    }
+
+    ' 命令
+    class CreateBusinessCommand {
+        +name: String
+        +customerId: Long
+        +amount: BigDecimal
+        +statusTypeId: Long
+        +ownerUserId: Long
+        +products: List<BusinessProductDTO>
+    }
+
+    class UpdateBusinessCommand {
+        +id: Long
+        +name: String
+        +amount: BigDecimal
+        +expectedDealTime: LocalDateTime
+    }
+
+    class DeleteBusinessCommand {
+        +id: Long
+    }
+
+    class UpdateBusinessStatusCommand {
+        +id: Long
+        +statusId: Long
+    }
+
+    class TransferBusinessCommand {
+        +id: Long
+        +newOwnerUserId: Long
+    }
+
+    class AddBusinessProductCommand {
+        +businessId: Long
+        +productId: Long
+        +quantity: Integer
+        +price: BigDecimal
+    }
+
+    class RemoveBusinessProductCommand {
+        +businessId: Long
+        +productId: Long
+    }
+
+    class AddBusinessFollowUpCommand {
+        +businessId: Long
+        +content: String
+        +nextTime: LocalDateTime
+    }
+
+    class UpdateBusinessStatusRuleCommand {
+        +typeId: Long
+        +fromStatusId: Long
+        +toStatusId: Long
+        +condition: String
+        +enabled: Boolean
+    }
+
+    ' 事件
+    class BusinessCreatedEvent {
+        +businessId: Long
+        +customerId: Long
+        +ownerUserId: Long
+    }
+
+    class BusinessStatusUpdatedEvent {
+        +businessId: Long
+        +oldStatusId: Long
+        +newStatusId: Long
+    }
+
+    class BusinessTransferredEvent {
+        +businessId: Long
+        +oldOwnerUserId: Long
+        +newOwnerUserId: Long
+    }
+
+    class BusinessProductAddedEvent {
+        +businessId: Long
+        +productId: Long
+        +quantity: Integer
+        +price: BigDecimal
+    }
+
+    class BusinessProductRemovedEvent {
+        +businessId: Long
+        +productId: Long
+    }
+
+    class BusinessFollowUpAddedEvent {
+        +businessId: Long
+        +followUpId: Long
+        +content: String
+        +nextTime: LocalDateTime
+    }
+
+    class BusinessStatusRuleUpdatedEvent {
+        +typeId: Long
+        +fromStatusId: Long
+        +toStatusId: Long
+        +condition: String
+        +enabled: Boolean
+    }
+}
+
+' 关系定义
+BusinessAggregate "1" -- "0..*" Business : 管理 >
+Business "1" -- "1" BusinessStatus : 拥有 >
+BusinessStatus "1" -- "1" BusinessStatusType : 属于 >
+Business "1" -- "0..*" BusinessProduct : 包含 >
+Business "1" -- "0..*" BusinessFollowUp : 包含 >
+BusinessStatusType "1" -- "0..*" BusinessStatusRule : 配置 >
+
+' 命令与聚合根的关系
+CreateBusinessCommand ..> BusinessAggregate : 触发 >
+UpdateBusinessCommand ..> BusinessAggregate : 触发 >
+DeleteBusinessCommand ..> BusinessAggregate : 触发 >
+UpdateBusinessStatusCommand ..> BusinessAggregate : 触发 >
+TransferBusinessCommand ..> BusinessAggregate : 触发 >
+AddBusinessProductCommand ..> BusinessAggregate : 触发 >
+RemoveBusinessProductCommand ..> BusinessAggregate : 触发 >
+AddBusinessFollowUpCommand ..> BusinessAggregate : 触发 >
+UpdateBusinessStatusRuleCommand ..> BusinessAggregate : 触发 >
+
+' 事件与聚合根的关系
+BusinessCreatedEvent ..> BusinessAggregate : 发布 >
+BusinessStatusUpdatedEvent ..> BusinessAggregate : 发布 >
+BusinessTransferredEvent ..> BusinessAggregate : 发布 >
+BusinessProductAddedEvent ..> BusinessAggregate : 发布 >
+BusinessProductRemovedEvent ..> BusinessAggregate : 发布 >
+BusinessFollowUpAddedEvent ..> BusinessAggregate : 发布 >
+BusinessStatusRuleUpdatedEvent ..> BusinessAggregate : 发布 >
+
+@enduml 

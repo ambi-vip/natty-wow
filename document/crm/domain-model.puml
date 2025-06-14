@@ -1,0 +1,471 @@
+@startuml CRM Domain Model
+
+' 样式设置
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam linetype ortho
+
+' 引入其他聚合根文件
+!include customer.puml
+!include clue.puml
+!include business.puml
+!include contract.puml
+!include receivable.puml
+
+' 包定义
+package "CRM Domain" {
+    ' 聚合根
+    package "Aggregates" {
+        class CustomerAggregate {
+            +createCustomer(command: CreateCustomerCommand)
+            +updateCustomer(command: UpdateCustomerCommand)
+            +deleteCustomer(command: DeleteCustomerCommand)
+            +transferCustomer(command: TransferCustomerCommand)
+            +putCustomerToPool(command: PutCustomerToPoolCommand)
+            +receiveCustomer(command: ReceiveCustomerCommand)
+        }
+
+        class ClueAggregate {
+            +createClue(command: CreateClueCommand)
+            +updateClue(command: UpdateClueCommand)
+            +deleteClue(command: DeleteClueCommand)
+            +transformClue(command: TransformClueCommand)
+            +transferClue(command: TransferClueCommand)
+        }
+
+        class BusinessAggregate {
+            +createBusiness(command: CreateBusinessCommand)
+            +updateBusiness(command: UpdateBusinessCommand)
+            +deleteBusiness(command: DeleteBusinessCommand)
+            +updateBusinessStatus(command: UpdateBusinessStatusCommand)
+            +transferBusiness(command: TransferBusinessCommand)
+        }
+
+        class ContractAggregate {
+            +createContract(command: CreateContractCommand)
+            +updateContract(command: UpdateContractCommand)
+            +deleteContract(command: DeleteContractCommand)
+            +submitContract(command: SubmitContractCommand)
+            +transferContract(command: TransferContractCommand)
+        }
+
+        class ReceivableAggregate {
+            +createReceivable(command: CreateReceivableCommand)
+            +updateReceivable(command: UpdateReceivableCommand)
+            +deleteReceivable(command: DeleteReceivableCommand)
+            +submitReceivable(command: SubmitReceivableCommand)
+            +createReceivablePlan(command: CreateReceivablePlanCommand)
+        }
+    }
+
+    ' 命令
+    package "Commands" {
+        class CreateCustomerCommand {
+            +name: String
+            +type: Integer
+            +areaId: Long
+            +ownerUserId: Long
+            +source: Integer
+        }
+
+        class UpdateCustomerCommand {
+            +id: Long
+            +name: String
+            +type: Integer
+            +areaId: Long
+            +status: Integer
+        }
+
+        class DeleteCustomerCommand {
+            +id: Long
+        }
+
+        class TransferCustomerCommand {
+            +id: Long
+            +newOwnerUserId: Long
+        }
+
+        class PutCustomerToPoolCommand {
+            +id: Long
+        }
+
+        class ReceiveCustomerCommand {
+            +id: Long
+            +receiverUserId: Long
+        }
+
+        class CreateClueCommand {
+            +name: String
+            +customerId: Long
+            +areaId: Long
+            +ownerUserId: Long
+            +source: Integer
+        }
+
+        class TransformClueCommand {
+            +id: Long
+            +customerId: Long
+        }
+
+        class CreateBusinessCommand {
+            +name: String
+            +customerId: Long
+            +amount: BigDecimal
+            +statusTypeId: Long
+            +ownerUserId: Long
+        }
+
+        class CreateContractCommand {
+            +name: String
+            +customerId: Long
+            +businessId: Long
+            +amount: BigDecimal
+            +ownerUserId: Long
+        }
+
+        class CreateReceivableCommand {
+            +customerId: Long
+            +contractId: Long
+            +amount: BigDecimal
+            +ownerUserId: Long
+        }
+    }
+
+    ' 事件
+    package "Events" {
+        class CustomerCreatedEvent {
+            +customerId: Long
+            +name: String
+            +ownerUserId: Long
+        }
+
+        class CustomerTransferredEvent {
+            +customerId: Long
+            +oldOwnerUserId: Long
+            +newOwnerUserId: Long
+        }
+
+        class CustomerPutToPoolEvent {
+            +customerId: Long
+            +oldOwnerUserId: Long
+        }
+
+        class ClueTransformedEvent {
+            +clueId: Long
+            +customerId: Long
+            +ownerUserId: Long
+        }
+
+        class BusinessCreatedEvent {
+            +businessId: Long
+            +customerId: Long
+            +ownerUserId: Long
+        }
+
+        class ContractCreatedEvent {
+            +contractId: Long
+            +customerId: Long
+            +businessId: Long
+            +ownerUserId: Long
+        }
+
+        class ReceivableCreatedEvent {
+            +receivableId: Long
+            +customerId: Long
+            +contractId: Long
+            +ownerUserId: Long
+        }
+    }
+
+    ' Saga 编排
+    package "Sagas" {
+        class ClueTransformSaga {
+            +start(command: TransformClueCommand)
+            +handleCustomerCreated(event: CustomerCreatedEvent)
+            +handleClueTransformed(event: ClueTransformedEvent)
+            +compensate()
+        }
+
+        class BusinessCreateSaga {
+            +start(command: CreateBusinessCommand)
+            +handleCustomerValidated(event: CustomerValidatedEvent)
+            +handleBusinessCreated(event: BusinessCreatedEvent)
+            +compensate()
+        }
+
+        class ContractCreateSaga {
+            +start(command: CreateContractCommand)
+            +handleBusinessValidated(event: BusinessValidatedEvent)
+            +handleContractCreated(event: ContractCreatedEvent)
+            +compensate()
+        }
+
+        class ReceivableCreateSaga {
+            +start(command: CreateReceivableCommand)
+            +handleContractValidated(event: ContractValidatedEvent)
+            +handleReceivableCreated(event: ReceivableCreatedEvent)
+            +compensate()
+        }
+    }
+
+    ' 核心实体
+    class Customer {
+        +id: Long
+        +name: String
+        +type: Integer
+        +areaId: Long
+        +ownerUserId: Long
+        +status: Integer
+        +source: Integer
+        +dealStatus: Integer
+        +lockStatus: Integer
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+        +ownerTime: LocalDateTime
+        +lastContactTime: LocalDateTime
+        +remark: String
+    }
+
+    class Clue {
+        +id: Long
+        +name: String
+        +customerId: Long
+        +areaId: Long
+        +ownerUserId: Long
+        +status: Integer
+        +source: Integer
+        +transformStatus: Integer
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+        +remark: String
+    }
+
+    class Contact {
+        +id: Long
+        +name: String
+        +customerId: Long
+        +areaId: Long
+        +position: String
+        +department: String
+        +mobile: String
+        +email: String
+        +telephone: String
+        +ownerUserId: Long
+        +parentId: Long
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+        +remark: String
+    }
+
+    class Business {
+        +id: Long
+        +name: String
+        +customerId: Long
+        +amount: BigDecimal
+        +statusTypeId: Long
+        +statusId: Long
+        +ownerUserId: Long
+        +expectedDealTime: LocalDateTime
+        +source: Integer
+        +isEnd: Boolean
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+        +remark: String
+    }
+
+    class Contract {
+        +id: Long
+        +name: String
+        +customerId: Long
+        +businessId: Long
+        +amount: BigDecimal
+        +contractNo: String
+        +signUserId: Long
+        +signContactId: Long
+        +signTime: LocalDateTime
+        +ownerUserId: Long
+        +status: Integer
+        +auditStatus: Integer
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+        +remark: String
+    }
+
+    class Product {
+        +id: Long
+        +name: String
+        +productNo: String
+        +categoryId: Long
+        +unit: String
+        +price: BigDecimal
+        +status: Integer
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+        +description: String
+        +remark: String
+    }
+
+    class Receivable {
+        +id: Long
+        +receivableNo: String
+        +customerId: Long
+        +contractId: Long
+        +amount: BigDecimal
+        +receivableTime: LocalDateTime
+        +ownerUserId: Long
+        +status: Integer
+        +auditStatus: Integer
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+        +receivableType: Integer
+        +remark: String
+    }
+
+    class FollowUpRecord {
+        +id: Long
+        +content: String
+        +followUpTime: LocalDateTime
+        +type: Integer
+        +method: Integer
+        +result: String
+        +customerId: Long
+        +businessIds: List<Long>
+        +contactIds: List<Long>
+        +creatorId: Long
+        +nextTime: LocalDateTime
+        +createTime: LocalDateTime
+        +remark: String
+    }
+
+    class OperateLog {
+        +id: Long
+        +businessType: Integer
+        +businessId: Long
+        +operateType: Integer
+        +content: String
+        +result: String
+        +operatorId: Long
+        +operatorName: String
+        +operatorDept: String
+        +operateTime: LocalDateTime
+        +operateDuration: Long
+        +operateIp: String
+        +operateLocation: String
+        +operateDevice: String
+        +operateBrowser: String
+    }
+
+    ' 值对象
+    class BusinessStatus {
+        +id: Long
+        +typeId: Long
+        +name: String
+        +isEnd: Boolean
+        +sort: Integer
+    }
+
+    class BusinessStatusType {
+        +id: Long
+        +name: String
+        +sort: Integer
+    }
+
+    class ProductCategory {
+        +id: Long
+        +name: String
+        +parentId: Long
+        +level: Integer
+        +sort: Integer
+    }
+
+    class ReceivablePlan {
+        +id: Long
+        +receivableId: Long
+        +customerId: Long
+        +contractId: Long
+        +amount: BigDecimal
+        +planTime: LocalDateTime
+        +period: Integer
+        +type: Integer
+        +ownerUserId: Long
+        +status: Integer
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+        +remark: String
+    }
+
+    class CustomerPoolConfig {
+        +id: Long
+        +enabled: Boolean
+        +noDealDays: Integer
+        +noFollowDays: Integer
+    }
+
+    class ContractConfig {
+        +id: Long
+        +contractNoPrefix: String
+        +contractNoRule: String
+        +remindConfig: String
+    }
+}
+
+' 关系定义
+CustomerAggregate "1" -- "0..*" Customer : 管理 >
+ClueAggregate "1" -- "0..*" Clue : 管理 >
+BusinessAggregate "1" -- "0..*" Business : 管理 >
+ContractAggregate "1" -- "0..*" Contract : 管理 >
+ReceivableAggregate "1" -- "0..*" Receivable : 管理 >
+
+' 命令与聚合根的关系
+CreateCustomerCommand ..> CustomerAggregate : 触发 >
+UpdateCustomerCommand ..> CustomerAggregate : 触发 >
+DeleteCustomerCommand ..> CustomerAggregate : 触发 >
+TransferCustomerCommand ..> CustomerAggregate : 触发 >
+CreateClueCommand ..> ClueAggregate : 触发 >
+TransformClueCommand ..> ClueAggregate : 触发 >
+CreateBusinessCommand ..> BusinessAggregate : 触发 >
+CreateContractCommand ..> ContractAggregate : 触发 >
+CreateReceivableCommand ..> ReceivableAggregate : 触发 >
+
+' 事件与聚合根的关系
+CustomerCreatedEvent ..> CustomerAggregate : 发布 >
+CustomerTransferredEvent ..> CustomerAggregate : 发布 >
+ClueTransformedEvent ..> ClueAggregate : 发布 >
+BusinessCreatedEvent ..> BusinessAggregate : 发布 >
+ContractCreatedEvent ..> ContractAggregate : 发布 >
+ReceivableCreatedEvent ..> ReceivableAggregate : 发布 >
+
+' Saga 与事件的关系
+ClueTransformSaga ..> CustomerCreatedEvent : 订阅 >
+ClueTransformSaga ..> ClueTransformedEvent : 订阅 >
+BusinessCreateSaga ..> CustomerValidatedEvent : 订阅 >
+BusinessCreateSaga ..> BusinessCreatedEvent : 订阅 >
+ContractCreateSaga ..> BusinessValidatedEvent : 订阅 >
+ContractCreateSaga ..> ContractCreatedEvent : 订阅 >
+ReceivableCreateSaga ..> ContractValidatedEvent : 订阅 >
+ReceivableCreateSaga ..> ReceivableCreatedEvent : 订阅 >
+
+' 核心实体关系
+Customer "1" -- "0..*" Clue : 拥有 >
+Customer "1" -- "0..*" Contact : 拥有 >
+Customer "1" -- "0..*" Business : 拥有 >
+Customer "1" -- "0..*" Contract : 拥有 >
+Customer "1" -- "0..*" Receivable : 拥有 >
+Customer "1" -- "0..*" FollowUpRecord : 拥有 >
+
+Business "1" -- "0..*" Contract : 关联 >
+Business "1" -- "0..*" FollowUpRecord : 关联 >
+Business "1" -- "1" BusinessStatus : 拥有 >
+BusinessStatus "1" -- "1" BusinessStatusType : 属于 >
+
+Contract "1" -- "0..*" Receivable : 关联 >
+Contract "1" -- "0..*" ReceivablePlan : 关联 >
+
+Contact "1" -- "0..*" FollowUpRecord : 关联 >
+
+Product "1" -- "1" ProductCategory : 属于 >
+
+Customer "1" -- "1" CustomerPoolConfig : 配置 >
+Contract "1" -- "1" ContractConfig : 配置 >
+
+@enduml 

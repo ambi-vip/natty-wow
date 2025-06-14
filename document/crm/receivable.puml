@@ -1,0 +1,214 @@
+@startuml Receivable Aggregate
+
+' 样式设置
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam linetype ortho
+
+package "Receivable Domain" {
+    ' 聚合根
+    class ReceivableAggregate {
+        +createReceivable(command: CreateReceivableCommand)
+        +updateReceivable(command: UpdateReceivableCommand)
+        +deleteReceivable(command: DeleteReceivableCommand)
+        +submitReceivable(command: SubmitReceivableCommand)
+        +createReceivablePlan(command: CreateReceivablePlanCommand)
+        +approveReceivable(command: ApproveReceivableCommand)
+        +rejectReceivable(command: RejectReceivableCommand)
+        +createReminder(command: CreateReceivableReminderCommand)
+        +updateRemindRule(command: UpdateReceivableRemindRuleCommand)
+    }
+
+    ' 实体
+    class Receivable {
+        +id: Long
+        +receivableNo: String
+        +customerId: Long
+        +contractId: Long
+        +amount: BigDecimal
+        +receivableTime: LocalDateTime
+        +ownerUserId: Long
+        +status: Integer
+        +auditStatus: Integer
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+        +receivableType: Integer
+        +remark: String
+    }
+
+    ' 值对象
+    class ReceivablePlan {
+        +id: Long
+        +receivableId: Long
+        +customerId: Long
+        +contractId: Long
+        +amount: BigDecimal
+        +planTime: LocalDateTime
+        +period: Integer
+        +type: Integer
+        +ownerUserId: Long
+        +status: Integer
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+        +remark: String
+    }
+
+    class ReceivableApproval {
+        +id: Long
+        +receivableId: Long
+        +approverId: Long
+        +approvalStatus: Integer
+        +approvalComment: String
+        +approvalTime: LocalDateTime
+        +createTime: LocalDateTime
+    }
+
+    class ReceivableReminder {
+        +id: Long
+        +receivableId: Long
+        +reminderType: Integer
+        +reminderTime: LocalDateTime
+        +reminderContent: String
+        +status: Integer
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+    }
+
+    class ReceivableRemindRule {
+        +id: Long
+        +remindType: Integer
+        +remindDays: Integer
+        +remindContent: String
+        +enabled: Boolean
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+    }
+
+    ' 命令
+    class CreateReceivableCommand {
+        +customerId: Long
+        +contractId: Long
+        +amount: BigDecimal
+        +ownerUserId: Long
+    }
+
+    class UpdateReceivableCommand {
+        +id: Long
+        +amount: BigDecimal
+        +receivableTime: LocalDateTime
+    }
+
+    class DeleteReceivableCommand {
+        +id: Long
+    }
+
+    class SubmitReceivableCommand {
+        +id: Long
+    }
+
+    class CreateReceivablePlanCommand {
+        +receivableId: Long
+        +amount: BigDecimal
+        +planTime: LocalDateTime
+        +period: Integer
+    }
+
+    class ApproveReceivableCommand {
+        +receivableId: Long
+        +approvalComment: String
+    }
+
+    class RejectReceivableCommand {
+        +receivableId: Long
+        +approvalComment: String
+    }
+
+    class CreateReceivableReminderCommand {
+        +receivableId: Long
+        +reminderType: Integer
+        +reminderTime: LocalDateTime
+        +reminderContent: String
+    }
+
+    class UpdateReceivableRemindRuleCommand {
+        +remindType: Integer
+        +remindDays: Integer
+        +remindContent: String
+        +enabled: Boolean
+    }
+
+    ' 事件
+    class ReceivableCreatedEvent {
+        +receivableId: Long
+        +customerId: Long
+        +contractId: Long
+        +ownerUserId: Long
+    }
+
+    class ReceivableSubmittedEvent {
+        +receivableId: Long
+        +submitterId: Long
+    }
+
+    class ReceivablePlanCreatedEvent {
+        +planId: Long
+        +receivableId: Long
+        +amount: BigDecimal
+        +planTime: LocalDateTime
+    }
+
+    class ReceivableApprovedEvent {
+        +receivableId: Long
+        +approverId: Long
+        +approvalComment: String
+    }
+
+    class ReceivableRejectedEvent {
+        +receivableId: Long
+        +approverId: Long
+        +approvalComment: String
+    }
+
+    class ReceivableReminderCreatedEvent {
+        +receivableId: Long
+        +reminderId: Long
+        +reminderType: Integer
+        +reminderTime: LocalDateTime
+    }
+
+    class ReceivableRemindRuleUpdatedEvent {
+        +remindType: Integer
+        +remindDays: Integer
+        +remindContent: String
+        +enabled: Boolean
+    }
+}
+
+' 关系定义
+ReceivableAggregate "1" -- "0..*" Receivable : 管理 >
+Receivable "1" -- "0..*" ReceivablePlan : 关联 >
+Receivable "1" -- "0..*" ReceivableApproval : 包含 >
+Receivable "1" -- "0..*" ReceivableReminder : 包含 >
+Receivable "1" -- "0..*" ReceivableRemindRule : 配置 >
+
+' 命令与聚合根的关系
+CreateReceivableCommand ..> ReceivableAggregate : 触发 >
+UpdateReceivableCommand ..> ReceivableAggregate : 触发 >
+DeleteReceivableCommand ..> ReceivableAggregate : 触发 >
+SubmitReceivableCommand ..> ReceivableAggregate : 触发 >
+CreateReceivablePlanCommand ..> ReceivableAggregate : 触发 >
+ApproveReceivableCommand ..> ReceivableAggregate : 触发 >
+RejectReceivableCommand ..> ReceivableAggregate : 触发 >
+CreateReceivableReminderCommand ..> ReceivableAggregate : 触发 >
+UpdateReceivableRemindRuleCommand ..> ReceivableAggregate : 触发 >
+
+' 事件与聚合根的关系
+ReceivableCreatedEvent ..> ReceivableAggregate : 发布 >
+ReceivableSubmittedEvent ..> ReceivableAggregate : 发布 >
+ReceivablePlanCreatedEvent ..> ReceivableAggregate : 发布 >
+ReceivableApprovedEvent ..> ReceivableAggregate : 发布 >
+ReceivableRejectedEvent ..> ReceivableAggregate : 发布 >
+ReceivableReminderCreatedEvent ..> ReceivableAggregate : 发布 >
+ReceivableRemindRuleUpdatedEvent ..> ReceivableAggregate : 发布 >
+
+@enduml 

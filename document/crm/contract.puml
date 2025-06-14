@@ -1,0 +1,222 @@
+@startuml Contract Aggregate
+
+' 样式设置
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam linetype ortho
+
+package "Contract Domain" {
+    ' 聚合根
+    class ContractAggregate {
+        +createContract(command: CreateContractCommand)
+        +updateContract(command: UpdateContractCommand)
+        +deleteContract(command: DeleteContractCommand)
+        +submitContract(command: SubmitContractCommand)
+        +transferContract(command: TransferContractCommand)
+        +addProduct(command: AddContractProductCommand)
+        +removeProduct(command: RemoveContractProductCommand)
+        +approveContract(command: ApproveContractCommand)
+        +rejectContract(command: RejectContractCommand)
+        +updateRemindRule(command: UpdateContractRemindRuleCommand)
+    }
+
+    ' 实体
+    class Contract {
+        +id: Long
+        +name: String
+        +customerId: Long
+        +businessId: Long
+        +amount: BigDecimal
+        +contractNo: String
+        +signUserId: Long
+        +signContactId: Long
+        +signTime: LocalDateTime
+        +ownerUserId: Long
+        +status: Integer
+        +auditStatus: Integer
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+        +remark: String
+    }
+
+    class ContractProduct {
+        +id: Long
+        +contractId: Long
+        +productId: Long
+        +quantity: Integer
+        +price: BigDecimal
+        +amount: BigDecimal
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+    }
+
+    class ContractApproval {
+        +id: Long
+        +contractId: Long
+        +approverId: Long
+        +approvalStatus: Integer
+        +approvalComment: String
+        +approvalTime: LocalDateTime
+        +createTime: LocalDateTime
+    }
+
+    ' 值对象
+    class ContractConfig {
+        +id: Long
+        +contractNoPrefix: String
+        +contractNoRule: String
+        +remindConfig: String
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+    }
+
+    class ContractRemindRule {
+        +id: Long
+        +remindType: Integer
+        +remindDays: Integer
+        +remindContent: String
+        +enabled: Boolean
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+    }
+
+    ' 命令
+    class CreateContractCommand {
+        +name: String
+        +customerId: Long
+        +businessId: Long
+        +amount: BigDecimal
+        +ownerUserId: Long
+        +products: List<ContractProductDTO>
+    }
+
+    class UpdateContractCommand {
+        +id: Long
+        +name: String
+        +amount: BigDecimal
+        +signTime: LocalDateTime
+    }
+
+    class DeleteContractCommand {
+        +id: Long
+    }
+
+    class SubmitContractCommand {
+        +id: Long
+    }
+
+    class TransferContractCommand {
+        +id: Long
+        +newOwnerUserId: Long
+    }
+
+    class AddContractProductCommand {
+        +contractId: Long
+        +productId: Long
+        +quantity: Integer
+        +price: BigDecimal
+    }
+
+    class RemoveContractProductCommand {
+        +contractId: Long
+        +productId: Long
+    }
+
+    class ApproveContractCommand {
+        +contractId: Long
+        +approvalComment: String
+    }
+
+    class RejectContractCommand {
+        +contractId: Long
+        +approvalComment: String
+    }
+
+    class UpdateContractRemindRuleCommand {
+        +remindType: Integer
+        +remindDays: Integer
+        +remindContent: String
+        +enabled: Boolean
+    }
+
+    ' 事件
+    class ContractCreatedEvent {
+        +contractId: Long
+        +customerId: Long
+        +businessId: Long
+        +ownerUserId: Long
+    }
+
+    class ContractSubmittedEvent {
+        +contractId: Long
+        +submitterId: Long
+    }
+
+    class ContractTransferredEvent {
+        +contractId: Long
+        +oldOwnerUserId: Long
+        +newOwnerUserId: Long
+    }
+
+    class ContractProductAddedEvent {
+        +contractId: Long
+        +productId: Long
+        +quantity: Integer
+        +price: BigDecimal
+    }
+
+    class ContractProductRemovedEvent {
+        +contractId: Long
+        +productId: Long
+    }
+
+    class ContractApprovedEvent {
+        +contractId: Long
+        +approverId: Long
+        +approvalComment: String
+    }
+
+    class ContractRejectedEvent {
+        +contractId: Long
+        +approverId: Long
+        +approvalComment: String
+    }
+
+    class ContractRemindRuleUpdatedEvent {
+        +remindType: Integer
+        +remindDays: Integer
+        +remindContent: String
+        +enabled: Boolean
+    }
+}
+
+' 关系定义
+ContractAggregate "1" -- "0..*" Contract : 管理 >
+Contract "1" -- "1" ContractConfig : 配置 >
+Contract "1" -- "0..*" ContractProduct : 包含 >
+Contract "1" -- "0..*" ContractApproval : 包含 >
+ContractConfig "1" -- "0..*" ContractRemindRule : 配置 >
+
+' 命令与聚合根的关系
+CreateContractCommand ..> ContractAggregate : 触发 >
+UpdateContractCommand ..> ContractAggregate : 触发 >
+DeleteContractCommand ..> ContractAggregate : 触发 >
+SubmitContractCommand ..> ContractAggregate : 触发 >
+TransferContractCommand ..> ContractAggregate : 触发 >
+AddContractProductCommand ..> ContractAggregate : 触发 >
+RemoveContractProductCommand ..> ContractAggregate : 触发 >
+ApproveContractCommand ..> ContractAggregate : 触发 >
+RejectContractCommand ..> ContractAggregate : 触发 >
+UpdateContractRemindRuleCommand ..> ContractAggregate : 触发 >
+
+' 事件与聚合根的关系
+ContractCreatedEvent ..> ContractAggregate : 发布 >
+ContractSubmittedEvent ..> ContractAggregate : 发布 >
+ContractTransferredEvent ..> ContractAggregate : 发布 >
+ContractProductAddedEvent ..> ContractAggregate : 发布 >
+ContractProductRemovedEvent ..> ContractAggregate : 发布 >
+ContractApprovedEvent ..> ContractAggregate : 发布 >
+ContractRejectedEvent ..> ContractAggregate : 发布 >
+ContractRemindRuleUpdatedEvent ..> ContractAggregate : 发布 >
+
+@enduml 

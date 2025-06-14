@@ -1,0 +1,231 @@
+@startuml Customer Aggregate
+
+' 样式设置
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam linetype ortho
+
+package "Customer Domain" {
+    ' 聚合根
+    class CustomerAggregate {
+        +createCustomer(command: CreateCustomerCommand)
+        +updateCustomer(command: UpdateCustomerCommand)
+        +deleteCustomer(command: DeleteCustomerCommand)
+        +transferCustomer(command: TransferCustomerCommand)
+        +putCustomerToPool(command: PutCustomerToPoolCommand)
+        +receiveCustomer(command: ReceiveCustomerCommand)
+        +addContact(command: AddContactCommand)
+        +removeContact(command: RemoveContactCommand)
+        +addTag(command: AddCustomerTagCommand)
+        +removeTag(command: RemoveCustomerTagCommand)
+        +updatePoolConfig(command: UpdateCustomerPoolConfigCommand)
+    }
+
+    ' 实体
+    class Customer {
+        +id: Long
+        +name: String
+        +type: Integer
+        +areaId: Long
+        +ownerUserId: Long
+        +status: Integer
+        +source: Integer
+        +dealStatus: Integer
+        +lockStatus: Integer
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+        +ownerTime: LocalDateTime
+        +lastContactTime: LocalDateTime
+        +remark: String
+    }
+
+    class Contact {
+        +id: Long
+        +name: String
+        +position: String
+        +department: String
+        +mobile: String
+        +email: String
+        +telephone: String
+        +isPrimary: Boolean
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+    }
+
+    ' 值对象
+    class CustomerPoolConfig {
+        +id: Long
+        +enabled: Boolean
+        +noDealDays: Integer
+        +noFollowDays: Integer
+        +maxCustomerCount: Integer
+        +receiveLimit: Integer
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+    }
+
+    class CustomerTag {
+        +id: Long
+        +name: String
+        +color: String
+        +sort: Integer
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+    }
+
+    class CustomerSource {
+        +id: Long
+        +name: String
+        +sort: Integer
+        +createTime: LocalDateTime
+        +updateTime: LocalDateTime
+    }
+
+    ' 命令
+    class CreateCustomerCommand {
+        +name: String
+        +type: Integer
+        +areaId: Long
+        +ownerUserId: Long
+        +source: Integer
+        +tags: List<Long>
+    }
+
+    class UpdateCustomerCommand {
+        +id: Long
+        +name: String
+        +type: Integer
+        +areaId: Long
+        +status: Integer
+        +tags: List<Long>
+    }
+
+    class DeleteCustomerCommand {
+        +id: Long
+    }
+
+    class TransferCustomerCommand {
+        +id: Long
+        +newOwnerUserId: Long
+    }
+
+    class PutCustomerToPoolCommand {
+        +id: Long
+    }
+
+    class ReceiveCustomerCommand {
+        +id: Long
+        +receiverUserId: Long
+    }
+
+    class AddContactCommand {
+        +customerId: Long
+        +name: String
+        +position: String
+        +mobile: String
+        +email: String
+    }
+
+    class RemoveContactCommand {
+        +customerId: Long
+        +contactId: Long
+    }
+
+    class AddCustomerTagCommand {
+        +customerId: Long
+        +tagId: Long
+    }
+
+    class RemoveCustomerTagCommand {
+        +customerId: Long
+        +tagId: Long
+    }
+
+    class UpdateCustomerPoolConfigCommand {
+        +enabled: Boolean
+        +noDealDays: Integer
+        +noFollowDays: Integer
+        +maxCustomerCount: Integer
+        +receiveLimit: Integer
+    }
+
+    ' 事件
+    class CustomerCreatedEvent {
+        +customerId: Long
+        +name: String
+        +ownerUserId: Long
+        +tags: List<Long>
+    }
+
+    class CustomerTransferredEvent {
+        +customerId: Long
+        +oldOwnerUserId: Long
+        +newOwnerUserId: Long
+    }
+
+    class CustomerPutToPoolEvent {
+        +customerId: Long
+        +oldOwnerUserId: Long
+    }
+
+    class ContactAddedEvent {
+        +customerId: Long
+        +contactId: Long
+        +name: String
+    }
+
+    class ContactRemovedEvent {
+        +customerId: Long
+        +contactId: Long
+    }
+
+    class CustomerTagAddedEvent {
+        +customerId: Long
+        +tagId: Long
+    }
+
+    class CustomerTagRemovedEvent {
+        +customerId: Long
+        +tagId: Long
+    }
+
+    class CustomerPoolConfigUpdatedEvent {
+        +enabled: Boolean
+        +noDealDays: Integer
+        +noFollowDays: Integer
+        +maxCustomerCount: Integer
+        +receiveLimit: Integer
+    }
+}
+
+' 关系定义
+CustomerAggregate "1" -- "0..*" Customer : 管理 >
+Customer "1" -- "1" CustomerPoolConfig : 配置 >
+Customer "1" -- "0..*" Contact : 拥有 >
+Customer "1" -- "0..*" CustomerTag : 标记 >
+Customer "1" -- "1" CustomerSource : 来源 >
+
+' 命令与聚合根的关系
+CreateCustomerCommand ..> CustomerAggregate : 触发 >
+UpdateCustomerCommand ..> CustomerAggregate : 触发 >
+DeleteCustomerCommand ..> CustomerAggregate : 触发 >
+TransferCustomerCommand ..> CustomerAggregate : 触发 >
+PutCustomerToPoolCommand ..> CustomerAggregate : 触发 >
+ReceiveCustomerCommand ..> CustomerAggregate : 触发 >
+AddContactCommand ..> CustomerAggregate : 触发 >
+RemoveContactCommand ..> CustomerAggregate : 触发 >
+AddCustomerTagCommand ..> CustomerAggregate : 触发 >
+RemoveCustomerTagCommand ..> CustomerAggregate : 触发 >
+UpdateCustomerPoolConfigCommand ..> CustomerAggregate : 触发 >
+
+' 事件与聚合根的关系
+CustomerCreatedEvent ..> CustomerAggregate : 发布 >
+CustomerTransferredEvent ..> CustomerAggregate : 发布 >
+CustomerPutToPoolEvent ..> CustomerAggregate : 发布 >
+ContactAddedEvent ..> CustomerAggregate : 发布 >
+ContactRemovedEvent ..> CustomerAggregate : 发布 >
+CustomerTagAddedEvent ..> CustomerAggregate : 发布 >
+CustomerTagRemovedEvent ..> CustomerAggregate : 发布 >
+CustomerPoolConfigUpdatedEvent ..> CustomerAggregate : 发布 >
+
+@enduml 
