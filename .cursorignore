@@ -1,13 +1,27 @@
 # Add directories or file patterns to ignore during indexing (e.g. foo/ or *.csv)
 
-.cursorignore
-.gitignore
-.vscode
+
+schema
+
+# 匹配目录
+node_modules
+/node_modules
+# 匹配目录及文件
+build/
+dist/**
+server/src/main/resources/**
+# 匹配文件类型
+*.log
+*.txt
+log*.json
+# 匹配具体文件
 .env
 .env.local
-
-node_modules
-server/src/main/resources
-schema
-*/build
-build
+.gitignore
+# IDE配置
+.idea
+.vscode
+# 其他
+.DS_Store
+.npmrc
+.yarnrc

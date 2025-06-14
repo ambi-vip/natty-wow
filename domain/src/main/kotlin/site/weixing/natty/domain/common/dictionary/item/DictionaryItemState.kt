@@ -1,12 +1,12 @@
-package site.weixing.natty.domain.common.item
+package site.weixing.natty.domain.common.dictionary.item
 
 import me.ahoo.wow.api.Identifier
 import me.ahoo.wow.api.annotation.AggregateId
 import me.ahoo.wow.api.annotation.OnSourcing
-import site.weixing.natty.api.common.item.DictionaryItemCreated
-import site.weixing.natty.api.common.item.DictionaryItemDeleted
-import site.weixing.natty.api.common.item.DictionaryItemStatusChanged
-import site.weixing.natty.api.common.item.DictionaryItemUpdated
+import site.weixing.natty.api.common.dictionary.item.DictionaryItemCreated
+import site.weixing.natty.api.common.dictionary.item.DictionaryItemDeleted
+import site.weixing.natty.api.common.dictionary.item.DictionaryItemStatusChanged
+import site.weixing.natty.api.common.dictionary.item.DictionaryItemUpdated
 /**
  * 字典项状态
  *

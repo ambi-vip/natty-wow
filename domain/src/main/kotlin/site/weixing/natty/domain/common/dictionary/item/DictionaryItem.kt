@@ -1,17 +1,17 @@
-package site.weixing.natty.domain.common.item
+package site.weixing.natty.domain.common.dictionary.item
 
 import me.ahoo.wow.api.annotation.AggregateRoot
 import me.ahoo.wow.api.annotation.OnCommand
 import me.ahoo.wow.api.annotation.StaticTenantId
-import site.weixing.natty.api.common.item.ChangeDictionaryItemStatus
-import site.weixing.natty.api.common.item.CreateDictionaryItem
-import site.weixing.natty.api.common.item.DeleteDictionaryItem
-import site.weixing.natty.api.common.item.DictionaryItemCreated
-import site.weixing.natty.api.common.item.DictionaryItemDeleted
-import site.weixing.natty.api.common.item.DictionaryItemStatusChanged
-import site.weixing.natty.api.common.item.DictionaryItemUpdated
-import site.weixing.natty.api.common.item.UpdateDictionaryItem
-import site.weixing.natty.domain.common.item.DictionaryItemState.DictionaryItemStatus
+import site.weixing.natty.api.common.dictionary.item.ChangeDictionaryItemStatus
+import site.weixing.natty.api.common.dictionary.item.CreateDictionaryItem
+import site.weixing.natty.api.common.dictionary.item.DeleteDictionaryItem
+import site.weixing.natty.api.common.dictionary.item.DictionaryItemCreated
+import site.weixing.natty.api.common.dictionary.item.DictionaryItemDeleted
+import site.weixing.natty.api.common.dictionary.item.DictionaryItemStatusChanged
+import site.weixing.natty.api.common.dictionary.item.DictionaryItemUpdated
+import site.weixing.natty.api.common.dictionary.item.UpdateDictionaryItem
+import site.weixing.natty.domain.common.dictionary.item.DictionaryItemState.DictionaryItemStatus
 
 /**
  * 字典项聚合根

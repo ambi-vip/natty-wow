@@ -3,11 +3,11 @@ package site.weixing.natty.domain.common.dictionary
 import me.ahoo.wow.api.annotation.AggregateRoot
 import me.ahoo.wow.api.annotation.OnCommand
 import me.ahoo.wow.api.annotation.StaticTenantId
+import me.ahoo.wow.api.command.DefaultDeleteAggregate
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toMono
 import site.weixing.natty.api.common.dictionary.ChangeDictionaryStatus
 import site.weixing.natty.api.common.dictionary.CreateDictionary
-import site.weixing.natty.api.common.dictionary.DeleteDictionary
 import site.weixing.natty.api.common.dictionary.DictionaryCreated
 import site.weixing.natty.api.common.dictionary.DictionaryDeleted
 import site.weixing.natty.api.common.dictionary.DictionaryStatusChanged
@@ -101,12 +101,12 @@ class Dictionary(private val state: DictionaryState) {
      * @return 字典删除事件
      */
     @OnCommand
-    fun onDelete(command: DeleteDictionary): DictionaryDeleted {
+    fun onDelete(command: DefaultDeleteAggregate): DictionaryDeleted {
         require(state.status != DictionaryStatus.DELETED) {
-            "字典[${command.id}]已删除。"
+            "字典[${state.id}]已删除。"
         }
         return DictionaryDeleted(
-            dictionaryId = command.id
+            dictionaryId = state.id
         )
     }
 } 

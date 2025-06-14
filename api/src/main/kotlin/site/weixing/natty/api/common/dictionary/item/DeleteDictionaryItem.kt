@@ -1,4 +1,4 @@
-package site.weixing.natty.api.common.item
+package site.weixing.natty.api.common.dictionary.item
 
 import me.ahoo.wow.api.annotation.CommandRoute
 import me.ahoo.wow.api.command.DeleteAggregate
