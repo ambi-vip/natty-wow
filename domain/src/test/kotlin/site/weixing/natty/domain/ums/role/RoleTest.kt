@@ -1,4 +1,4 @@
-package site.weixing.natty.ums.domain.role
+package site.weixing.natty.domain.ums.role
 
 import me.ahoo.wow.id.GlobalIdGenerator
 import me.ahoo.wow.test.aggregate.`when`

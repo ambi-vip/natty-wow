@@ -1,4 +1,4 @@
-package site.weixing.natty
+package site.weixing.natty.domain
 
 import me.ahoo.wow.infra.prepare.PrepareKey
 import me.ahoo.wow.infra.prepare.PrepareKeyFactory

@@ -1,4 +1,4 @@
-package site.weixing.natty.ums.domain.permission
+package site.weixing.natty.domain.ums.permission
 
 import me.ahoo.wow.test.aggregate.`when`
 import me.ahoo.wow.test.aggregateVerifier

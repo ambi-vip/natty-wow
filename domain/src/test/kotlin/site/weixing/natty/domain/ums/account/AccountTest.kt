@@ -1,4 +1,4 @@
-package site.weixing.natty.ums.domain.account
+package site.weixing.natty.domain.ums.account
 
 import me.ahoo.wow.id.GlobalIdGenerator
 import me.ahoo.wow.test.aggregate.`when`
@@ -18,11 +18,7 @@ import site.weixing.natty.api.ums.account.LockAccount
 import site.weixing.natty.api.ums.account.RoleAssigned
 import site.weixing.natty.api.ums.account.UnlockAccount
 import site.weixing.natty.api.ums.account.UpdateAccount
-import site.weixing.natty.TestPrepareKeyFactory
-import site.weixing.natty.domain.ums.account.Account
-import site.weixing.natty.domain.ums.account.AccountState
-import site.weixing.natty.domain.ums.account.AccountStatus
-import site.weixing.natty.domain.ums.account.UsernamePrepare
+import site.weixing.natty.domain.TestPrepareKeyFactory
 
 
 class AccountTest {

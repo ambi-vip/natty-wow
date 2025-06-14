@@ -1,0 +1,33 @@
+package site.weixing.natty.api.common.dictionary
+
+import me.ahoo.wow.api.annotation.CommandRoute
+import jakarta.validation.constraints.NotBlank
+
+/**
+ * 改变字典状态命令
+ *
+ * @param id 字典ID
+ * @param status 字典状态
+ */
+@CommandRoute(
+    appendIdPath = CommandRoute.AppendPath.ALWAYS,
+    action = "status",
+    summary = "改变字典状态"
+)
+data class ChangeDictionaryStatus(
+    @CommandRoute.PathVariable
+    val id: String,
+    @field:NotBlank
+    val status: String
+)
+
+/**
+ * 字典状态改变事件
+ *
+ * @param dictionaryId 字典ID
+ * @param status 字典状态
+ */
+data class DictionaryStatusChanged(
+    val dictionaryId: String,
+    val status: String
+)

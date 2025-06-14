@@ -1,4 +1,4 @@
-package site.weixing.natty.ums.domain.saga
+package site.weixing.natty.domain.ums.saga
 
 import me.ahoo.wow.test.SagaVerifier.sagaVerifier
 import org.hamcrest.MatcherAssert.assertThat
