@@ -2,6 +2,7 @@ package site.weixing.natty.domain.common.item
 
 import me.ahoo.wow.api.annotation.AggregateRoot
 import me.ahoo.wow.api.annotation.OnCommand
+import me.ahoo.wow.api.annotation.StaticTenantId
 import site.weixing.natty.api.common.item.ChangeDictionaryItemStatus
 import site.weixing.natty.api.common.item.CreateDictionaryItem
 import site.weixing.natty.api.common.item.DeleteDictionaryItem
@@ -19,6 +20,7 @@ import site.weixing.natty.domain.common.item.DictionaryItemState.DictionaryItemS
  */
 @Suppress("unused")
 @AggregateRoot
+@StaticTenantId
 class DictionaryItem(private val state: DictionaryItemState) {
 
     /**

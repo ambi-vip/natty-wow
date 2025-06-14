@@ -2,6 +2,7 @@ package site.weixing.natty.domain.common.dictionary
 
 import me.ahoo.wow.api.annotation.AggregateRoot
 import me.ahoo.wow.api.annotation.OnCommand
+import me.ahoo.wow.api.annotation.StaticTenantId
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toMono
 import site.weixing.natty.api.common.dictionary.ChangeDictionaryStatus
@@ -21,6 +22,7 @@ import site.weixing.natty.domain.common.dictionary.DictionaryState.DictionarySta
  */
 @Suppress("unused")
 @AggregateRoot
+@StaticTenantId
 class Dictionary(private val state: DictionaryState) {
 
     /**
