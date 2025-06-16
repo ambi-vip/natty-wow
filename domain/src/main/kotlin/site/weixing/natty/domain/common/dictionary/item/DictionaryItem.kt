@@ -3,6 +3,8 @@ package site.weixing.natty.domain.common.dictionary.item
 import me.ahoo.wow.api.annotation.AggregateRoot
 import me.ahoo.wow.api.annotation.OnCommand
 import me.ahoo.wow.api.annotation.StaticTenantId
+import me.ahoo.wow.api.command.DefaultDeleteAggregate
+import me.ahoo.wow.api.event.DefaultAggregateDeleted
 import me.ahoo.wow.exception.throwNotFoundIfNull
 import me.ahoo.wow.query.dsl.singleQuery
 import me.ahoo.wow.query.snapshot.SnapshotQueryService
@@ -12,16 +14,14 @@ import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toMono
 import site.weixing.natty.api.common.dictionary.item.ChangeDictionaryItemStatus
 import site.weixing.natty.api.common.dictionary.item.CreateDictionaryItem
-import site.weixing.natty.api.common.dictionary.item.DeleteDictionaryItem
 import site.weixing.natty.api.common.dictionary.item.DictionaryItemCreated
 import site.weixing.natty.api.common.dictionary.item.DictionaryItemDeleted
 import site.weixing.natty.api.common.dictionary.item.DictionaryItemStatusChanged
 import site.weixing.natty.api.common.dictionary.item.DictionaryItemUpdated
 import site.weixing.natty.api.common.dictionary.item.UpdateDictionaryItem
+import site.weixing.natty.domain.common.dictionary.DictionaryPrepares
 import site.weixing.natty.domain.common.dictionary.DictionaryState
 import site.weixing.natty.domain.common.dictionary.item.DictionaryItemState.DictionaryItemStatus
-import site.weixing.natty.domain.ums.account.AccountState
-import site.weixing.natty.domain.ums.account.AccountStateProperties
 
 /**
  * 字典项聚合根
@@ -42,30 +42,35 @@ class DictionaryItem(private val state: DictionaryItemState) {
     @OnCommand
     fun onCreate(
         command: CreateDictionaryItem,
-        dictQueryService: SnapshotQueryService<DictionaryState>,
+        dictQueryService: SnapshotQueryService<DictionaryState>
         ): Mono<DictionaryItemCreated> {
-        require(state.status == DictionaryItemStatus.ACTIVE) {
-            "字典项[${command.itemCode}]已存在或状态不允许创建。"
+        return DictionaryPrepares.ITEM_CODE.usingPrepare(
+            key = command.itemCode,
+            value = state.itemCode,
+        ) {
+            require(it) {
+                "code[${command.itemCode}] is already registered."
+            }
+            dictQueryService.single(singleQuery {
+                condition {
+                    nestedState()
+                    id((command.dictionaryId))
+                }
+            }).toState().throwNotFoundIfNull("字典不存在")
+                .flatMap { dictState ->
+                    DictionaryItemCreated(
+                        dictionaryItemId = state.id,
+                        dictionaryId = command.dictionaryId,
+                        dictionaryCode = dictState.code!!,
+                        itemCode = command.itemCode,
+                        itemName = command.itemName,
+                        itemValue = command.itemValue?.ifEmpty { command.itemCode } ?: command.itemCode,
+                        sortOrder = command.sortOrder,
+                        description = command.description,
+                        localizedNames = command.localizedNames
+                    ).toMono()
+                }
         }
-        return dictQueryService.single(singleQuery {
-            condition {
-                nestedState()
-                id((command.dictionaryId))
-            }
-        }).toState().throwNotFoundIfNull("字典不存在")
-            .flatMap {
-                DictionaryItemCreated(
-                    dictionaryItemId = state.id,
-                    dictionaryId = command.dictionaryId,
-                    dictionaryCode = it.code!!,
-                    itemCode = command.itemCode,
-                    itemName = command.itemName,
-                    itemValue = command.itemValue ?: command.itemCode,
-                    sortOrder = command.sortOrder,
-                    description = command.description,
-                    localizedNames = command.localizedNames
-                ).toMono()
-            }
     }
 
     /**
@@ -114,13 +119,12 @@ class DictionaryItem(private val state: DictionaryItemState) {
      * @return 字典项删除事件
      */
     @OnCommand
-    fun onDelete(command: DeleteDictionaryItem): DictionaryItemDeleted {
-        require(state.status != DictionaryItemStatus.DELETED) {
-            "字典项[${command.id}]已删除。"
-        }
-        return DictionaryItemDeleted(
-            dictionaryItemId = command.id,
-            dictionaryCode = state.dictionaryCode!!
-        )
+    fun onDelete(command: DefaultDeleteAggregate): Mono<DictionaryItemDeleted> {
+        return DictionaryPrepares.ITEM_CODE.rollback(state.itemCode)
+            .map { DictionaryItemDeleted(
+                dictionaryItemId = state.id,
+                dictionaryCode = state.dictionaryCode
+            ) }
+
     }
 } 

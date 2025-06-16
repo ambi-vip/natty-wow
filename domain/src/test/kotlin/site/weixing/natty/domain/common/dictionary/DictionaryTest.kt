@@ -102,30 +102,5 @@ class DictionaryTest {
             .verify()
     }
 
-    /**
-     * 测试删除字典
-     */
-    @Test
-    fun `should delete dictionary when DeleteDictionary command is received`() {
-        val dictionaryId = "test-dictionary-id"
-        val givenEvent = DictionaryCreated(
-            dictionaryId = dictionaryId,
-            code = "TEST_CODE",
-            name = "测试字典",
-            description = "这是一个测试字典"
-        )
-        val command = DeleteDictionary(
-            id = dictionaryId
-        )
 
-        aggregateVerifier<Dictionary, DictionaryState>()
-            .given(givenEvent)
-            .`when`(command)
-            .expectNoError()
-            .expectEventType(DictionaryDeleted::class.java)
-            .expectState {
-                assertThat(it.status, equalTo(DictionaryStatus.DELETED))
-            }
-            .verify()
-    }
 } 

@@ -3,7 +3,6 @@ package site.weixing.natty.domain.common.dictionary
 import me.ahoo.wow.api.Identifier
 import me.ahoo.wow.api.annotation.OnSourcing
 import site.weixing.natty.api.common.dictionary.DictionaryCreated
-import site.weixing.natty.api.common.dictionary.DictionaryDeleted
 import site.weixing.natty.api.common.dictionary.DictionaryStatusChanged
 import site.weixing.natty.api.common.dictionary.DictionaryUpdated
 
@@ -18,7 +17,7 @@ import site.weixing.natty.api.common.dictionary.DictionaryUpdated
  */
 data class DictionaryState(override val id: String) : Identifier {
 
-    var code: String? = null
+    var code: String = ""
         private set
     var name: String? = null
         private set
@@ -59,16 +58,6 @@ data class DictionaryState(override val id: String) : Identifier {
     @OnSourcing
     fun onStatusChanged(event: DictionaryStatusChanged) {
         this.status = DictionaryStatus.valueOf(event.status)
-    }
-
-    /**
-     * 应用字典删除事件
-     *
-     * @param event 字典删除事件
-     */
-    @OnSourcing
-    fun onDeleted(event: DictionaryDeleted) {
-        this.status = DictionaryStatus.DELETED
     }
 
     /**

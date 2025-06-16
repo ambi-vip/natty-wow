@@ -4,12 +4,12 @@ import me.ahoo.wow.api.annotation.AggregateRoot
 import me.ahoo.wow.api.annotation.OnCommand
 import me.ahoo.wow.api.annotation.StaticTenantId
 import me.ahoo.wow.api.command.DefaultDeleteAggregate
+import me.ahoo.wow.api.event.DefaultAggregateDeleted
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toMono
 import site.weixing.natty.api.common.dictionary.ChangeDictionaryStatus
 import site.weixing.natty.api.common.dictionary.CreateDictionary
 import site.weixing.natty.api.common.dictionary.DictionaryCreated
-import site.weixing.natty.api.common.dictionary.DictionaryDeleted
 import site.weixing.natty.api.common.dictionary.DictionaryStatusChanged
 import site.weixing.natty.api.common.dictionary.DictionaryUpdated
 import site.weixing.natty.api.common.dictionary.UpdateDictionary
@@ -34,16 +34,10 @@ class Dictionary(private val state: DictionaryState) {
     @OnCommand
     fun onCreate(
         command: CreateDictionary,
-        dictionaryPrepare: DictionaryPrepare
     ): Mono<DictionaryCreated> {
-
-        require(state.status == DictionaryStatus.ACTIVE) {
-            "字典[${command.code}]已存在或状态不允许创建。"
-        }
-
-        return dictionaryPrepare.usingPrepare(
+        return DictionaryPrepares.CODE.usingPrepare(
             key = command.code,
-            value = state.id,
+            value = state.code,
         ) {
             require(it) {
                 "code[${command.code}] is already registered."
@@ -101,12 +95,8 @@ class Dictionary(private val state: DictionaryState) {
      * @return 字典删除事件
      */
     @OnCommand
-    fun onDelete(command: DefaultDeleteAggregate): DictionaryDeleted {
-        require(state.status != DictionaryStatus.DELETED) {
-            "字典[${state.id}]已删除。"
-        }
-        return DictionaryDeleted(
-            dictionaryId = state.id
-        )
+    fun onDelete(command: DefaultDeleteAggregate): Mono<DefaultAggregateDeleted> {
+        return DictionaryPrepares.CODE.rollback(state.code)
+            .map { DefaultAggregateDeleted }
     }
 } 

@@ -1,11 +1,28 @@
 package site.weixing.natty.domain.common.dictionary
 
+import jakarta.annotation.PostConstruct
 import me.ahoo.wow.infra.prepare.PrepareKey
 import me.ahoo.wow.infra.prepare.PrepareKeyFactory
 import org.springframework.stereotype.Component
 
-// 用户名预处理服务，用于防重复
 @Component
-class DictionaryPrepare(
+class DictionaryPrepares(
     private val prepareKeyFactory: PrepareKeyFactory
-) : PrepareKey<String> by prepareKeyFactory.create("username", String::class.java)
+) {
+
+    @PostConstruct
+    fun init() {
+        CODE = prepareKeyFactory.create("com_dict_code", String::class.java)
+        ITEM_CODE = prepareKeyFactory.create("com_dict_item_code", String::class.java)
+    }
+
+    companion object {
+        @JvmStatic
+        lateinit var CODE: PrepareKey<String>
+            private set
+
+        @JvmStatic
+        lateinit var ITEM_CODE: PrepareKey<String>
+            private set
+    }
+}

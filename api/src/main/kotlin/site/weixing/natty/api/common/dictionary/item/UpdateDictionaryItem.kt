@@ -23,7 +23,6 @@ data class UpdateDictionaryItem(
     val id: String,
     @field:NotBlank
     val itemName: String,
-    @field:NotBlank
     val itemValue: String,
     val sortOrder: Int = 0,
     val description: String? = null,

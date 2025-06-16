@@ -1,10 +1,8 @@
 package site.weixing.natty.domain.common.dictionary.item
 
 import me.ahoo.wow.api.Identifier
-import me.ahoo.wow.api.annotation.AggregateId
 import me.ahoo.wow.api.annotation.OnSourcing
 import site.weixing.natty.api.common.dictionary.item.DictionaryItemCreated
-import site.weixing.natty.api.common.dictionary.item.DictionaryItemDeleted
 import site.weixing.natty.api.common.dictionary.item.DictionaryItemStatusChanged
 import site.weixing.natty.api.common.dictionary.item.DictionaryItemUpdated
 /**
@@ -22,11 +20,11 @@ import site.weixing.natty.api.common.dictionary.item.DictionaryItemUpdated
  */
 data class DictionaryItemState(override val id: String) : Identifier {
 
-    var dictionaryId: String? = null
+    var dictionaryId: String = ""
         private set
-    var dictionaryCode: String? = null
+    var dictionaryCode: String = ""
         private set
-    var itemCode: String? = null
+    var itemCode: String = ""
         private set
     var itemName: String? = null
         private set
@@ -81,16 +79,6 @@ data class DictionaryItemState(override val id: String) : Identifier {
     @OnSourcing
     fun onStatusChanged(event: DictionaryItemStatusChanged) {
         this.status = DictionaryItemStatus.valueOf(event.status)
-    }
-
-    /**
-     * 应用字典项删除事件
-     *
-     * @param event 字典项删除事件
-     */
-    @OnSourcing
-    fun onDeleted(event: DictionaryItemDeleted) {
-        this.status = DictionaryItemStatus.DELETED
     }
 
     /**
