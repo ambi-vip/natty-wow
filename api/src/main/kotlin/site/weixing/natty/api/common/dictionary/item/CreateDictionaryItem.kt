@@ -25,13 +25,11 @@ data class CreateDictionaryItem(
     @field:NotBlank
     val dictionaryId: String,
     @field:NotBlank
-    val dictionaryCode: String,
-    @field:NotBlank
     val itemCode: String,
     @field:NotBlank
     val itemName: String,
-    @field:NotBlank
-    val itemValue: String,
+
+    val itemValue: String?,
     val sortOrder: Int = 0,
     val description: String? = null,
     val localizedNames: Map<String, String>? = null

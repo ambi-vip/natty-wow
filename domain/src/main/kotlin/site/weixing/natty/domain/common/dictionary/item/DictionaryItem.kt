@@ -3,6 +3,13 @@ package site.weixing.natty.domain.common.dictionary.item
 import me.ahoo.wow.api.annotation.AggregateRoot
 import me.ahoo.wow.api.annotation.OnCommand
 import me.ahoo.wow.api.annotation.StaticTenantId
+import me.ahoo.wow.exception.throwNotFoundIfNull
+import me.ahoo.wow.query.dsl.singleQuery
+import me.ahoo.wow.query.snapshot.SnapshotQueryService
+import me.ahoo.wow.query.snapshot.nestedState
+import me.ahoo.wow.query.snapshot.toState
+import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toMono
 import site.weixing.natty.api.common.dictionary.item.ChangeDictionaryItemStatus
 import site.weixing.natty.api.common.dictionary.item.CreateDictionaryItem
 import site.weixing.natty.api.common.dictionary.item.DeleteDictionaryItem
@@ -11,7 +18,10 @@ import site.weixing.natty.api.common.dictionary.item.DictionaryItemDeleted
 import site.weixing.natty.api.common.dictionary.item.DictionaryItemStatusChanged
 import site.weixing.natty.api.common.dictionary.item.DictionaryItemUpdated
 import site.weixing.natty.api.common.dictionary.item.UpdateDictionaryItem
+import site.weixing.natty.domain.common.dictionary.DictionaryState
 import site.weixing.natty.domain.common.dictionary.item.DictionaryItemState.DictionaryItemStatus
+import site.weixing.natty.domain.ums.account.AccountState
+import site.weixing.natty.domain.ums.account.AccountStateProperties
 
 /**
  * 字典项聚合根
@@ -30,21 +40,32 @@ class DictionaryItem(private val state: DictionaryItemState) {
      * @return 字典项创建事件
      */
     @OnCommand
-    fun onCreate(command: CreateDictionaryItem): DictionaryItemCreated {
+    fun onCreate(
+        command: CreateDictionaryItem,
+        dictQueryService: SnapshotQueryService<DictionaryState>,
+        ): Mono<DictionaryItemCreated> {
         require(state.status == DictionaryItemStatus.ACTIVE) {
             "字典项[${command.itemCode}]已存在或状态不允许创建。"
         }
-        return DictionaryItemCreated(
-            dictionaryItemId = state.id,
-            dictionaryId = command.dictionaryId,
-            dictionaryCode = command.dictionaryCode,
-            itemCode = command.itemCode,
-            itemName = command.itemName,
-            itemValue = command.itemValue,
-            sortOrder = command.sortOrder,
-            description = command.description,
-            localizedNames = command.localizedNames
-        )
+        return dictQueryService.single(singleQuery {
+            condition {
+                nestedState()
+                id((command.dictionaryId))
+            }
+        }).toState().throwNotFoundIfNull("字典不存在")
+            .flatMap {
+                DictionaryItemCreated(
+                    dictionaryItemId = state.id,
+                    dictionaryId = command.dictionaryId,
+                    dictionaryCode = it.code!!,
+                    itemCode = command.itemCode,
+                    itemName = command.itemName,
+                    itemValue = command.itemValue ?: command.itemCode,
+                    sortOrder = command.sortOrder,
+                    description = command.description,
+                    localizedNames = command.localizedNames
+                ).toMono()
+            }
     }
 
     /**
