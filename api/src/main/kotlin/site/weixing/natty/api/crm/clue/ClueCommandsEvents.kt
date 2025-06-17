@@ -36,7 +36,7 @@ data class CreateClue(
     summary = "更新线索"
 )
 data class UpdateClue(
-    @field:NotBlank
+    @CommandRoute.PathVariable
     val id: String,
 
     @field:NotNull(message = "线索不存在")
