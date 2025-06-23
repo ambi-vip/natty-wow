@@ -6,6 +6,8 @@ import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+import org.springframework.security.crypto.password.PasswordEncoder
 import site.weixing.natty.auth.authorization.DefaultAuthenticationManager
 import site.weixing.natty.domain.auth.AuthHandler
 import site.weixing.natty.domain.auth.commands.AuthenticationManager
@@ -33,9 +35,9 @@ open class CoSecConfiguration {
     }
 
 
-//    @Bean
-//    open fun passwordEncoder(): PasswordEncoder {
-//        return BCryptPasswordEncoder()
-//    }
+    @Bean
+    open fun passwordEncoder(): PasswordEncoder {
+        return BCryptPasswordEncoder(8)
+    }
 
-} 
+}

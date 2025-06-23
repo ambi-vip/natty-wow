@@ -3,21 +3,29 @@ package site.weixing.natty.domain.ums.saga
 import me.ahoo.wow.api.annotation.OnEvent
 import me.ahoo.wow.api.annotation.Retry
 import me.ahoo.wow.api.event.DomainEvent
+import me.ahoo.wow.command.CommandGateway
+import me.ahoo.wow.command.factory.CommandBuilder
+import me.ahoo.wow.command.toCommandMessage
+import me.ahoo.wow.command.wait.WaitingFor
 import me.ahoo.wow.spring.stereotype.StatelessSagaComponent
 import org.slf4j.LoggerFactory
+import reactor.core.publisher.Mono
 import site.weixing.natty.api.ums.account.CreateAccount
 import site.weixing.natty.ums.api.user.UserCreated
 
 @StatelessSagaComponent
-class UserAccountSaga {
+class UserAccountSaga(
+    private val commandGateway: CommandGateway
+) {
     companion object {
         private val log = LoggerFactory.getLogger(UserAccountSaga::class.java)
     }
 
     @OnEvent
     @Retry
-    fun onUserCreated(event: DomainEvent<UserCreated>): CreateAccount {
+    fun onUserCreated(event: DomainEvent<UserCreated>): Mono<Void> {
         val userCreated = event.body
+
 
         log.debug("Creating account for user: ${event.aggregateId.id}")
 
@@ -28,10 +36,10 @@ class UserAccountSaga {
             email = userCreated.email ?: "",
             password = "changeme" // 默认密码，需要用户首次登录修改
         )
-        // 1: 事件处理 命令，失败反馈到 onUserCreated
-//        return commandGateway.sendAndWaitForSnapshot(createAccount.toCommandMessage(ownerId = event.ownerId))
-//            .then()
-        // 2: 在 聚合根中定义 OnError 触发补偿
-        return createAccount;
+        // 同步 CreateAccount 失败进行事件记录
+        return commandGateway.sendAndWait(
+            createAccount.toCommandMessage(),
+            WaitingFor.processed()
+        ).then()
     }
 }

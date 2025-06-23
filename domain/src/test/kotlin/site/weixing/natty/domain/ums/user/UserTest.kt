@@ -6,9 +6,6 @@ import me.ahoo.wow.test.aggregateVerifier
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.junit.jupiter.api.Test
-import site.weixing.natty.domain.ums.user.User
-import site.weixing.natty.domain.ums.user.UserState
-import site.weixing.natty.domain.ums.user.UserStatus
 import site.weixing.natty.ums.api.user.CreateUser
 import site.weixing.natty.ums.api.user.UserCreated
 
@@ -30,8 +27,8 @@ class UserTest {
             .expectEventType(UserCreated::class.java)
             .expectState {
                 assertThat(it.name, equalTo(command.name))
-                assertThat(it.email, equalTo(command.email))
-                assertThat(it.phone, equalTo(command.phone))
+                assertThat(it.primaryEmail, equalTo(command.email))
+                assertThat(it.primaryPhone, equalTo(command.phone))
                 assertThat(it.avatar, equalTo(command.avatar))
                 assertThat(it.accountId, equalTo(command.accountId))
                 assertThat(it.status, equalTo(UserStatus.ACTIVE))
@@ -56,8 +53,8 @@ class UserTest {
             .expectEventType(UserCreated::class.java)
             .expectState {
                 assertThat(it.name, equalTo(command.name))
-                assertThat(it.email, equalTo(command.email))
-                assertThat(it.phone, equalTo(command.phone))
+                assertThat(it.primaryEmail, equalTo(command.email))
+                assertThat(it.primaryPhone, equalTo(command.phone))
                 assertThat(it.avatar, equalTo(command.avatar))
                 assertThat(it.accountId, equalTo(accountId))
                 assertThat(it.status, equalTo(UserStatus.ACTIVE))

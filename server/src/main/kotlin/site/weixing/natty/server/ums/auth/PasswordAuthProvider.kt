@@ -55,8 +55,8 @@ class PasswordAuthProvider(
                             id = user.id,
                             attributes = mapOf(
                                 "username" to (user.name ?: ""),
-                                "phone" to (user.phone ?: ""),
-                                "email" to (user.email ?: ""),
+                                "primaryPhone" to (user.primaryPhone ?: ""),
+                                "primaryEmail" to (user.primaryEmail ?: ""),
                                 "accountType" to "ADMIN"
                             )
                         )
@@ -78,8 +78,8 @@ class PasswordAuthProvider(
 //                    id = user.id,
 //                    attributes = mapOf(
 //                        "username" to (user.name ?: ""),
-//                        "phone" to (user.phone ?: ""),
-//                        "email" to (user.email ?: ""),
+//                        "primaryPhone" to (user.primaryPhone ?: ""),
+//                        "primaryEmail" to (user.primaryEmail ?: ""),
 //                        "accountType" to "USER"
 //                    )
 //                )
