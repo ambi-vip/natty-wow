@@ -3,7 +3,7 @@ package site.weixing.natty.domain.ums.user
 import me.ahoo.wow.api.Identifier
 import me.ahoo.wow.api.annotation.OnSourcing
 import site.weixing.natty.api.ums.user.UserStatus
-import site.weixing.natty.ums.api.user.UserCreated
+import site.weixing.natty.api.ums.user.UserCreated
 import site.weixing.natty.api.ums.user.UserCustomDataUpdated
 import site.weixing.natty.api.ums.user.UserDeleted
 //import site.weixing.natty.api.ums.user.UserIdentitiesUpdated

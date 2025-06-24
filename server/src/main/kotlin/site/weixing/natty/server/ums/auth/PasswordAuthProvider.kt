@@ -11,11 +11,14 @@ import me.ahoo.wow.query.snapshot.query
 import me.ahoo.wow.query.snapshot.toState
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.switchIfEmpty
 import site.weixing.natty.auth.PasswordCredentialsToken
 import site.weixing.natty.domain.ums.account.AccountState
 import site.weixing.natty.domain.ums.account.AccountStateProperties
+import site.weixing.natty.domain.ums.account.UsernamePrepare
 import site.weixing.natty.domain.ums.crypto.infra.PasswordEncoder
 import site.weixing.natty.server.ums.user.UserService
+import java.lang.RuntimeException
 
 /**
  * 用户认证提供者
@@ -26,6 +29,7 @@ import site.weixing.natty.server.ums.user.UserService
 class PasswordAuthProvider(
     private val userService: UserService,
     private val passwordEncoder: PasswordEncoder,
+    private val usernamePrepare: UsernamePrepare
 ) : Authentication<PasswordCredentialsToken, CoSecPrincipal> {
 
     override val supportCredentials: Class<PasswordCredentialsToken>
@@ -41,11 +45,21 @@ class PasswordAuthProvider(
 
     private fun validateAdminUser(username: String, password: String): Mono<CoSecPrincipal> {
 
-        return userService.getByUserName(username)
-            .map { user ->
-                require(passwordEncoder.matches(password, user.passwordEncrypted)) {
+        return usernamePrepare.get(UsernamePrepare.USERNAME_PREFIX + username)
+            .switchIfEmpty {
+                throw RuntimeException("密码不正确")
+            }
+            .doOnNext {
+                require(passwordEncoder.matches(password, it.password)) {
                     "密码不正确"
                 }
+            }
+            .flatMap {
+                userService.getById(it.userId)
+            }
+            .map {
+                    user ->
+
                 SimplePrincipal(
                     id = user.id,
                     attributes = mapOf(

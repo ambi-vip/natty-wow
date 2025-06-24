@@ -8,7 +8,15 @@ import org.springframework.stereotype.Component
 @Component
 class UsernamePrepare(
     private val prepareKeyFactory: PrepareKeyFactory
-) : PrepareKey<UsernameIndexValue> by prepareKeyFactory.create("username", UsernameIndexValue::class.java)
+) : PrepareKey<UsernameIndexValue> by prepareKeyFactory.create("username", UsernameIndexValue::class.java) {
+
+    companion object {
+        const val USERNAME_PREFIX = "username:"
+        const val EMAIL_PREFIX = "email:"
+        const val PHONE_PREFIX = "phone:"
+    }
+
+}
 
 
 // 用户名索引值，用于防重复

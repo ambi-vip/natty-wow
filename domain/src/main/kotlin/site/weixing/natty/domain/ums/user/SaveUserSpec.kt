@@ -1,42 +1,71 @@
 package site.weixing.natty.domain.ums.user
 
-import me.ahoo.wow.api.annotation.Name
+import me.ahoo.wow.infra.prepare.PreparedValue.Companion.toForever
 import me.ahoo.wow.query.snapshot.SnapshotQueryService
+import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
-import reactor.kotlin.core.publisher.switchIfEmpty
+import site.weixing.natty.domain.ums.account.UsernameIndexValue
 import site.weixing.natty.domain.ums.account.UsernamePrepare
-import site.weixing.natty.ums.api.user.CreateUser
+import site.weixing.natty.domain.ums.crypto.infra.PasswordEncoder
+import site.weixing.natty.api.ums.user.CreateUser
+import site.weixing.natty.domain.ums.account.UsernamePrepare.Companion.EMAIL_PREFIX
+import site.weixing.natty.domain.ums.account.UsernamePrepare.Companion.PHONE_PREFIX
+import site.weixing.natty.domain.ums.account.UsernamePrepare.Companion.USERNAME_PREFIX
 
 interface SaveUserSpec {
-    fun require(user: CreateUser): Mono<CreateUser>
+    fun require(command: CreateUser): Mono<CreateUser>
+    fun prepare(command: CreateUser, user: UserState): Mono<Void>
 }
 
-@Name("createOrderSpec")
-class DefaultCreateOrderSpec(
+@Component
+class DefaultSaveUserSpec(
     private val userQueryService: SnapshotQueryService<UserState>,
-    private val usernamePrepare: UsernamePrepare
+    private val usernamePrepare: UsernamePrepare,
+    private val passwordEncoder: PasswordEncoder
 ) : SaveUserSpec {
 
-    override fun require(user: CreateUser): Mono<CreateUser> {
 
+
+    override fun require(command: CreateUser): Mono<CreateUser> {
+        return Mono.`when`(
+            validateField(command.username, "username", USERNAME_PREFIX),
+            validateField(command.primaryEmail, "email", EMAIL_PREFIX),
+            validateField(command.primaryPhone, "phone", PHONE_PREFIX)
+        ).thenReturn(command)
     }
 
 
-    private fun saveUserName(user: CreateUser): Mono<Void> {
-        return Mono.defer {
-            user.username?.let { username ->
-                usernamePrepare.getValue(username)
-                    .flatMap { existingValue ->
-                        // 如果 usernamePrepare.getValue(username) 有值，抛出异常
-                       return
-                    }
-                    .switchIfEmpty {
-                        // 如果没有值，继续执行保存逻辑
-                        // saveUsernameToDatabase(username)
-                        Mono.empty() // 返回一个空的 Mono，表示操作成功
-                    }
-            } ?: Mono.empty() // 如果 username 为 null，则返回一个空的 Mono
+    private fun validateField(value: String?, fieldName: String, prefix: String): Mono<Void> {
+        if (value == null) {
+            return Mono.empty()
         }
+        val key = prefix + value
+        return usernamePrepare.getValue(key)
+            .flatMap { existingUser ->
+                if (existingUser != null) {
+                    Mono.error(IllegalArgumentException("$fieldName[$value] is already registered."))
+                } else {
+                    Mono.empty()
+                }
+            }
     }
 
+    override fun prepare(command: CreateUser, user: UserState): Mono<Void> {
+        val encodedPassword = passwordEncoder.encode("123123")
+        val usernameIndexValue = UsernameIndexValue(
+            userId = user.id,
+            password = encodedPassword,
+        ).toForever()
+        val prepares = mutableListOf<Mono<Boolean>>()
+        command.username?.let {
+            prepares.add(usernamePrepare.prepare(USERNAME_PREFIX + it, usernameIndexValue))
+        }
+        command.primaryEmail?.let {
+            prepares.add(usernamePrepare.prepare(EMAIL_PREFIX + it, usernameIndexValue))
+        }
+        command.primaryPhone?.let {
+            prepares.add(usernamePrepare.prepare(PHONE_PREFIX + it, usernameIndexValue))
+        }
+        return Mono.`when`(*prepares.toTypedArray()).then()
+    }
 }

@@ -3,9 +3,9 @@ package site.weixing.natty.domain.ums.user
 import me.ahoo.wow.api.annotation.AggregateRoot
 import me.ahoo.wow.api.annotation.OnCommand
 import me.ahoo.wow.api.annotation.OnError
+import me.ahoo.wow.api.command.CommandResultAccessor
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toMono
-import site.weixing.natty.api.ums.account.AccountCreated
 import site.weixing.natty.api.ums.user.DeleteUser
 import site.weixing.natty.api.ums.user.UpdateUser
 import site.weixing.natty.api.ums.user.UpdateUserCustomData
@@ -19,12 +19,10 @@ import site.weixing.natty.api.ums.user.UserProfileUpdated
 import site.weixing.natty.api.ums.user.UserStatus
 import site.weixing.natty.api.ums.user.UserStatusUpdated
 import site.weixing.natty.api.ums.user.UserUpdated
-import site.weixing.natty.domain.ums.account.UsernameIndexValue
-import site.weixing.natty.domain.ums.account.UsernamePrepare
 import site.weixing.natty.domain.ums.crypto.infra.PasswordEncoder
 import site.weixing.natty.ums.api.user.ChangeUserPassword
-import site.weixing.natty.ums.api.user.CreateUser
-import site.weixing.natty.ums.api.user.UserCreated
+import site.weixing.natty.api.ums.user.CreateUser
+import site.weixing.natty.api.ums.user.UserCreated
 import site.weixing.natty.ums.api.user.UserPasswordChanged
 
 @Suppress("unused")
@@ -34,32 +32,25 @@ class User(private val state: UserState) {
     @OnCommand
     fun onCreate(
         command: CreateUser,
-        usernamePrepare: UsernamePrepare
-    ): UserCreated {
+        saveUserSpec: SaveUserSpec,
+        commandResultAccessor: CommandResultAccessor
+    ): Mono<UserCreated> {
 
-//        command.username?.let { username ->
-//            usernamePrepare.usingPrepare(
-//                key = username,
-//                value = UsernameIndexValue(
-//                    userId = state.id,
-//                    password = "encodedPassword",
-//                ),
-//            ) {
-//                require(it) {
-//                    "username[${username}] is already registered."
-//                }
-//                Mono.empty<Unit>()
-//            }.block()
-//        }
-
-        return UserCreated(
-            name = command.name,
-            accountId = command.accountId,
-            primaryEmail = command.primaryEmail,
-            primaryPhone = command.primaryPhone,
-            avatar = command.avatar,
-            username = command.username,
-        )
+        return saveUserSpec.require(command)
+            .flatMap {
+                saveUserSpec.prepare(command, state)
+            }.then(
+                Mono.fromCallable {
+                    UserCreated(
+                        name = command.name,
+                        accountId = command.accountId,
+                        primaryEmail = command.primaryEmail,
+                        primaryPhone = command.primaryPhone,
+                        avatar = command.avatar,
+                        username = command.username,
+                    )
+                }
+            )
     }
 
     @OnCommand

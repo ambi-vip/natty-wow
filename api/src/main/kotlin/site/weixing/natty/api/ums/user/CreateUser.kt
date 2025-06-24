@@ -1,4 +1,4 @@
-package site.weixing.natty.ums.api.user
+package site.weixing.natty.api.ums.user
 
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size

@@ -6,8 +6,8 @@ import me.ahoo.wow.test.aggregateVerifier
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.junit.jupiter.api.Test
-import site.weixing.natty.ums.api.user.CreateUser
-import site.weixing.natty.ums.api.user.UserCreated
+import site.weixing.natty.api.ums.user.CreateUser
+import site.weixing.natty.api.ums.user.UserCreated
 
 class UserTest {
 
