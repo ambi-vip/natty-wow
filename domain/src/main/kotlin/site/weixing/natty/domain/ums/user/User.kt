@@ -5,6 +5,7 @@ import me.ahoo.wow.api.annotation.OnCommand
 import me.ahoo.wow.api.annotation.OnError
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toMono
+import site.weixing.natty.api.ums.account.AccountCreated
 import site.weixing.natty.api.ums.user.DeleteUser
 import site.weixing.natty.api.ums.user.UpdateUser
 import site.weixing.natty.api.ums.user.UpdateUserCustomData
@@ -18,7 +19,9 @@ import site.weixing.natty.api.ums.user.UserProfileUpdated
 import site.weixing.natty.api.ums.user.UserStatus
 import site.weixing.natty.api.ums.user.UserStatusUpdated
 import site.weixing.natty.api.ums.user.UserUpdated
-import site.weixing.natty.domain.ums.crypto.PasswordEncoder
+import site.weixing.natty.domain.ums.account.UsernameIndexValue
+import site.weixing.natty.domain.ums.account.UsernamePrepare
+import site.weixing.natty.domain.ums.crypto.infra.PasswordEncoder
 import site.weixing.natty.ums.api.user.ChangeUserPassword
 import site.weixing.natty.ums.api.user.CreateUser
 import site.weixing.natty.ums.api.user.UserCreated
@@ -29,13 +32,33 @@ import site.weixing.natty.ums.api.user.UserPasswordChanged
 class User(private val state: UserState) {
 
     @OnCommand
-    fun onCreate(command: CreateUser): UserCreated {
+    fun onCreate(
+        command: CreateUser,
+        usernamePrepare: UsernamePrepare
+    ): UserCreated {
+
+//        command.username?.let { username ->
+//            usernamePrepare.usingPrepare(
+//                key = username,
+//                value = UsernameIndexValue(
+//                    userId = state.id,
+//                    password = "encodedPassword",
+//                ),
+//            ) {
+//                require(it) {
+//                    "username[${username}] is already registered."
+//                }
+//                Mono.empty<Unit>()
+//            }.block()
+//        }
+
         return UserCreated(
             name = command.name,
             accountId = command.accountId,
-            email = command.email,
-            phone = command.phone,
-            avatar = command.avatar
+            primaryEmail = command.primaryEmail,
+            primaryPhone = command.primaryPhone,
+            avatar = command.avatar,
+            username = command.username,
         )
     }
 
@@ -44,8 +67,8 @@ class User(private val state: UserState) {
         require(state.name != null) { "用户不存在" }
         return UserUpdated(
             name = command.name,
-            email = command.email,
-            phone = command.phone,
+            primaryEmail = command.primaryEmail,
+            primaryPhone = command.primaryPhone,
             avatar = command.avatar
         )
     }
@@ -59,8 +82,9 @@ class User(private val state: UserState) {
     }
 
     @OnCommand
-    fun onChangePassword(command: ChangeUserPassword,
-                         passwordEncoder: PasswordEncoder
+    fun onChangePassword(
+        command: ChangeUserPassword,
+        passwordEncoder: PasswordEncoder
     ): Mono<UserPasswordChanged> {
         require(state.status == UserStatus.ACTIVE) { "用户状态不允许修改密码" }
 
@@ -79,7 +103,7 @@ class User(private val state: UserState) {
     @OnCommand
     fun onUpdateStatus(command: UpdateUserStatus): UserStatusUpdated {
         require(state.status != command.status) { "用户已经处于${command.status}状态" }
-        
+
         return UserStatusUpdated(
             status = command.status,
             reason = command.reason
@@ -98,7 +122,7 @@ class User(private val state: UserState) {
     @OnCommand
     fun onUpdateProfile(command: UpdateUserProfile): UserProfileUpdated {
         require(state.status == UserStatus.ACTIVE) { "用户状态不允许更新档案信息" }
-        
+
         return UserProfileUpdated(
             nickname = command.nickname,
             profile = command.profile,
@@ -113,7 +137,7 @@ class User(private val state: UserState) {
     @OnCommand
     fun onUpdateCustomData(command: UpdateUserCustomData): UserCustomDataUpdated {
         require(state.status == UserStatus.ACTIVE) { "用户状态不允许更新自定义数据" }
-        
+
         return UserCustomDataUpdated(
             customData = command.customData
         )

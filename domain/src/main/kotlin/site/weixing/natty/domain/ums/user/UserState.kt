@@ -66,16 +66,18 @@ class UserState(override val id: String) : Identifier {
     fun onCreated(event: UserCreated) {
         name = event.name
         accountId = event.accountId
-        primaryEmail = event.email
-        primaryPhone = event.phone
+        primaryEmail = event.primaryEmail
+        primaryPhone = event.primaryPhone
         avatar = event.avatar
+        status = UserStatus.ACTIVE
+        username = event.username
     }
 
     @OnSourcing
     fun onUpdated(event: UserUpdated) {
         event.name?.let { name = it }
-        event.email?.let { primaryEmail = it }
-        event.phone?.let { primaryPhone = it }
+        event.primaryEmail?.let { primaryEmail = it }
+        event.primaryPhone?.let { primaryPhone = it }
         event.avatar?.let { avatar = it }
     }
 

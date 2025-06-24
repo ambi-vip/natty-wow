@@ -16,12 +16,15 @@ data class CreateUser(
     @field:Size(max = 64)
     val name: String,
 
+    @field:Size(max = 64)
+    val username: String? = null,
+
     val accountId: String? = null,
 
     @field:Size(max = 128)
-    val email: String? = null,
+    val primaryEmail: String? = null,
 
-    val phone: String? = null,
+    val primaryPhone: String? = null,
 
     @field:Size(max = 2048)
     val avatar: String? = null,
@@ -30,7 +33,8 @@ data class CreateUser(
 data class UserCreated(
     val name: String,
     val accountId: String?,
-    val email: String?,
-    val phone: String?,
+    val primaryEmail: String?,
+    val primaryPhone: String?,
     val avatar: String?,
+    val username: String?,
 )

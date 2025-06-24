@@ -1,4 +1,4 @@
-package site.weixing.natty.domain.ums.crypto
+package site.weixing.natty.domain.ums.crypto.infra
 
 /**
  * PasswordEncoder

@@ -14,6 +14,7 @@ import reactor.core.publisher.Mono
 import site.weixing.natty.auth.PasswordCredentialsToken
 import site.weixing.natty.domain.ums.account.AccountState
 import site.weixing.natty.domain.ums.account.AccountStateProperties
+import site.weixing.natty.domain.ums.crypto.infra.PasswordEncoder
 import site.weixing.natty.server.ums.user.UserService
 
 /**
@@ -21,11 +22,10 @@ import site.weixing.natty.server.ums.user.UserService
  * 支持基于 accountType 的不同账户体系
  * @author ambi
  */
-@Suppress("SpringJavaInjectionPointsAutowiringInspection")
 @Component
 class PasswordAuthProvider(
-    private val accountQueryService: SnapshotQueryService<AccountState>,
     private val userService: UserService,
+    private val passwordEncoder: PasswordEncoder,
 ) : Authentication<PasswordCredentialsToken, CoSecPrincipal> {
 
     override val supportCredentials: Class<PasswordCredentialsToken>
@@ -40,50 +40,23 @@ class PasswordAuthProvider(
     }
 
     private fun validateAdminUser(username: String, password: String): Mono<CoSecPrincipal> {
-        return singleQuery {
-            condition {
-                nestedState()
-                AccountStateProperties.USERNAME eq username
-            }
-        }.query(accountQueryService)
-            .toState()
-            .throwNotFoundIfEmpty()
-            .flatMap { account ->
-                userService.getById(account.userId?:"")
-                    .map { user ->
-                        SimplePrincipal(
-                            id = user.id,
-                            attributes = mapOf(
-                                "username" to (user.name ?: ""),
-                                "primaryPhone" to (user.primaryPhone ?: ""),
-                                "primaryEmail" to (user.primaryEmail ?: ""),
-                                "accountType" to "ADMIN"
-                            )
-                        )
-                    }
+
+        return userService.getByUserName(username)
+            .map { user ->
+                require(passwordEncoder.matches(password, user.passwordEncrypted)) {
+                    "密码不正确"
+                }
+                SimplePrincipal(
+                    id = user.id,
+                    attributes = mapOf(
+                        "username" to (user.name ?: ""),
+                        "primaryPhone" to (user.primaryPhone ?: ""),
+                        "primaryEmail" to (user.primaryEmail ?: ""),
+                        "accountType" to "ADMIN"
+                    )
+                )
             }
     }
 
-//    private fun validateNormalUser(username: String, password: String): Mono<CoSecPrincipal> {
-//        return singleQuery {
-//            condition {
-//                nestedState()
-//                UserStateProperties.NAME eq username
-//            }
-//        }.query(userQueryService)
-//            .toState()
-//            .throwNotFoundIfEmpty()
-//            .map { user ->
-//                SimplePrincipal(
-//                    id = user.id,
-//                    attributes = mapOf(
-//                        "username" to (user.name ?: ""),
-//                        "primaryPhone" to (user.primaryPhone ?: ""),
-//                        "primaryEmail" to (user.primaryEmail ?: ""),
-//                        "accountType" to "USER"
-//                    )
-//                )
-//            }
-//    }
 }
 

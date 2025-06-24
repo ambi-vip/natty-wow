@@ -1,7 +1,7 @@
 package site.weixing.natty.auth.crypto
 
 import org.springframework.stereotype.Component
-import site.weixing.natty.domain.ums.crypto.PasswordEncoder
+import site.weixing.natty.domain.ums.crypto.infra.PasswordEncoder
 
 /**
  * SpringPasswordEncoder

@@ -27,7 +27,7 @@ spring:
     mapper:
       accept-case-insensitive-enums: true
   profiles:
-    active: local
+    active: dev
 
 #  web:
 #    resources:

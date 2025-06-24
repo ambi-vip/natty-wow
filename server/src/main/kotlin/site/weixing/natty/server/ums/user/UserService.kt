@@ -33,9 +33,14 @@ class UserService(
         return singleQuery {
             condition {
                 nestedState()
-                UserStateProperties.STATUS
+                UserStateProperties.USERNAME.eq(userName)
+//                or {
+//                    UserStateProperties.PRIMARY_EMAIL.eq(userName)
+//                    UserStateProperties.PRIMARY_PHONE.eq(userName)
+//                }
             }
-        }.query(queryService).toState().throwNotFoundIfEmpty()
+        }.query(queryService).toState()
+            .throwNotFoundIfEmpty("不存在用户")
     }
 
 }
