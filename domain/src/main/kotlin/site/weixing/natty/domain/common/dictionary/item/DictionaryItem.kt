@@ -61,7 +61,7 @@ class DictionaryItem(private val state: DictionaryItemState) {
                     DictionaryItemCreated(
                         dictionaryItemId = state.id,
                         dictionaryId = command.dictionaryId,
-                        dictionaryCode = dictState.code!!,
+                        dictionaryCode = dictState.code,
                         itemCode = command.itemCode,
                         itemName = command.itemName,
                         itemValue = command.itemValue?.ifEmpty { command.itemCode } ?: command.itemCode,
