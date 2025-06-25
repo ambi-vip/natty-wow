@@ -39,7 +39,9 @@ class User(private val state: UserState) {
         return saveUserSpec.require(command)
             .flatMap {
                 saveUserSpec.prepare(command, state)
-            }.then(
+            }
+//            .then(Mono.fromCallable { throw RuntimeException("xxx") })
+            .then(
                 Mono.fromCallable {
                     UserCreated(
                         name = command.name,
@@ -52,6 +54,11 @@ class User(private val state: UserState) {
                 }
             )
     }
+
+//    @OnError
+//    fun onCreateError(command: CreateUser) {
+//        println(command)
+//    }
 
     @OnCommand
     fun onUpdate(command: UpdateUser): UserUpdated {

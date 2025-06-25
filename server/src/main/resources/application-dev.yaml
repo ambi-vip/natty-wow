@@ -1,4 +1,13 @@
-
+spring:
+  data:
+    mongodb:
+      # 或者分离配置：
+      host: devops.weixing.site
+      port: 27017
+      database: natty
+      username: mongo_f5AhsX
+      password: mongo_bmJMYy
+      authentication-database: admin
 
 
 wow:

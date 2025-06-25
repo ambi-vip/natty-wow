@@ -65,6 +65,7 @@ class DefaultSaveUserSpec(
         }
         command.primaryPhone?.let {
             prepares.add(usernamePrepare.prepare(PHONE_PREFIX + it, usernameIndexValue))
+            throw RuntimeException("xxx")
         }
         return Mono.`when`(*prepares.toTypedArray()).then()
     }
