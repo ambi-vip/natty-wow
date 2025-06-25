@@ -51,6 +51,11 @@ class User(private val state: UserState) {
             )
     }
 
+//    @OnError
+//    fun onCreateError(command: CreateUser) {
+//        println(command)
+//    }
+
     @OnCommand
     fun onUpdate(command: UpdateUser): UserUpdated {
         require(state.name != null) { "用户不存在" }
