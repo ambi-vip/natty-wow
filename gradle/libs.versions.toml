@@ -13,7 +13,7 @@ kotlin-logging = "7.0.7"
 swagger = "2.2.32"
 springdoc = "2.8.9"
 hamcrest = "3.0"
-mockk = "1.14.2"
+mockk = "1.14.4"
 # plugins
 detekt = "1.23.8"
 dokka = "2.0.0"
