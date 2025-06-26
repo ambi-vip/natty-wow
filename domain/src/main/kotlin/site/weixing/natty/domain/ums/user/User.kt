@@ -57,7 +57,6 @@ class User(private val state: UserState) {
 
     @OnCommand
     fun onUpdate(command: UpdateUser): UserUpdated {
-        require(state.name != null) { "用户不存在" }
         return UserUpdated(
             name = command.name,
             primaryEmail = command.primaryEmail,

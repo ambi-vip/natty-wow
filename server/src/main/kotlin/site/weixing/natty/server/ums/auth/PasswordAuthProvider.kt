@@ -12,33 +12,26 @@ import site.weixing.natty.domain.ums.crypto.infra.PasswordEncoder
 import site.weixing.natty.server.ums.user.UserService
 import java.lang.RuntimeException
 
-/**
- * 用户认证提供者
- * 支持基于 accountType 的不同账户体系
- * @author ambi
- */
+// 认证异常
+class AuthException(message: String) : RuntimeException(message)
+
+interface AccountAuthStrategy {
+    val accountType: String
+    fun authenticate(username: String, password: String): Mono<CoSecPrincipal>
+}
+
 @Component
-class PasswordAuthProvider(
+class AdminAuthStrategy(
     private val userService: UserService,
     private val passwordEncoder: PasswordEncoder,
     private val usernamePrepare: UsernamePrepare
-) : Authentication<PasswordCredentialsToken, CoSecPrincipal> {
+) : AccountAuthStrategy {
+    override val accountType: String = "ADMIN"
 
-    override val supportCredentials: Class<PasswordCredentialsToken>
-        get() = PasswordCredentialsToken::class.java
-
-    override fun authenticate(credentials: PasswordCredentialsToken): Mono<CoSecPrincipal> {
-        return when (credentials.accountType) {
-            "ADMIN" -> validateAdminUser(credentials.username, credentials.password)
-//            "USER" -> validateNormalUser(credentials.username, credentials.password)
-            else -> Mono.error(IllegalArgumentException("不支持的账户类型: ${credentials.accountType}"))
-        }
-    }
-
-    private fun validateAdminUser(username: String, password: String): Mono<CoSecPrincipal> {
+    override fun authenticate(username: String, password: String): Mono<CoSecPrincipal> {
         return usernamePrepare.get(username)
             .filter { passwordEncoder.matches(password, it.password) }
-            .switchIfEmpty(Mono.error(RuntimeException("密码不正确")))
+            .switchIfEmpty(Mono.error(AuthException("认证失败")))
             .flatMap { userService.getById(it.userId) }
             .map { user ->
                 SimplePrincipal(
@@ -47,9 +40,30 @@ class PasswordAuthProvider(
                         "username" to (user.name ?: ""),
                         "primaryPhone" to (user.primaryPhone ?: ""),
                         "primaryEmail" to (user.primaryEmail ?: ""),
-                        "accountType" to "ADMIN"
+                        "accountType" to accountType
                     )
                 )
+            }
+    }
+}
+
+@Component
+class PasswordAuthProvider(
+    strategies: List<AccountAuthStrategy>
+) : Authentication<PasswordCredentialsToken, CoSecPrincipal> {
+
+    private val strategyMap = strategies.associateBy { it.accountType }
+
+    override val supportCredentials: Class<PasswordCredentialsToken>
+        get() = PasswordCredentialsToken::class.java
+
+    override fun authenticate(credentials: PasswordCredentialsToken): Mono<CoSecPrincipal> {
+        val strategy = strategyMap[credentials.accountType]
+            ?: return Mono.error(AuthException("不支持的账户类型: ${credentials.accountType}"))
+        return strategy.authenticate(credentials.username, credentials.password)
+            .doOnError { ex ->
+                // 认证失败日志
+                // log.warn("认证失败: type=${credentials.accountType}, username=${credentials.username}, reason=${ex.message}")
             }
     }
 }

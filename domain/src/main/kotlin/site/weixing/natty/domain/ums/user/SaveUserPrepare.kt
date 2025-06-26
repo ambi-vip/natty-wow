@@ -11,7 +11,7 @@ import site.weixing.natty.domain.ums.crypto.infra.PasswordEncoder
  * bind Prepare
  */
 interface SaveUserPrepare {
-    fun bindPrepare(command: CreateUser, user: UserState): Mono<CreateUser>
+    fun bindPrepare(command: CreateUser, user: UserState): Mono<Void>
 }
 
 @Component
@@ -20,13 +20,13 @@ class DefaultSaveUserPrepare(
     private val passwordEncoder: PasswordEncoder
 ) : SaveUserPrepare {
 
-    override fun bindPrepare(command: CreateUser, user: UserState): Mono<CreateUser> {
+    override fun bindPrepare(command: CreateUser, user: UserState): Mono<Void> {
         val usernameIndexValue = buildIndexValue(user)
         return Mono.`when`(
             usingPrepareField(command.username, "username", usernameIndexValue),
             usingPrepareField(command.primaryEmail, "email", usernameIndexValue),
             usingPrepareField(command.primaryPhone, "phone", usernameIndexValue)
-        ).thenReturn(command)
+        ).then()
     }
 
     private fun buildIndexValue(user: UserState): UsernameIndexValue {

@@ -1,5 +1,7 @@
 package site.weixing.natty.domain.ums.user
 
+import io.mockk.every
+import io.mockk.mockk
 import me.ahoo.wow.test.aggregate.`when`
 import me.ahoo.wow.test.aggregateVerifier
 import org.assertj.core.api.Assertions.assertThat
@@ -11,10 +13,8 @@ import site.weixing.natty.api.ums.user.UserStatus
 
 class UserTest {
 
-    class MockSavePrepare : SaveUserPrepare {
-        override fun bindPrepare(command: CreateUser, user: UserState): Mono<CreateUser> {
-            return Mono.just(command)
-        }
+    val saveUserPrepare = mockk<SaveUserPrepare> {
+        every { bindPrepare(any(), any()) } returns Mono.empty<Void>()
     }
 
     @Test
@@ -27,8 +27,10 @@ class UserTest {
             accountId = null
         )
 
+
+
         aggregateVerifier<User, UserState>()
-            .inject(MockSavePrepare())
+            .inject(saveUserPrepare)
             .`when`(command)
             .expectNoError()
             .expectEventType(UserCreated::class.java)
