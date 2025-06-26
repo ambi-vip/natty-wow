@@ -2,8 +2,7 @@ package site.weixing.natty.domain.common.dictionary
 
 import me.ahoo.wow.test.aggregate.`when`
 import me.ahoo.wow.test.aggregateVerifier
-import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.Matchers.equalTo
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import site.weixing.natty.api.common.dictionary.ChangeDictionaryStatus
 import site.weixing.natty.api.common.dictionary.CreateDictionary
@@ -66,8 +65,8 @@ class DictionaryTest {
             .expectNoError()
             .expectEventType(DictionaryUpdated::class.java)
             .expectState {
-                assertThat(it.name, equalTo(command.name))
-                assertThat(it.description, equalTo(command.description))
+                assertThat(it.name).isEqualTo(command.name)
+                assertThat(it.name).isEqualTo(command.description)
             }
             .verify()
     }
@@ -95,7 +94,7 @@ class DictionaryTest {
             .expectNoError()
             .expectEventType(DictionaryStatusChanged::class.java)
             .expectState {
-                assertThat(it.status, equalTo(DictionaryStatus.INACTIVE))
+                assertThat(it.status).isEqualTo(DictionaryStatus.INACTIVE)
             }
             .verify()
     }

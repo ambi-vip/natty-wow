@@ -37,6 +37,16 @@ allprojects {
         maven("https://repo.spring.io/release")
         mavenCentral()
     }
+    apply<DetektPlugin>()
+    configure<DetektExtension> {
+        config.setFrom(files("${rootProject.rootDir}/config/detekt/detekt.yml"))
+        buildUponDefaultConfig = true
+        autoCorrect = true
+    }
+    dependencies {
+        detektPlugins(dependenciesProject)
+        detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting")
+    }
     tasks.withType<Jar> {
         manifest {
             attributes["Implementation-Title"] = project.getArchivesName()
@@ -57,12 +67,6 @@ configure(bomProjects) {
 }
 
 configure(libraryProjects) {
-//    apply<DetektPlugin>()
-//    configure<DetektExtension> {
-//        config.setFrom(files("${rootProject.rootDir}/config/detekt/detekt.yml"))
-//        buildUponDefaultConfig = true
-//        autoCorrect = true
-//    }
     apply<DokkaPlugin>()
     apply<JacocoPlugin>()
     apply<JavaLibraryPlugin>()
@@ -105,10 +109,8 @@ configure(libraryProjects) {
     }
     dependencies {
         api(platform(dependenciesProject))
-//        detektPlugins(dependenciesProject)
         implementation("com.google.guava:guava")
         implementation("org.slf4j:slf4j-api")
-        testImplementation("org.hamcrest:hamcrest")
         testImplementation("io.mockk:mockk") {
             exclude(group = "org.slf4j", module = "slf4j-api")
         }
@@ -117,7 +119,6 @@ configure(libraryProjects) {
         testImplementation("org.junit.jupiter:junit-jupiter-params")
         testImplementation("org.junit.platform:junit-platform-launcher")
         testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
-//        detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting")
     }
 }
 

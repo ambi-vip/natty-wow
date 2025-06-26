@@ -9,11 +9,12 @@ dependencies {
     api(platform(libs.cosky.bom))
     api(platform(libs.simba.bom))
     api(platform(libs.springdoc.bom))
+    api(platform(libs.fluent.assert.bom))
     constraints {
         api(libs.guava)
         api(libs.kotlin.logging)
         api(libs.swagger.annotations)
-        api(libs.hamcrest)
+        api(libs.swagger.core)
         api(libs.mockk)
         api(libs.detekt.formatting)
 //        api(libs.casdoor)

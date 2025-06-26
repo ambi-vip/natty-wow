@@ -3,8 +3,7 @@ package site.weixing.natty.domain.demo
 import me.ahoo.wow.id.GlobalIdGenerator
 import me.ahoo.wow.test.aggregate.`when`
 import me.ahoo.wow.test.aggregateVerifier
-import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.Matchers.equalTo
+import org.assertj.core.api.Assertions.*
 import org.junit.jupiter.api.Test
 import site.weixing.natty.api.demo.demo.CreateDemo
 import site.weixing.natty.api.demo.demo.DemoCreated
@@ -24,7 +23,7 @@ class DemoTest {
             .expectNoError()
             .expectEventType(DemoCreated::class.java)
             .expectState {
-                assertThat(it.data, equalTo(command.data))
+                assertThat(it.data()).isEqualTo(command.data)
             }
             .verify()
     }

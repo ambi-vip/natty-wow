@@ -2,28 +2,30 @@
 # libraries
 spring-boot = "3.5.3"
 cosid = "2.13.0"
-wow = "5.18.8"
-coapi = "1.12.0"
+wow = "5.21.1"
+coapi = "1.12.5"
 cocache = "3.9.5"
 cosec = "2.16.1"
 cosky = "4.8.8"
 simba = "2.8.8"
 guava = "33.4.8-jre"
 kotlin-logging = "7.0.7"
-swagger = "2.2.32"
+swagger = "2.2.34"
 springdoc = "2.8.9"
-hamcrest = "3.0"
-mockk = "1.14.2"
+jte = "3.2.1"
+# testing
+junit = "5.13.2"
+fluent-assert = "0.2.0"
+mockk = "1.14.4"
 # plugins
 detekt = "1.23.8"
 dokka = "2.0.0"
-kotlin = "2.1.21"
-publish-plugin = "2.0.0"
+kotlin = "2.2.0"
 ksp = "2.2.0-2.0.2"
+publish-plugin = "2.0.0"
 kover = "0.9.1"
 test-retry = "1.6.2"
 casdoor = "1.15.0"
-jte = "3.2.1"
 
 [libraries]
 spring-boot-dependencies = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "spring-boot" }
@@ -37,12 +39,15 @@ simba-bom = { module = "me.ahoo.simba:simba-bom", version.ref = "simba" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
 kotlin-logging = { module = "io.github.oshai:kotlin-logging-jvm", version.ref = "kotlin-logging" }
 swagger-annotations = { module = "io.swagger.core.v3:swagger-annotations", version.ref = "swagger" }
+swagger-core = { module = "io.swagger.core.v3:swagger-core-jakarta", version.ref = "swagger" }
 springdoc-bom = { module = "org.springdoc:springdoc-openapi-bom", version.ref = "springdoc" }
-hamcrest = { module = "org.hamcrest:hamcrest", version.ref = "hamcrest" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 casdoor = { module = "org.casbin:casdoor-spring-boot-starter", version.ref = "casdoor" }
 jte = { module = "gg.jte:jte", version.ref = "jte" }
+jte-kotlin = { module = "gg.jte:jte-kotlin", version.ref = "jte" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+fluent-assert-bom = { module = "me.ahoo.test:fluent-assert-bom", version.ref = "fluent-assert" }
 
 [plugins]
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

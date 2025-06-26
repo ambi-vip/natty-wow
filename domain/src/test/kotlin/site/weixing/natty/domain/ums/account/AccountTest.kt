@@ -3,8 +3,7 @@ package site.weixing.natty.domain.ums.account
 import me.ahoo.wow.id.GlobalIdGenerator
 import me.ahoo.wow.test.aggregate.`when`
 import me.ahoo.wow.test.aggregateVerifier
-import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.Matchers.equalTo
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import site.weixing.natty.api.ums.account.AccountCreated
 import site.weixing.natty.api.ums.account.AccountDeleted
@@ -41,10 +40,12 @@ class AccountTest {
             .expectNoError()
             .expectEventType(AccountCreated::class.java)
             .expectState {
-                assertThat(it.username, equalTo(command.username))
-                assertThat(it.email, equalTo(command.email))
-                assertThat(it.phone, equalTo(command.phone))
-                assertThat(it.status, equalTo(AccountStatus.ACTIVE))
+
+                assertThat(it.username).isEqualTo(command.username)
+                assertThat(it.email).isEqualTo(command.email)
+                assertThat(it.phone).isEqualTo(command.phone)
+                assertThat(it.status).isEqualTo(AccountStatus.ACTIVE)
+
             }
             .verify()
     }
@@ -70,9 +71,11 @@ class AccountTest {
             .expectNoError()
             .expectEventType(AccountUpdated::class.java)
             .expectState {
-                assertThat(it.username, equalTo(command.username))
-                assertThat(it.email, equalTo(command.email))
-                assertThat(it.phone, equalTo(command.phone))
+
+                assertThat(it.username).isEqualTo(command.username)
+                assertThat(it.email).isEqualTo(command.email)
+                assertThat(it.phone).isEqualTo(command.phone)
+
             }
             .verify()
     }
@@ -96,7 +99,7 @@ class AccountTest {
             .expectNoError()
             .expectEventType(AccountLocked::class.java)
             .expectState {
-                assertThat(it.status, equalTo(AccountStatus.LOCKED))
+                assertThat(it.status).isEqualTo(AccountStatus.LOCKED)
             }
             .verify()
     }
@@ -147,7 +150,7 @@ class AccountTest {
             .expectNoError()
             .expectEventType(AccountUnlocked::class.java)
             .expectState {
-                assertThat(it.status, equalTo(AccountStatus.ACTIVE))
+                assertThat(it.status).isEqualTo(AccountStatus.ACTIVE)
             }
             .verify()
     }
@@ -189,7 +192,7 @@ class AccountTest {
             .expectNoError()
             .expectEventType(AccountDeleted::class.java)
             .expectState {
-                assertThat(it.status, equalTo(AccountStatus.DISABLED))
+                assertThat(it.status).isEqualTo(AccountStatus.DISABLED)
             }
             .verify()
     }
@@ -235,7 +238,7 @@ class AccountTest {
             .expectNoError()
             .expectEventType(RoleAssigned::class.java)
             .expectState {
-                assertThat(it.roleIds, equalTo(command.roleIds))
+                assertThat(it.roleIds).isEqualTo(command.roleIds)
             }
             .verify()
     }

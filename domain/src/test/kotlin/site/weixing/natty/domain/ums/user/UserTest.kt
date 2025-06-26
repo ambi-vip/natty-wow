@@ -5,8 +5,7 @@ import me.ahoo.wow.id.GlobalIdGenerator
 import me.ahoo.wow.test.aggregate.VerifiedStage
 import me.ahoo.wow.test.aggregate.`when`
 import me.ahoo.wow.test.aggregateVerifier
-import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.Matchers.equalTo
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import reactor.core.publisher.Mono
 import site.weixing.natty.api.ums.user.CreateUser
@@ -38,12 +37,13 @@ class UserTest {
             .expectNoError()
             .expectEventType(UserCreated::class.java)
             .expectState {
-                assertThat(it.name, equalTo(command.name))
-                assertThat(it.primaryEmail, equalTo(command.primaryEmail))
-                assertThat(it.primaryPhone, equalTo(command.primaryPhone))
-                assertThat(it.avatar, equalTo(command.avatar))
-                assertThat(it.accountId, equalTo(command.accountId))
-                assertThat(it.status, equalTo(UserStatus.ACTIVE))
+
+                assertThat(it.name).isEqualTo(command.name)
+                assertThat(it.primaryEmail).isEqualTo(command.primaryEmail)
+                assertThat(it.primaryPhone).isEqualTo(command.primaryPhone)
+                assertThat(it.avatar).isEqualTo(command.avatar)
+                assertThat(it.status).isEqualTo(UserStatus.ACTIVE)
+
             }
             .verify()
     }

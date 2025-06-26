@@ -1,8 +1,7 @@
 package site.weixing.natty.domain.demo
 
 import me.ahoo.wow.test.SagaVerifier.sagaVerifier
-import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.Matchers.equalTo
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import site.weixing.natty.api.demo.demo.DemoCreated
 import site.weixing.natty.api.demo.demo.UpdateDemo
@@ -17,7 +16,7 @@ class DemoSagaTest {
                 event
             )
             .expectCommandBody<UpdateDemo> {
-                assertThat(it.data, equalTo("updated"))
+                assertThat(it.data).isEqualTo("updated")
             }
             .verify()
     }

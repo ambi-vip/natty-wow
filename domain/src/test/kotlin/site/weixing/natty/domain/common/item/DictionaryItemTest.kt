@@ -2,8 +2,7 @@ package site.weixing.natty.domain.common.item
 
 import me.ahoo.wow.test.aggregate.`when`
 import me.ahoo.wow.test.aggregateVerifier
-import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.Matchers.equalTo
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import site.weixing.natty.api.common.dictionary.item.ChangeDictionaryItemStatus
 import site.weixing.natty.api.common.dictionary.item.CreateDictionaryItem
@@ -41,14 +40,14 @@ class DictionaryItemTest {
             .expectNoError()
             .expectEventType(DictionaryItemCreated::class.java)
             .expectState {
-                assertThat(it.dictionaryId, equalTo(command.dictionaryId))
-                assertThat(it.itemCode, equalTo(command.itemCode))
-                assertThat(it.itemName, equalTo(command.itemName))
-                assertThat(it.itemValue, equalTo(command.itemValue))
-                assertThat(it.sortOrder, equalTo(command.sortOrder))
-                assertThat(it.description, equalTo(command.description))
-                assertThat(it.localizedNames, equalTo(command.localizedNames))
-                assertThat(it.status, equalTo(DictionaryItemStatus.ACTIVE))
+                assertThat(it.dictionaryId).isEqualTo(command.dictionaryId)
+                assertThat(it.itemCode).isEqualTo(command.itemCode)
+                assertThat(it.itemName).isEqualTo(command.itemName)
+                assertThat(it.itemValue).isEqualTo(command.itemValue)
+                assertThat(it.sortOrder).isEqualTo(command.sortOrder)
+                assertThat(it.description).isEqualTo(command.description)
+                assertThat(it.localizedNames).isEqualTo(command.localizedNames)
+                assertThat(it.status).isEqualTo(DictionaryItemStatus.ACTIVE)
             }
             .verify()
     }
@@ -85,11 +84,12 @@ class DictionaryItemTest {
             .expectNoError()
             .expectEventType(DictionaryItemUpdated::class.java)
             .expectState {
-                assertThat(it.itemName, equalTo(command.itemName))
-                assertThat(it.itemValue, equalTo(command.itemValue))
-                assertThat(it.sortOrder, equalTo(command.sortOrder))
-                assertThat(it.description, equalTo(command.description))
-                assertThat(it.localizedNames, equalTo(command.localizedNames))
+                assertThat(it.itemName).isEqualTo(command.itemName)
+                assertThat(it.itemValue).isEqualTo(command.itemValue)
+                assertThat(it.sortOrder).isEqualTo(command.sortOrder)
+                assertThat(it.description).isEqualTo(command.description)
+                assertThat(it.localizedNames).isEqualTo(command.localizedNames)
+
             }
             .verify()
     }
@@ -121,7 +121,7 @@ class DictionaryItemTest {
             .expectNoError()
             .expectEventType(DictionaryItemStatusChanged::class.java)
             .expectState {
-                assertThat(it.status, equalTo(DictionaryItemStatus.INACTIVE))
+                assertThat(it.status).isEqualTo(DictionaryItemStatus.INACTIVE)
             }
             .verify()
     }

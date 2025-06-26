@@ -3,8 +3,7 @@ package site.weixing.natty.domain.ums.role
 import me.ahoo.wow.id.GlobalIdGenerator
 import me.ahoo.wow.test.aggregate.`when`
 import me.ahoo.wow.test.aggregateVerifier
-import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.Matchers.equalTo
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import site.weixing.natty.domain.ums.role.Role
 import site.weixing.natty.domain.ums.role.RoleState
@@ -31,10 +30,11 @@ class RoleTest {
             .expectNoError()
             .expectEventType(RoleCreated::class.java)
             .expectState {
-                assertThat(it.name, equalTo(command.name))
-                assertThat(it.description, equalTo(command.description))
-                assertThat(it.permissions, equalTo(command.permissions))
-                assertThat(it.status, equalTo(RoleStatus.ACTIVE))
+                assertThat(it.name).isEqualTo(command.name)
+                assertThat(it.description).isEqualTo(command.description)
+                assertThat(it.permissions).isEqualTo(command.permissions)
+                assertThat(it.status).isEqualTo(RoleStatus.ACTIVE)
+
             }
             .verify()
     }
@@ -60,10 +60,10 @@ class RoleTest {
             .expectNoError()
             .expectEventType(RoleUpdated::class.java)
             .expectState {
-                assertThat(it.name, equalTo(command.name))
-                assertThat(it.description, equalTo(command.description))
-                assertThat(it.permissions, equalTo(command.permissions))
-                assertThat(it.status, equalTo(RoleStatus.ACTIVE))
+                assertThat(it.name).isEqualTo(command.name)
+                assertThat(it.description).isEqualTo(command.description)
+                assertThat(it.permissions).isEqualTo(command.permissions)
+                assertThat(it.status).isEqualTo(RoleStatus.ACTIVE)
             }
             .verify()
     }
@@ -111,7 +111,7 @@ class RoleTest {
             .expectNoError()
             .expectEventType(RoleDeleted::class.java)
             .expectState {
-                assertThat(it.status, equalTo(RoleStatus.DISABLED))
+                assertThat(it.status).isEqualTo(RoleStatus.DISABLED)
             }
             .verify()
     }

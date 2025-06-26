@@ -2,12 +2,8 @@ package site.weixing.natty.domain.ums.permission
 
 import me.ahoo.wow.test.aggregate.`when`
 import me.ahoo.wow.test.aggregateVerifier
-import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.Matchers.equalTo
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import site.weixing.natty.domain.ums.permission.Permission
-import site.weixing.natty.domain.ums.permission.PermissionState
-import site.weixing.natty.domain.ums.permission.PermissionStatus
 import site.weixing.natty.ums.api.permission.CreatePermission
 import site.weixing.natty.ums.api.permission.PermissionCreated
 import site.weixing.natty.ums.api.permission.PermissionType
@@ -28,11 +24,13 @@ class PermissionTest {
             .expectNoError()
             .expectEventType(PermissionCreated::class.java)
             .expectState {
-                assertThat(it.code, equalTo(command.code))
-                assertThat(it.name, equalTo(command.name))
-                assertThat(it.description, equalTo(command.description))
-                assertThat(it.type, equalTo(command.type))
-                assertThat(it.status, equalTo(PermissionStatus.ACTIVE))
+
+                assertThat(it.code).isEqualTo(command.code)
+                assertThat(it.name).isEqualTo(command.name)
+                assertThat(it.description).isEqualTo(command.description)
+                assertThat(it.type).isEqualTo(command.type)
+                assertThat(it.status).isEqualTo(PermissionStatus.ACTIVE)
+
             }
             .verify()
     }
@@ -51,11 +49,11 @@ class PermissionTest {
             .expectNoError()
             .expectEventType(PermissionCreated::class.java)
             .expectState {
-                assertThat(it.code, equalTo(command.code))
-                assertThat(it.name, equalTo(command.name))
-                assertThat(it.description, equalTo(command.description))
-                assertThat(it.type, equalTo(command.type))
-                assertThat(it.status, equalTo(PermissionStatus.ACTIVE))
+                assertThat(it.code).isEqualTo(command.code)
+                assertThat(it.name).isEqualTo(command.name)
+                assertThat(it.description).isEqualTo(command.description)
+                assertThat(it.type).isEqualTo(command.type)
+                assertThat(it.status).isEqualTo(PermissionStatus.ACTIVE)
             }
             .verify()
     }
