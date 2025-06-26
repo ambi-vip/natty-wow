@@ -32,15 +32,11 @@ class User(private val state: UserState) {
     @OnCommand
     fun onCreate(
         command: CreateUser,
-        saveUserSpec: SaveUserSpec,
+        saveUserPrepare: SaveUserPrepare,
         commandResultAccessor: CommandResultAccessor
     ): Mono<UserCreated> {
 
-        return saveUserSpec.require(command)
-            .flatMap {
-                saveUserSpec.prepare(command, state)
-            }
-//            .then(Mono.fromCallable { throw RuntimeException("xxx") })
+        return saveUserPrepare.bindPrepare(command, state)
             .then(
                 Mono.fromCallable {
                     UserCreated(
@@ -110,7 +106,7 @@ class User(private val state: UserState) {
 
 //    @OnCommand
 //    fun onUpdateIdentities(command: UpdateUserIdentities): UserIdentitiesUpdated {
-//        require(state.status == UserStatus.ACTIVE) { "用户状态不允许更新身份信息" }
+//        bindPrepare(state.status == UserStatus.ACTIVE) { "用户状态不允许更新身份信息" }
 //
 //        return UserIdentitiesUpdated(
 //            identities = command.identities

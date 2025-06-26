@@ -15,16 +15,9 @@ import site.weixing.natty.api.ums.user.UserStatus
 
 class UserTest {
 
-    class MockSaveSpec() : SaveUserSpec {
-        override fun require(command: CreateUser): Mono<CreateUser> {
+    class MockSavePrepare : SaveUserPrepare {
+        override fun bindPrepare(command: CreateUser, user: UserState): Mono<CreateUser> {
             return Mono.just(command)
-        }
-
-        override fun prepare(
-            command: CreateUser,
-            user: UserState
-        ): Mono<Void> {
-            return Mono.empty()
         }
     }
 
@@ -40,7 +33,7 @@ class UserTest {
         )
 
         aggregateVerifier<User, UserState>()
-            .inject(MockSaveSpec())
+            .inject(MockSavePrepare())
             .`when`(command)
             .expectNoError()
             .expectEventType(UserCreated::class.java)

@@ -44,22 +44,11 @@ class PasswordAuthProvider(
     }
 
     private fun validateAdminUser(username: String, password: String): Mono<CoSecPrincipal> {
-
-        return usernamePrepare.get(UsernamePrepare.USERNAME_PREFIX + username)
-            .switchIfEmpty {
-                throw RuntimeException("密码不正确")
-            }
-            .doOnNext {
-                require(passwordEncoder.matches(password, it.password)) {
-                    "密码不正确"
-                }
-            }
-            .flatMap {
-                userService.getById(it.userId)
-            }
-            .map {
-                    user ->
-
+        return usernamePrepare.get(username)
+            .filter { passwordEncoder.matches(password, it.password) }
+            .switchIfEmpty(Mono.error(RuntimeException("密码不正确")))
+            .flatMap { userService.getById(it.userId) }
+            .map { user ->
                 SimplePrincipal(
                     id = user.id,
                     attributes = mapOf(
