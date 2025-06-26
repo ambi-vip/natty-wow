@@ -1,13 +1,13 @@
 package site.weixing.natty.server.compensation.configuration
 
-import site.weixing.natty.domain.compensation.DefaultNextRetryAtCalculator
-import site.weixing.natty.domain.compensation.NextRetryAtCalculator
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.reactive.CorsWebFilter
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource
+import site.weixing.natty.domain.compensation.DefaultNextRetryAtCalculator
+import site.weixing.natty.domain.compensation.NextRetryAtCalculator
 
 @Configuration
 @EnableConfigurationProperties(CompensationProperties::class)

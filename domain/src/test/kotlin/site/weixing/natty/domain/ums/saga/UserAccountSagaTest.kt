@@ -1,8 +1,6 @@
 package site.weixing.natty.domain.ums.saga
 
-import me.ahoo.wow.test.SagaVerifier.sagaVerifier
 import org.junit.jupiter.api.Test
-import site.weixing.natty.api.ums.account.CreateAccount
 import site.weixing.natty.api.ums.user.UserCreated
 
 class UserAccountSagaTest {

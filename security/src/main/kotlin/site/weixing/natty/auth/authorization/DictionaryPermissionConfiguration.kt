@@ -1,18 +1,18 @@
-//package site.weixing.natty.auth.authorization
+// package site.weixing.natty.auth.authorization
 //
-//import me.ahoo.cosec.api.permission.AppPermission
-//import me.ahoo.cosec.permission.AppPermissionData
-//import org.slf4j.LoggerFactory
-//import org.springframework.context.annotation.Configuration
-//import org.springframework.context.annotation.Bean
+// import me.ahoo.cosec.api.permission.AppPermission
+// import me.ahoo.cosec.permission.AppPermissionData
+// import org.slf4j.LoggerFactory
+// import org.springframework.context.annotation.Configuration
+// import org.springframework.context.annotation.Bean
 //
-///**
+// /**
 // * 字典权限配置
 // *
 // * 定义并注册字典相关的权限点。
 // */
-//@Configuration
-//class DictionaryPermissionConfiguration {
+// @Configuration
+// class DictionaryPermissionConfiguration {
 //
 //    companion object {
 //        private val log = LoggerFactory.getLogger(DictionaryPermissionConfiguration::class.java)
@@ -94,4 +94,4 @@
 //
 //        log.info("Dictionary app permissions initialized.")
 //    }
-//}
+// }

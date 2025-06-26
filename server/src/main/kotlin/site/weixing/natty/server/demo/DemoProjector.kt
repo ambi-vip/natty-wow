@@ -1,8 +1,8 @@
 package site.weixing.natty.server.demo
 
 import me.ahoo.wow.spring.stereotype.ProjectionProcessorComponent
-import site.weixing.natty.api.demo.demo.DemoCreated
 import org.slf4j.LoggerFactory
+import site.weixing.natty.api.demo.demo.DemoCreated
 
 @ProjectionProcessorComponent
 class DemoProjector {

@@ -1,8 +1,5 @@
 package site.weixing.natty.domain.ums.user
 
-import io.mockk.mockk
-import me.ahoo.wow.id.GlobalIdGenerator
-import me.ahoo.wow.test.aggregate.VerifiedStage
 import me.ahoo.wow.test.aggregate.`when`
 import me.ahoo.wow.test.aggregateVerifier
 import org.assertj.core.api.Assertions.assertThat
@@ -20,7 +17,6 @@ class UserTest {
         }
     }
 
-
     @Test
     fun onCreate() {
         val command = CreateUser(
@@ -37,16 +33,12 @@ class UserTest {
             .expectNoError()
             .expectEventType(UserCreated::class.java)
             .expectState {
-
                 assertThat(it.name).isEqualTo(command.name)
                 assertThat(it.primaryEmail).isEqualTo(command.primaryEmail)
                 assertThat(it.primaryPhone).isEqualTo(command.primaryPhone)
                 assertThat(it.avatar).isEqualTo(command.avatar)
                 assertThat(it.status).isEqualTo(UserStatus.ACTIVE)
-
             }
             .verify()
     }
-
-
 }

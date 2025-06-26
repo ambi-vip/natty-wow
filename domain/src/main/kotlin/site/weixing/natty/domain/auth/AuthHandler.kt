@@ -11,13 +11,11 @@ import site.weixing.natty.api.auth.RefreshToken
  * 认证处理器
  * @author ambi
  */
-interface AuthHandler{
+interface AuthHandler {
 
     fun authenticate(command: Authenticate): Mono<AuthAuthenticated>
 
     fun refreshToken(command: RefreshToken): Mono<AuthAuthenticated>
 
     fun logout(command: Logout): Mono<AuthInvalidated>
-
 }
-

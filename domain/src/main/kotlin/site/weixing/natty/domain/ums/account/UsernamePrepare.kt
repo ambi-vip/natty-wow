@@ -13,10 +13,8 @@ class UsernamePrepare(
     UsernameIndexValue::class.java
 )
 
-
 // 用户名索引值，用于防重复
 data class UsernameIndexValue(
     val userId: String,
     val password: String
 )
-

@@ -35,7 +35,11 @@ class Followup(private val state: FollowupState) {
     fun onUpdate(command: UpdateFollowup): Mono<FollowupUpdated> {
         // 业务规则校验
         require(state.targetId != null) { "跟进记录不存在" }
-        command.followupTime?.let { require(it.isBefore(java.time.LocalDateTime.now().plusMinutes(1))) { "跟进时间不能是未来时间" } }
+        command.followupTime?.let {
+            require(
+                it.isBefore(java.time.LocalDateTime.now().plusMinutes(1))
+            ) { "跟进时间不能是未来时间" }
+        }
         // TODO: 更详细的业务规则校验，例如跟进内容的有效性，跟进方式的有效性等
 
         // 返回事件

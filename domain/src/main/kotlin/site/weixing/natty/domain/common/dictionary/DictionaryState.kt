@@ -73,4 +73,4 @@ data class DictionaryState(override val id: String) : Identifier {
         /** 删除 */
         DELETED
     }
-} 
+}

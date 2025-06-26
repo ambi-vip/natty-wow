@@ -1,10 +1,5 @@
 package site.weixing.natty.server.common
 
-import me.ahoo.wow.command.CommandGateway
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
-
-
 /**
  * 字典配置控制器
  *
@@ -14,11 +9,11 @@ import org.springframework.web.bind.annotation.RestController
  * @param dictionaryRepository 字典仓库
  * @param dictionaryItemRepository 字典项仓库
  */
-//@RestController
-//@RequestMapping("/dictionaries")
-//class DictionaryController(
+// @RestController
+// @RequestMapping("/dictionaries")
+// class DictionaryController(
 //    private val commandGateway: CommandGateway,
-//) {
+// ) {
 //
 //    /**
 //     * 查询所有字典
@@ -31,4 +26,4 @@ import org.springframework.web.bind.annotation.RestController
 //    }
 //
 //
-//}
+// }

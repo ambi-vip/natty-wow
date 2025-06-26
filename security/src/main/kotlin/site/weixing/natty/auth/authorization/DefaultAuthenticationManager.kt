@@ -3,7 +3,6 @@ package site.weixing.natty.auth.authorization
 import me.ahoo.cosec.api.authentication.Credentials
 import me.ahoo.cosec.api.token.CompositeToken
 import me.ahoo.cosec.authentication.CompositeAuthentication
-import me.ahoo.cosec.token.TokenCompositeAuthentication
 import me.ahoo.cosec.token.TokenConverter
 import reactor.core.publisher.Mono
 import site.weixing.natty.domain.auth.commands.AuthenticatedToken

@@ -4,7 +4,6 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import me.ahoo.wow.api.annotation.AggregateRoot
 import me.ahoo.wow.api.annotation.OnCommand
 import me.ahoo.wow.api.annotation.OnError
-import me.ahoo.wow.api.annotation.StaticAggregateId
 import me.ahoo.wow.api.annotation.StaticTenantId
 import reactor.core.publisher.Mono
 import site.weixing.natty.api.crm.clue.AddClueFollowUp
@@ -12,14 +11,14 @@ import site.weixing.natty.api.crm.clue.AddClueTransformRecord
 import site.weixing.natty.api.crm.clue.ClueCreated
 import site.weixing.natty.api.crm.clue.ClueDeleted
 import site.weixing.natty.api.crm.clue.ClueFollowUpAdded
-import site.weixing.natty.api.crm.clue.ClueTransformed
-import site.weixing.natty.api.crm.clue.ClueTransformRecordAdded
 import site.weixing.natty.api.crm.clue.ClueTransferred
+import site.weixing.natty.api.crm.clue.ClueTransformRecordAdded
+import site.weixing.natty.api.crm.clue.ClueTransformed
 import site.weixing.natty.api.crm.clue.ClueUpdated
 import site.weixing.natty.api.crm.clue.CreateClue
 import site.weixing.natty.api.crm.clue.DeleteClue
-import site.weixing.natty.api.crm.clue.TransformClue
 import site.weixing.natty.api.crm.clue.TransferClue
+import site.weixing.natty.api.crm.clue.TransformClue
 import site.weixing.natty.api.crm.clue.UpdateClue
 import java.util.UUID
 
@@ -189,4 +188,4 @@ class Clue(private val state: ClueState) {
         println("Error processing DeleteClue command: ${error.message}")
         return Mono.empty()
     }
-} 
+}

@@ -41,7 +41,6 @@ class AuthSession(
             }
     }
 
-
     @OnCommand
     fun onRefreshToken(
         command: RefreshToken,
@@ -65,4 +64,3 @@ class AuthSession(
 
     fun isActive(): Boolean = state.isActive && !state.isExpired()
 }
-

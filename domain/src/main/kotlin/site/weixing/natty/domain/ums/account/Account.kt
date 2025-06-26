@@ -23,9 +23,10 @@ import site.weixing.natty.api.ums.account.UpdateAccount
 class Account(private val state: AccountState) {
 
     @OnCommand
-    fun onCreate(command: CreateAccount,
-                 usernamePrepare: UsernamePrepare
-                 ): Mono<AccountCreated> {
+    fun onCreate(
+        command: CreateAccount,
+        usernamePrepare: UsernamePrepare
+    ): Mono<AccountCreated> {
         return usernamePrepare.usingPrepare(
             key = command.username,
             value = UsernameIndexValue(

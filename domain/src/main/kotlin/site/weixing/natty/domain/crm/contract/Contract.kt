@@ -87,4 +87,4 @@ class Contract(private val state: ContractState) {
         println("Error processing DeleteContract command: ${error.message}")
         return Mono.empty()
     }
-} 
+}

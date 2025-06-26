@@ -27,7 +27,6 @@ class ClueSaga(
 
     @OnEvent
     fun onClueTransformed(event: ClueTransformed, state: ClueState): CommandBuilder? {
-
         val contactInfo = state.contactInfo ?: return null
 
         // TODO 针对信息 判断是否需要新增用户
@@ -39,7 +38,7 @@ class ClueSaga(
             email = contactInfo.email ?: "",
             address = contactInfo.address ?: "",
             remark = state.remark ?: "",
-            ).commandBuilder()
+        ).commandBuilder()
     }
 
     @OnEvent
@@ -48,8 +47,6 @@ class ClueSaga(
         val source = event.body.source ?: return null
         if (!"CULD".equals(source)) return null
 
-        return null;
-
+        return null
     }
-
 }

@@ -9,9 +9,7 @@ import reactor.core.publisher.Mono
 interface AuthenticationManager {
 
     fun authenticate(credentials: CredentialsToken): Mono<out AuthenticatedToken>
-
 }
-
 
 /**
  * Desc
@@ -19,9 +17,8 @@ interface AuthenticationManager {
  */
 abstract class CredentialsToken
 
-
 abstract class AuthenticatedToken {
-    abstract val accessToken : String
+    abstract val accessToken: String
     abstract val refreshToken: String
     abstract val accountId: String
 }

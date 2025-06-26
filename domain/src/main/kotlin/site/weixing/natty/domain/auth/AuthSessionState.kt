@@ -14,13 +14,13 @@ import java.time.Instant
  */
 class AuthSessionState(override val id: String) : Identifier {
 
-    var accountId: String?= null
+    var accountId: String? = null
         private set
 
-    var accountType: String?= null
+    var accountType: String? = null
         private set
 
-    var grantType: GrantType?= null
+    var grantType: GrantType? = null
         private set
 
     var accessToken: String? = null
@@ -31,7 +31,6 @@ class AuthSessionState(override val id: String) : Identifier {
 
     var expiresAt: Instant? = null
         private set
-
 
     var isActive: Boolean = true
         private set

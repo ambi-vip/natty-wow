@@ -3,18 +3,10 @@ package site.weixing.natty.server.ums.auth
 import me.ahoo.cosec.api.authentication.Authentication
 import me.ahoo.cosec.api.principal.CoSecPrincipal
 import me.ahoo.cosec.principal.SimplePrincipal
-import me.ahoo.wow.exception.throwNotFoundIfEmpty
-import me.ahoo.wow.query.dsl.singleQuery
-import me.ahoo.wow.query.snapshot.SnapshotQueryService
-import me.ahoo.wow.query.snapshot.nestedState
-import me.ahoo.wow.query.snapshot.query
-import me.ahoo.wow.query.snapshot.toState
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.switchIfEmpty
 import site.weixing.natty.auth.PasswordCredentialsToken
-import site.weixing.natty.domain.ums.account.AccountState
-import site.weixing.natty.domain.ums.account.AccountStateProperties
 import site.weixing.natty.domain.ums.account.UsernamePrepare
 import site.weixing.natty.domain.ums.crypto.infra.PasswordEncoder
 import site.weixing.natty.server.ums.user.UserService
@@ -60,6 +52,4 @@ class PasswordAuthProvider(
                 )
             }
     }
-
 }
-

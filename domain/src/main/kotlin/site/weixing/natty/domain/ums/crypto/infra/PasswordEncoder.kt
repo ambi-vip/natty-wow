@@ -13,5 +13,4 @@ interface PasswordEncoder {
     fun upgradeEncoding(encodedPassword: String?): Boolean {
         return false
     }
-
 }

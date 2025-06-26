@@ -1,25 +1,25 @@
-//package site.weixing.natty.auth
+// package site.weixing.natty.auth
 //
-//import me.ahoo.cosec.token.TokenCompositeAuthentication
-//import me.ahoo.wow.command.CommandBus
-//import me.ahoo.wow.command.CommandGateway
-//import me.ahoo.wow.command.toCommandMessage
-//import org.springframework.web.bind.annotation.PostMapping
-//import org.springframework.web.bind.annotation.RequestBody
-//import org.springframework.web.bind.annotation.RequestMapping
-//import org.springframework.web.bind.annotation.RestController
-//import reactor.core.publisher.Mono
-//import site.weixing.natty.auth.domain.commands.Login
-//import site.weixing.natty.auth.domain.commands.RefreshToken
-//import site.weixing.natty.auth.domain.events.LoggedIn
-//import site.weixing.natty.auth.domain.events.TokenRefreshed
+// import me.ahoo.cosec.token.TokenCompositeAuthentication
+// import me.ahoo.wow.command.CommandBus
+// import me.ahoo.wow.command.CommandGateway
+// import me.ahoo.wow.command.toCommandMessage
+// import org.springframework.web.bind.annotation.PostMapping
+// import org.springframework.web.bind.annotation.RequestBody
+// import org.springframework.web.bind.annotation.RequestMapping
+// import org.springframework.web.bind.annotation.RestController
+// import reactor.core.publisher.Mono
+// import site.weixing.natty.auth.domain.commands.Login
+// import site.weixing.natty.auth.domain.commands.RefreshToken
+// import site.weixing.natty.auth.domain.events.LoggedIn
+// import site.weixing.natty.auth.domain.events.TokenRefreshed
 //
-//@RestController
-//@RequestMapping("/auth")
-//class AuthController(
+// @RestController
+// @RequestMapping("/auth")
+// class AuthController(
 //    private val tokenCompositeAuthentication: TokenCompositeAuthentication,
 //    private val authCommandBus: CommandGateway
-//) {
+// ) {
 //
 //    @PostMapping("/login")
 //    fun login(@RequestBody loginRequest: LoginRequest): Mono<LoginResponse> {
@@ -59,19 +59,19 @@
 //                }
 //            }
 //    }
-//}
+// }
 //
-//data class LoginRequest(
+// data class LoginRequest(
 //    val username: String,
 //    val password: String
-//)
+// )
 //
-//data class LoginResponse(
+// data class LoginResponse(
 //    val accessToken: String,
 //    val refreshToken: String,
 //    val expiresIn: Long
-//)
+// )
 //
-//data class RefreshTokenRequest(
+// data class RefreshTokenRequest(
 //    val refreshToken: String
-//)
+// )

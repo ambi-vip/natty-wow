@@ -31,4 +31,4 @@ class OperateLogState(override val id: String) : Identifier {
         remark = event.remark
         createTime = LocalDateTime.now()
     }
-} 
+}

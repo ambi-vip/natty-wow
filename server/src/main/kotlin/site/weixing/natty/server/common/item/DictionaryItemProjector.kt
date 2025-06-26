@@ -1,17 +1,17 @@
-//package site.weixing.natty.server.common.item
+// package site.weixing.natty.server.common.item
 //
-//import com.fasterxml.jackson.databind.ObjectMapper
-//import me.ahoo.wow.api.annotation.OnEvent
-//import me.ahoo.wow.api.annotation.WaitForSnapshot
-//import org.slf4j.LoggerFactory
-//import org.springframework.stereotype.Component
-//import site.weixing.natty.api.common.item.DictionaryItemCreated
-//import site.weixing.natty.api.common.item.DictionaryItemDeleted
-//import site.weixing.natty.api.common.item.DictionaryItemStatusChanged
-//import site.weixing.natty.api.common.item.DictionaryItemUpdated
-//import site.weixing.natty.domain.common.item.DictionaryItemState
+// import com.fasterxml.jackson.databind.ObjectMapper
+// import me.ahoo.wow.api.annotation.OnEvent
+// import me.ahoo.wow.api.annotation.WaitForSnapshot
+// import org.slf4j.LoggerFactory
+// import org.springframework.stereotype.Component
+// import site.weixing.natty.api.common.item.DictionaryItemCreated
+// import site.weixing.natty.api.common.item.DictionaryItemDeleted
+// import site.weixing.natty.api.common.item.DictionaryItemStatusChanged
+// import site.weixing.natty.api.common.item.DictionaryItemUpdated
+// import site.weixing.natty.domain.common.item.DictionaryItemState
 //
-///**
+// /**
 // * 字典项投影器
 // *
 // * 订阅字典项相关的事件，并将数据同步到`dictionary_item_read_model`表。
@@ -19,11 +19,11 @@
 // * @param dictionaryItemRepository 字典项仓库
 // * @param objectMapper JSON对象映射器
 // */
-//@Component
-//class DictionaryItemProjector(
+// @Component
+// class DictionaryItemProjector(
 //    private val dictionaryItemRepository: DictionaryItemRepository,
 //    private val objectMapper: ObjectMapper
-//) {
+// ) {
 //
 //    companion object {
 //        private val log = LoggerFactory.getLogger(DictionaryItemProjector::class.java)
@@ -117,4 +117,4 @@
 //        entity.status = state.status // 逻辑删除，状态置为DELETED
 //        dictionaryItemRepository.save(entity)
 //    }
-//}
+// }

@@ -30,14 +30,12 @@ open class CoSecConfiguration {
     @ConditionalOnBean(AuthenticationManager::class)
     open fun defaultAuthHandler(
         authenticationManager: AuthenticationManager,
-    ) : AuthHandler {
-        return DefaultAuthHandler(authenticationManager);
+    ): AuthHandler {
+        return DefaultAuthHandler(authenticationManager)
     }
-
 
     @Bean
     open fun passwordEncoder(): PasswordEncoder {
         return BCryptPasswordEncoder(8)
     }
-
 }

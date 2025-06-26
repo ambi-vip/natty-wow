@@ -51,7 +51,7 @@ class ReceivableState(override val id: String) : Identifier {
 }
 
 enum class ReceivableStatus {
-    PENDING,       // 待支付
-    PAID,          // 已支付
-    OVERDUE        // 已逾期
-} 
+    PENDING, // 待支付
+    PAID, // 已支付
+    OVERDUE // 已逾期
+}

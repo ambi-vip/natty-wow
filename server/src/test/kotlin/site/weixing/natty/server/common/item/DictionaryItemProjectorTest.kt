@@ -1,33 +1,33 @@
-//package site.weixing.natty.server.common.item
+// package site.weixing.natty.server.common.item
 //
-//import com.fasterxml.jackson.databind.ObjectMapper
-//import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-//import com.ninjasquad.springmockk.MockkBean
-//import io.mockk.Runs
-//import io.mockk.every
-//import io.mockk.just
-//import me.ahoo.wow.eventsourcing.EventStore
-//import me.ahoo.wow.eventsourcing.snapshot.SnapshotRepository
-//import org.junit.jupiter.api.BeforeEach
-//import org.junit.jupiter.api.Test
-//import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
-//import org.springframework.context.annotation.Import
-//import site.weixing.natty.api.common.item.DictionaryItemCreated
-//import site.weixing.natty.api.common.item.DictionaryItemDeleted
-//import site.weixing.natty.api.common.item.DictionaryItemStatusChanged
-//import site.weixing.natty.api.common.item.DictionaryItemUpdated
-//import site.weixing.natty.domain.common.item.DictionaryItemState
-//import site.weixing.natty.domain.common.item.DictionaryItemState.DictionaryItemStatus
-//import java.util.Optional
+// import com.fasterxml.jackson.databind.ObjectMapper
+// import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+// import com.ninjasquad.springmockk.MockkBean
+// import io.mockk.Runs
+// import io.mockk.every
+// import io.mockk.just
+// import me.ahoo.wow.eventsourcing.EventStore
+// import me.ahoo.wow.eventsourcing.snapshot.SnapshotRepository
+// import org.junit.jupiter.api.BeforeEach
+// import org.junit.jupiter.api.Test
+// import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
+// import org.springframework.context.annotation.Import
+// import site.weixing.natty.api.common.item.DictionaryItemCreated
+// import site.weixing.natty.api.common.item.DictionaryItemDeleted
+// import site.weixing.natty.api.common.item.DictionaryItemStatusChanged
+// import site.weixing.natty.api.common.item.DictionaryItemUpdated
+// import site.weixing.natty.domain.common.item.DictionaryItemState
+// import site.weixing.natty.domain.common.item.DictionaryItemState.DictionaryItemStatus
+// import java.util.Optional
 //
-///**
+// /**
 // * 字典项投影器测试
 // */
-//@DataJpaTest
-//@Import(DictionaryItemRepository::class)
-//class DictionaryItemProjectorTest(
+// @DataJpaTest
+// @Import(DictionaryItemRepository::class)
+// class DictionaryItemProjectorTest(
 //    private val dictionaryItemRepository: DictionaryItemRepository
-//) {
+// ) {
 //
 //    @MockkBean
 //    private lateinit var eventStore: EventStore
@@ -228,4 +228,4 @@
 //            assert(status == DictionaryItemStatus.DELETED)
 //        }
 //    }
-//}
+// }

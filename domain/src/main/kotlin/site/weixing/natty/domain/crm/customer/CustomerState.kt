@@ -51,6 +51,6 @@ class CustomerState(override val id: String) : Identifier {
 
 enum class CustomerStatus {
     POTENTIAL, // 潜在客户
-    DEAL,      // 成交客户
-    LOST       // 客户流失
-} 
+    DEAL, // 成交客户
+    LOST // 客户流失
+}

@@ -19,7 +19,6 @@ import site.weixing.natty.api.ums.account.UnlockAccount
 import site.weixing.natty.api.ums.account.UpdateAccount
 import site.weixing.natty.domain.TestPrepareKeyFactory
 
-
 class AccountTest {
 
     private val usernamePrepare = UsernamePrepare(TestPrepareKeyFactory.create())
@@ -40,12 +39,10 @@ class AccountTest {
             .expectNoError()
             .expectEventType(AccountCreated::class.java)
             .expectState {
-
                 assertThat(it.username).isEqualTo(command.username)
                 assertThat(it.email).isEqualTo(command.email)
                 assertThat(it.phone).isEqualTo(command.phone)
                 assertThat(it.status).isEqualTo(AccountStatus.ACTIVE)
-
             }
             .verify()
     }
@@ -71,11 +68,9 @@ class AccountTest {
             .expectNoError()
             .expectEventType(AccountUpdated::class.java)
             .expectState {
-
                 assertThat(it.username).isEqualTo(command.username)
                 assertThat(it.email).isEqualTo(command.email)
                 assertThat(it.phone).isEqualTo(command.phone)
-
             }
             .verify()
     }

@@ -4,7 +4,7 @@ package site.weixing.natty.auth.authenticate
  * Desc
  * @author ambi
  */
-//abstract class AbstractPasswordAuthentication :
+// abstract class AbstractPasswordAuthentication :
 //    Authentication<UsernamePasswordCredentials, CoSecPrincipal>,
 //    IdentityAuthentication {
 //
@@ -14,9 +14,9 @@ package site.weixing.natty.auth.authenticate
 //    override val supportCredentials: Class<UsernamePasswordCredentials>
 //        get() = UsernamePasswordCredentials::class.java
 //
-//}
+// }
 //
-//data class UsernamePasswordCredentials(
+// data class UsernamePasswordCredentials(
 //    val username: String,
 //    val password: String
-//) : Credentials, CredentialsToken()
+// ) : Credentials, CredentialsToken()

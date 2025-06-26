@@ -20,7 +20,6 @@ class DefaultSaveUserPrepare(
     private val passwordEncoder: PasswordEncoder
 ) : SaveUserPrepare {
 
-
     override fun bindPrepare(command: CreateUser, user: UserState): Mono<CreateUser> {
         val usernameIndexValue = buildIndexValue(user)
         return Mono.`when`(
@@ -37,7 +36,6 @@ class DefaultSaveUserPrepare(
             password = encodedPassword,
         )
     }
-
 
     private fun usingPrepareField(
         index: String?,
@@ -57,5 +55,4 @@ class DefaultSaveUserPrepare(
             Mono.empty()
         }
     }
-
 }

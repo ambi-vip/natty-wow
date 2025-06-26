@@ -13,5 +13,4 @@ interface IdentityAuthentication {
     val grantType: GrantType
 
     fun authenticate(authenticate: CredentialsToken): Mono<AuthenticatedToken>
-
 }

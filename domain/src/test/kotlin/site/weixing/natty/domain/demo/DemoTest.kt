@@ -23,7 +23,7 @@ class DemoTest {
             .expectNoError()
             .expectEventType(DemoCreated::class.java)
             .expectState {
-                assertThat(it.data()).isEqualTo(command.data)
+                assertThat(it.data).isEqualTo(command.data)
             }
             .verify()
     }
@@ -41,7 +41,7 @@ class DemoTest {
             .expectNoError()
             .expectEventType(DemoUpdated::class.java)
             .expectState {
-                assertThat(it.data, equalTo(command.data))
+                assertThat(it.data).isEqualTo(command.data)
             }
             .verify()
     }

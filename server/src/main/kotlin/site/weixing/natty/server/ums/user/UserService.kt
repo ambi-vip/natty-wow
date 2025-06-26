@@ -42,5 +42,4 @@ class UserService(
         }.query(queryService).toState()
             .throwNotFoundIfEmpty("不存在用户")
     }
-
 }

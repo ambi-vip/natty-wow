@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test
 import site.weixing.natty.api.common.dictionary.item.ChangeDictionaryItemStatus
 import site.weixing.natty.api.common.dictionary.item.CreateDictionaryItem
 import site.weixing.natty.api.common.dictionary.item.DictionaryItemCreated
-import site.weixing.natty.api.common.dictionary.item.DictionaryItemDeleted
 import site.weixing.natty.api.common.dictionary.item.DictionaryItemStatusChanged
 import site.weixing.natty.api.common.dictionary.item.DictionaryItemUpdated
 import site.weixing.natty.api.common.dictionary.item.UpdateDictionaryItem
@@ -89,7 +88,6 @@ class DictionaryItemTest {
                 assertThat(it.sortOrder).isEqualTo(command.sortOrder)
                 assertThat(it.description).isEqualTo(command.description)
                 assertThat(it.localizedNames).isEqualTo(command.localizedNames)
-
             }
             .verify()
     }
@@ -125,6 +123,4 @@ class DictionaryItemTest {
             }
             .verify()
     }
-
-
 } 

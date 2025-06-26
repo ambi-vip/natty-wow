@@ -5,10 +5,10 @@ import me.ahoo.wow.api.annotation.OnCommand
 import me.ahoo.wow.api.annotation.OnError
 import reactor.core.publisher.Mono
 import site.weixing.natty.api.crm.contact.ContactCreated
+import site.weixing.natty.api.crm.contact.ContactDeleted
 import site.weixing.natty.api.crm.contact.ContactUpdated
 import site.weixing.natty.api.crm.contact.CreateContact
 import site.weixing.natty.api.crm.contact.DeleteContact
-import site.weixing.natty.api.crm.contact.ContactDeleted
 import site.weixing.natty.api.crm.contact.UpdateContact
 
 @AggregateRoot

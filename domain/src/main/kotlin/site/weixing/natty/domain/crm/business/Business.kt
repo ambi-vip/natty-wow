@@ -80,4 +80,4 @@ class Business(private val state: BusinessState) {
         println("Error processing DeleteBusiness command: ${error.message}")
         return Mono.empty()
     }
-} 
+}

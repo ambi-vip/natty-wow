@@ -10,5 +10,4 @@ interface UserIdentityAuthentication : IdentityAuthentication {
 
     override val accountType: String
         get() = "USER"
-
 }

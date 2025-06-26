@@ -5,7 +5,6 @@ import me.ahoo.wow.test.aggregateVerifier
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import site.weixing.natty.api.common.dictionary.ChangeDictionaryStatus
-import site.weixing.natty.api.common.dictionary.CreateDictionary
 import site.weixing.natty.api.common.dictionary.DictionaryCreated
 import site.weixing.natty.api.common.dictionary.DictionaryStatusChanged
 import site.weixing.natty.api.common.dictionary.DictionaryUpdated
@@ -98,6 +97,4 @@ class DictionaryTest {
             }
             .verify()
     }
-
-
 } 

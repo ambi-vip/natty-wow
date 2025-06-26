@@ -9,12 +9,12 @@ import reactor.kotlin.core.publisher.toMono
 import site.weixing.natty.api.ums.user.DeleteUser
 import site.weixing.natty.api.ums.user.UpdateUser
 import site.weixing.natty.api.ums.user.UpdateUserCustomData
-//import site.weixing.natty.api.ums.user.UpdateUserIdentities
+// import site.weixing.natty.api.ums.user.UpdateUserIdentities
 import site.weixing.natty.api.ums.user.UpdateUserProfile
 import site.weixing.natty.api.ums.user.UpdateUserStatus
 import site.weixing.natty.api.ums.user.UserCustomDataUpdated
 import site.weixing.natty.api.ums.user.UserDeleted
-//import site.weixing.natty.api.ums.user.UserIdentitiesUpdated
+// import site.weixing.natty.api.ums.user.UserIdentitiesUpdated
 import site.weixing.natty.api.ums.user.UserProfileUpdated
 import site.weixing.natty.api.ums.user.UserStatus
 import site.weixing.natty.api.ums.user.UserStatusUpdated
@@ -35,7 +35,6 @@ class User(private val state: UserState) {
         saveUserPrepare: SaveUserPrepare,
         commandResultAccessor: CommandResultAccessor
     ): Mono<UserCreated> {
-
         return saveUserPrepare.bindPrepare(command, state)
             .then(
                 Mono.fromCallable {

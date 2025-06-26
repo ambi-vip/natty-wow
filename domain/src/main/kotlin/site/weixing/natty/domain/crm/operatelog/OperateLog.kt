@@ -35,4 +35,4 @@ class OperateLog(private val state: OperateLogState) {
         println("Error processing CreateOperateLog command: ${error.message}")
         return Mono.empty()
     }
-} 
+}

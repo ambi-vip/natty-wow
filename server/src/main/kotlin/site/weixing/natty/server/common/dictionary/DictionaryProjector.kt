@@ -1,24 +1,24 @@
-//package site.weixing.natty.server.dictionary.dictionary
+// package site.weixing.natty.server.dictionary.dictionary
 //
-//import me.ahoo.wow.api.annotation.OnEvent
-//import me.ahoo.wow.api.annotation.WaitForSnapshot
-//import org.slf4j.LoggerFactory
-//import org.springframework.stereotype.Component
-//import site.weixing.natty.api.dictionary.dictionary.DictionaryCreated
-//import site.weixing.natty.api.dictionary.dictionary.DictionaryDeleted
-//import site.weixing.natty.api.dictionary.dictionary.DictionaryStatusChanged
-//import site.weixing.natty.api.dictionary.dictionary.DictionaryUpdated
-//import site.weixing.natty.domain.dictionary.dictionary.DictionaryState
+// import me.ahoo.wow.api.annotation.OnEvent
+// import me.ahoo.wow.api.annotation.WaitForSnapshot
+// import org.slf4j.LoggerFactory
+// import org.springframework.stereotype.Component
+// import site.weixing.natty.api.dictionary.dictionary.DictionaryCreated
+// import site.weixing.natty.api.dictionary.dictionary.DictionaryDeleted
+// import site.weixing.natty.api.dictionary.dictionary.DictionaryStatusChanged
+// import site.weixing.natty.api.dictionary.dictionary.DictionaryUpdated
+// import site.weixing.natty.domain.dictionary.dictionary.DictionaryState
 //
-///**
+// /**
 // * 字典投影器
 // *
 // * 订阅字典相关的事件，并将数据同步到`dictionary_read_model`表。
 // */
-//@Component
-//class DictionaryProjector(
+// @Component
+// class DictionaryProjector(
 //    private val dictionaryRepository: DictionaryRepository
-//) {
+// ) {
 //
 //    companion object {
 //        private val log = LoggerFactory.getLogger(DictionaryProjector::class.java)
@@ -105,4 +105,4 @@
 //        entity.status = state.status // 逻辑删除，状态置为DELETED
 //        dictionaryRepository.save(entity)
 //    }
-//}
+// }

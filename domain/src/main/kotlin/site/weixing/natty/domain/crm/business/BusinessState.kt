@@ -48,9 +48,9 @@ class BusinessState(override val id: String) : Identifier {
 }
 
 enum class BusinessStatus {
-    PROSPECT,      // 潜在商机
-    NEGOTIATION,   // 谈判中
-    WON,           // 已赢单
-    LOST,          // 已输单
-    CANCELED       // 已取消
+    PROSPECT, // 潜在商机
+    NEGOTIATION, // 谈判中
+    WON, // 已赢单
+    LOST, // 已输单
+    CANCELED // 已取消
 } 

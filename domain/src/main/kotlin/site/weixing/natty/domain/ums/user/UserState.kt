@@ -6,7 +6,7 @@ import site.weixing.natty.api.ums.user.UserStatus
 import site.weixing.natty.api.ums.user.UserCreated
 import site.weixing.natty.api.ums.user.UserCustomDataUpdated
 import site.weixing.natty.api.ums.user.UserDeleted
-//import site.weixing.natty.api.ums.user.UserIdentitiesUpdated
+// import site.weixing.natty.api.ums.user.UserIdentitiesUpdated
 import site.weixing.natty.ums.api.user.UserPasswordChanged
 import site.weixing.natty.api.ums.user.UserProfileUpdated
 import site.weixing.natty.api.ums.user.UserStatusUpdated
@@ -61,7 +61,6 @@ class UserState(override val id: String) : Identifier {
     var lastSignInAt: Long? = null
         private set
 
-
     @OnSourcing
     fun onCreated(event: UserCreated) {
         name = event.name
@@ -99,11 +98,9 @@ class UserState(override val id: String) : Identifier {
 
 //    @OnSourcing
 //    fun onIdentitiesUpdated(event: UserIdentitiesUpdated) {
-////        identities = event.identities
-////        identities.pu
+// //        identities = event.identities
+// //        identities.pu
 //    }
-
-
 
     @OnSourcing
     fun onProfileUpdated(event: UserProfileUpdated) {

@@ -8,11 +8,11 @@ import site.weixing.natty.api.auth.TokenRefreshed
 
 @Component
 class AuthEventHandler {
-    
+
     companion object {
         private val log = LoggerFactory.getLogger(AuthEventHandler::class.java)
     }
-    
+
     @OnEvent
     fun onLoggedIn(event: AuthAuthenticated) {
         if (log.isDebugEnabled) {
@@ -30,4 +30,4 @@ class AuthEventHandler {
         // 处理令牌刷新事件
         // 例如：更新令牌记录、记录日志等
     }
-} 
+}

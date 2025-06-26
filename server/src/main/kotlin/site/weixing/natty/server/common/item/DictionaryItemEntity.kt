@@ -1,15 +1,15 @@
-//package site.weixing.natty.server.common.item
+// package site.weixing.natty.server.common.item
 //
-//import jakarta.persistence.Column
-//import jakarta.persistence.Entity
-//import jakarta.persistence.EnumType
-//import jakarta.persistence.Enumerated
-//import jakarta.persistence.Id
-//import jakarta.persistence.Index
-//import jakarta.persistence.Table
-//import site.weixing.natty.domain.common.item.DictionaryItemState.DictionaryItemStatus
+// import jakarta.persistence.Column
+// import jakarta.persistence.Entity
+// import jakarta.persistence.EnumType
+// import jakarta.persistence.Enumerated
+// import jakarta.persistence.Id
+// import jakarta.persistence.Index
+// import jakarta.persistence.Table
+// import site.weixing.natty.domain.common.item.DictionaryItemState.DictionaryItemStatus
 //
-///**
+// /**
 // * 字典项查询实体
 // *
 // * @param id 字典项ID
@@ -22,13 +22,13 @@
 // * @param status 字典项状态
 // * @param localizedNames 多语言名称
 // */
-//@Entity
-//@Table(
+// @Entity
+// @Table(
 //    name = "dictionary_item_read_model", indexes = [
 //        Index(name = "idx_dictionary_item_dictionary_id_item_code", columnList = "dictionary_id,item_code", unique = true)
 //    ]
-//)
-//data class DictionaryItemEntity(
+// )
+// data class DictionaryItemEntity(
 //    @Id
 //    val id: String,
 //
@@ -55,4 +55,4 @@
 //
 //    @Column(columnDefinition = "TEXT")
 //    var localizedNames: String? = null // 存储JSON字符串
-//)
+// )

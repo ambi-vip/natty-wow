@@ -41,7 +41,6 @@ class DefaultAuthHandler(
             }
     }
 
-
     private fun createCredentialsToken(command: Authenticate): CredentialsToken {
         // 根据不同的认证类型创建对应的凭证令牌
         return when (command.grantType) {
@@ -69,7 +68,6 @@ class DefaultAuthHandler(
         // 实现登出逻辑
         return Mono.empty()
     }
-
 }
 
 data class PasswordCredentialsToken(

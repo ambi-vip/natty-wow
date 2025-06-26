@@ -49,7 +49,6 @@ class Dictionary(private val state: DictionaryState) {
                 description = command.description
             ).toMono()
         }
-
     }
 
     /**

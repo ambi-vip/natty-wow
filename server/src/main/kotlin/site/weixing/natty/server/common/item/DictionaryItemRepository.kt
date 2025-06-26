@@ -1,13 +1,13 @@
-//package site.weixing.natty.server.common.item
+// package site.weixing.natty.server.common.item
 //
-//import org.springframework.data.jpa.repository.JpaRepository
-//import org.springframework.stereotype.Repository
+// import org.springframework.data.jpa.repository.JpaRepository
+// import org.springframework.stereotype.Repository
 //
-///**
+// /**
 // * 字典项仓库接口
 // */
-//@Repository
-//interface DictionaryItemRepository : JpaRepository<DictionaryItemEntity, String> {
+// @Repository
+// interface DictionaryItemRepository : JpaRepository<DictionaryItemEntity, String> {
 //
 //    /**
 //     * 根据所属字典ID和字典项编码查询字典项实体
@@ -25,4 +25,4 @@
 //     * @return 字典项实体列表
 //     */
 //    fun findAllByDictionaryId(dictionaryId: String): List<DictionaryItemEntity>
-//}
+// }

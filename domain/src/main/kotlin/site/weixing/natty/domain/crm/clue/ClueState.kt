@@ -4,9 +4,9 @@ import me.ahoo.wow.api.Identifier
 import me.ahoo.wow.api.annotation.OnSourcing
 import site.weixing.natty.api.crm.clue.ClueCreated
 import site.weixing.natty.api.crm.clue.ClueFollowUpAdded
-import site.weixing.natty.api.crm.clue.ClueTransformed
-import site.weixing.natty.api.crm.clue.ClueTransformRecordAdded
 import site.weixing.natty.api.crm.clue.ClueTransferred
+import site.weixing.natty.api.crm.clue.ClueTransformRecordAdded
+import site.weixing.natty.api.crm.clue.ClueTransformed
 import site.weixing.natty.api.crm.clue.ClueUpdated
 import site.weixing.natty.api.crm.clue.ContactInfo
 import java.time.LocalDateTime
@@ -97,8 +97,8 @@ class ClueState(override val id: String) : Identifier {
 }
 
 enum class ClueStatus {
-    NEW,           // 新建
-    FOLLOWING,     // 跟进中
-    QUALIFIED,     // 已转化
-    INVALID        // 无效
-} 
+    NEW, // 新建
+    FOLLOWING, // 跟进中
+    QUALIFIED, // 已转化
+    INVALID // 无效
+}

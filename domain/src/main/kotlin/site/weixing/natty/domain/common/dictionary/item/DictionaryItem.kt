@@ -4,7 +4,6 @@ import me.ahoo.wow.api.annotation.AggregateRoot
 import me.ahoo.wow.api.annotation.OnCommand
 import me.ahoo.wow.api.annotation.StaticTenantId
 import me.ahoo.wow.api.command.DefaultDeleteAggregate
-import me.ahoo.wow.api.event.DefaultAggregateDeleted
 import me.ahoo.wow.exception.throwNotFoundIfNull
 import me.ahoo.wow.query.dsl.singleQuery
 import me.ahoo.wow.query.snapshot.SnapshotQueryService
@@ -43,7 +42,7 @@ class DictionaryItem(private val state: DictionaryItemState) {
     fun onCreate(
         command: CreateDictionaryItem,
         dictQueryService: SnapshotQueryService<DictionaryState>
-        ): Mono<DictionaryItemCreated> {
+    ): Mono<DictionaryItemCreated> {
         return DictionaryPrepares.ITEM_CODE.usingPrepare(
             key = command.itemCode,
             value = state.itemCode,
@@ -51,12 +50,14 @@ class DictionaryItem(private val state: DictionaryItemState) {
             require(it) {
                 "code[${command.itemCode}] is already registered."
             }
-            dictQueryService.single(singleQuery {
-                condition {
-                    nestedState()
-                    id((command.dictionaryId))
+            dictQueryService.single(
+                singleQuery {
+                    condition {
+                        nestedState()
+                        id((command.dictionaryId))
+                    }
                 }
-            }).toState().throwNotFoundIfNull("字典不存在")
+            ).toState().throwNotFoundIfNull("字典不存在")
                 .flatMap { dictState ->
                     DictionaryItemCreated(
                         dictionaryItemId = state.id,
@@ -121,10 +122,11 @@ class DictionaryItem(private val state: DictionaryItemState) {
     @OnCommand
     fun onDelete(command: DefaultDeleteAggregate): Mono<DictionaryItemDeleted> {
         return DictionaryPrepares.ITEM_CODE.rollback(state.itemCode)
-            .map { DictionaryItemDeleted(
-                dictionaryItemId = state.id,
-                dictionaryCode = state.dictionaryCode
-            ) }
-
+            .map {
+                DictionaryItemDeleted(
+                    dictionaryItemId = state.id,
+                    dictionaryCode = state.dictionaryCode
+                )
+            }
     }
 } 

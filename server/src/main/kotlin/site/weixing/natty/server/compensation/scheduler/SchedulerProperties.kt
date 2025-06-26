@@ -1,9 +1,9 @@
 package site.weixing.natty.server.compensation.scheduler
 
 import me.ahoo.wow.api.naming.EnabledCapable
-import site.weixing.natty.server.compensation.configuration.CompensationProperties
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.bind.DefaultValue
+import site.weixing.natty.server.compensation.configuration.CompensationProperties
 import java.time.Duration
 
 @ConfigurationProperties(prefix = SchedulerProperties.PREFIX)

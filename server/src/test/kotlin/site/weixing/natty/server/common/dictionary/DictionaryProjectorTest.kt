@@ -1,39 +1,39 @@
-//package site.weixing.natty.server.common.dictionary
+// package site.weixing.natty.server.common.dictionary
 //
-//import com.ninjasquad.springmockk.MockkBean
-//import io.mockk.Runs
-//import io.mockk.every
-//import io.mockk.just
-//import me.ahoo.wow.eventsourcing.EventStore
-//import me.ahoo.wow.eventsourcing.snapshot.SnapshotRepository
-//import org.junit.jupiter.api.BeforeEach
-//import org.junit.jupiter.api.Test
-//import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
-//import org.springframework.context.annotation.Import
-//import org.springframework.test.context.ContextConfiguration
-//import site.weixing.natty.api.common.dictionary.DictionaryCreated
-//import site.weixing.natty.api.common.dictionary.DictionaryDeleted
-//import site.weixing.natty.api.common.dictionary.DictionaryStatusChanged
-//import site.weixing.natty.api.common.dictionary.DictionaryUpdated
-//import site.weixing.natty.domain.common.dictionary.DictionaryState
-//import site.weixing.natty.domain.common.dictionary.DictionaryState.DictionaryStatus
-//import java.util.Optional
+// import com.ninjasquad.springmockk.MockkBean
+// import io.mockk.Runs
+// import io.mockk.every
+// import io.mockk.just
+// import me.ahoo.wow.eventsourcing.EventStore
+// import me.ahoo.wow.eventsourcing.snapshot.SnapshotRepository
+// import org.junit.jupiter.api.BeforeEach
+// import org.junit.jupiter.api.Test
+// import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
+// import org.springframework.context.annotation.Import
+// import org.springframework.test.context.ContextConfiguration
+// import site.weixing.natty.api.common.dictionary.DictionaryCreated
+// import site.weixing.natty.api.common.dictionary.DictionaryDeleted
+// import site.weixing.natty.api.common.dictionary.DictionaryStatusChanged
+// import site.weixing.natty.api.common.dictionary.DictionaryUpdated
+// import site.weixing.natty.domain.common.dictionary.DictionaryState
+// import site.weixing.natty.domain.common.dictionary.DictionaryState.DictionaryStatus
+// import java.util.Optional
 //
-///**
+// /**
 // * 字典投影器测试
 // */
-//@DataJpaTest
-//@ContextConfiguration(
+// @DataJpaTest
+// @ContextConfiguration(
 //    classes = [
 //        DictionaryProjector::class,
 //        // Spring Data JPA 自动配置
 //        DictionaryRepository::class
 //    ]
-//)
-//@Import(DictionaryRepository::class) // 导入Repository，避免Spring Test自动扫描问题
-//class DictionaryProjectorTest(
+// )
+// @Import(DictionaryRepository::class) // 导入Repository，避免Spring Test自动扫描问题
+// class DictionaryProjectorTest(
 //    private val dictionaryRepository: DictionaryRepository
-//) {
+// ) {
 //
 //    @MockkBean
 //    private lateinit var eventStore: EventStore
@@ -191,4 +191,4 @@
 //            assert(status == DictionaryStatus.DELETED)
 //        }
 //    }
-//}
+// }

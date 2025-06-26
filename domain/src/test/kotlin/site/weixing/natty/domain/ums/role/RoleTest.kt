@@ -5,9 +5,6 @@ import me.ahoo.wow.test.aggregate.`when`
 import me.ahoo.wow.test.aggregateVerifier
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import site.weixing.natty.domain.ums.role.Role
-import site.weixing.natty.domain.ums.role.RoleState
-import site.weixing.natty.domain.ums.role.RoleStatus
 import site.weixing.natty.ums.api.role.CreateRole
 import site.weixing.natty.ums.api.role.DeleteRole
 import site.weixing.natty.ums.api.role.RoleCreated
@@ -34,7 +31,6 @@ class RoleTest {
                 assertThat(it.description).isEqualTo(command.description)
                 assertThat(it.permissions).isEqualTo(command.permissions)
                 assertThat(it.status).isEqualTo(RoleStatus.ACTIVE)
-
             }
             .verify()
     }

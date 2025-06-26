@@ -43,4 +43,4 @@ class StatisticState(override val id: String) : Identifier {
         remark = event.remark ?: remark
         updateTime = LocalDateTime.now()
     }
-} 
+}

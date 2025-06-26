@@ -95,4 +95,3 @@ data class DictionaryItemState(override val id: String) : Identifier {
         DELETED
     }
 }
-

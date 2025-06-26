@@ -24,13 +24,11 @@ class PermissionTest {
             .expectNoError()
             .expectEventType(PermissionCreated::class.java)
             .expectState {
-
                 assertThat(it.code).isEqualTo(command.code)
                 assertThat(it.name).isEqualTo(command.name)
                 assertThat(it.description).isEqualTo(command.description)
                 assertThat(it.type).isEqualTo(command.type)
                 assertThat(it.status).isEqualTo(PermissionStatus.ACTIVE)
-
             }
             .verify()
     }

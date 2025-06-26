@@ -59,9 +59,9 @@ class ContractState(override val id: String) : Identifier {
 }
 
 enum class ContractStatus {
-    DRAFT,          // 草稿
-    APPROVED,       // 已审批
-    EFFECTIVE,      // 生效中
-    TERMINATED,     // 已终止
-    EXPIRED         // 已过期
+    DRAFT, // 草稿
+    APPROVED, // 已审批
+    EFFECTIVE, // 生效中
+    TERMINATED, // 已终止
+    EXPIRED // 已过期
 } 

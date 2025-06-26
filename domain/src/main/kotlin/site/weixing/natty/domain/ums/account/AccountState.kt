@@ -10,7 +10,7 @@ import site.weixing.natty.api.ums.account.AccountUpdated
 import site.weixing.natty.api.ums.account.RoleAssigned
 
 class AccountState(override val id: String) : Identifier {
-    var userId:String? = null
+    var userId: String? = null
         private set
     var username: String? = null
         private set
