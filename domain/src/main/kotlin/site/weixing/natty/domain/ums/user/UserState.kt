@@ -6,6 +6,8 @@ import site.weixing.natty.api.ums.user.UserStatus
 import site.weixing.natty.api.ums.user.UserCreated
 import site.weixing.natty.api.ums.user.UserCustomDataUpdated
 import site.weixing.natty.api.ums.user.UserDeleted
+import site.weixing.natty.api.ums.user.UserPrimaryEmailChanged
+import site.weixing.natty.api.ums.user.UserPrimaryPhoneChanged
 // import site.weixing.natty.api.ums.user.UserIdentitiesUpdated
 import site.weixing.natty.ums.api.user.UserPasswordChanged
 import site.weixing.natty.api.ums.user.UserProfileUpdated
@@ -70,13 +72,13 @@ class UserState(override val id: String) : Identifier {
         avatar = event.avatar
         status = UserStatus.ACTIVE
         username = event.username
+        passwordEncrypted = event.passwordEncrypted
+        passwordEncryptionMethod = event.passwordEncryptionMethod
     }
 
     @OnSourcing
     fun onUpdated(event: UserUpdated) {
         event.name?.let { name = it }
-        event.primaryEmail?.let { primaryEmail = it }
-        event.primaryPhone?.let { primaryPhone = it }
         event.avatar?.let { avatar = it }
     }
 
@@ -84,6 +86,17 @@ class UserState(override val id: String) : Identifier {
     fun onDeleted(event: UserDeleted) {
         status = UserStatus.DISABLED
     }
+
+    @OnSourcing
+    fun onPrimalPhoneChanged(event: UserPrimaryPhoneChanged) {
+        primaryPhone = event.newPhone
+    }
+
+    @OnSourcing
+    fun onPrimalEmailChanged(event: UserPrimaryEmailChanged) {
+        primaryEmail = event.newEmail
+    }
+
 
     @OnSourcing
     fun onPasswordChanged(event: UserPasswordChanged) {

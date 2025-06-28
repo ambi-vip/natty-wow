@@ -6,6 +6,8 @@ import me.ahoo.wow.api.annotation.OnError
 import me.ahoo.wow.api.command.CommandResultAccessor
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toMono
+import site.weixing.natty.api.ums.user.ChangeUserPrimaryEmail
+import site.weixing.natty.api.ums.user.ChangeUserPrimaryPhone
 import site.weixing.natty.api.ums.user.DeleteUser
 import site.weixing.natty.api.ums.user.UpdateUser
 import site.weixing.natty.api.ums.user.UpdateUserCustomData
@@ -23,6 +25,10 @@ import site.weixing.natty.domain.ums.crypto.infra.PasswordEncoder
 import site.weixing.natty.ums.api.user.ChangeUserPassword
 import site.weixing.natty.api.ums.user.CreateUser
 import site.weixing.natty.api.ums.user.UserCreated
+import site.weixing.natty.api.ums.user.UserPrimaryEmailChanged
+import site.weixing.natty.api.ums.user.UserPrimaryPhoneChanged
+import site.weixing.natty.domain.ums.account.UsernameIndexValue
+import site.weixing.natty.domain.ums.account.UsernamePrepare
 import site.weixing.natty.ums.api.user.UserPasswordChanged
 
 @Suppress("unused")
@@ -36,7 +42,7 @@ class User(private val state: UserState) {
         commandResultAccessor: CommandResultAccessor
     ): Mono<UserCreated> {
         return saveUserPrepare.bindPrepare(command, state)
-            .then(
+            .flatMap { usernameIndexValue ->
                 Mono.fromCallable {
                     UserCreated(
                         name = command.name,
@@ -45,33 +51,108 @@ class User(private val state: UserState) {
                         primaryPhone = command.primaryPhone,
                         avatar = command.avatar,
                         username = command.username,
+                        passwordEncrypted = usernameIndexValue?.password,
+                        passwordEncryptionMethod = usernameIndexValue?.encryptionMethod
                     )
                 }
-            )
+            }
     }
 
-//    @OnError
-//    fun onCreateError(command: CreateUser) {
-//        println(command)
-//    }
-
     @OnCommand
-    fun onUpdate(command: UpdateUser): UserUpdated {
+    fun onUpdate(
+        command: UpdateUser
+    ): Mono<UserUpdated> {
         return UserUpdated(
             name = command.name,
-            primaryEmail = command.primaryEmail,
-            primaryPhone = command.primaryPhone,
             avatar = command.avatar
-        )
+        ).toMono()
     }
 
     @OnCommand
-    fun onDelete(command: DeleteUser): UserDeleted {
-        require(state.status != UserStatus.DISABLED) { "用户已被禁用" }
-        return UserDeleted(
-            reason = command.reason
+    fun onChangePrimalPhone(
+        command: ChangeUserPrimaryPhone,
+        usernamePrepare: UsernamePrepare,
+    ): Mono<UserPrimaryPhoneChanged> {
+        require(state.status == UserStatus.ACTIVE) { "用户状态不允许修改手机号" }
+
+        val usernameIndexValue = UsernameIndexValue(
+            userId = state.id,
+            password = state.passwordEncrypted,
+            encryptionMethod = state.passwordEncryptionMethod
         )
+
+        return if (state.primaryPhone.isNullOrBlank()) {
+            // 用户没有手机号，直接准备新手机号
+            usernamePrepare.usingPrepare(
+                key = command.newPhone,
+                value = usernameIndexValue,
+            ) { success ->
+                require(success) { "手机号${command.newPhone}已被占用" }
+                UserPrimaryPhoneChanged(
+                    oldPhone = null,
+                    newPhone = command.newPhone,
+                ).toMono()
+            }
+        } else {
+            // 用户已有手机号，使用 reprepare 替换
+            usernamePrepare.reprepare(
+                oldKey = state.primaryPhone!!,
+                oldValue = usernameIndexValue,
+                newKey = command.newPhone,
+                newValue = usernameIndexValue
+            ).map { success ->
+                require(success) { "手机号${command.newPhone}已被占用" }
+                UserPrimaryPhoneChanged(
+                    oldPhone = state.primaryPhone,
+                    newPhone = command.newPhone,
+                )
+            }
+        }
     }
+
+    @OnCommand
+    fun onChangePrimalEmail(
+        command: ChangeUserPrimaryEmail,
+        usernamePrepare: UsernamePrepare,
+    ): Mono<UserPrimaryEmailChanged> {
+        require(state.status == UserStatus.ACTIVE) { "用户状态不允许修改邮箱" }
+
+        val usernameIndexValue = UsernameIndexValue(
+            userId = state.id,
+            password = state.passwordEncrypted,
+            encryptionMethod = state.passwordEncryptionMethod
+        )
+
+        return if (state.primaryPhone.isNullOrBlank()) {
+            // 用户没有手机号，直接准备新手机号
+            usernamePrepare.usingPrepare(
+                key = command.newEmail,
+                value = usernameIndexValue,
+            ) { success ->
+                require(success) { "邮箱${command.newEmail}已被占用" }
+                UserPrimaryEmailChanged(
+                    oldEmail = null,
+                    newEmail = command.newEmail,
+                ).toMono()
+            }
+        } else {
+            // 用户已有手机号，使用 reprepare 替换
+            usernamePrepare.reprepare(
+                oldKey = state.primaryPhone!!,
+                oldValue = usernameIndexValue,
+                newKey = command.newEmail,
+                newValue = usernameIndexValue
+            ).map { success ->
+                require(success) { "邮箱${command.newEmail}已被占用" }
+                UserPrimaryEmailChanged(
+                    oldEmail = state.primaryEmail,
+                    newEmail = command.newEmail,
+                )
+            }
+        }
+    }
+
+
 
     @OnCommand
     fun onChangePassword(
@@ -132,6 +213,14 @@ class User(private val state: UserState) {
 
         return UserCustomDataUpdated(
             customData = command.customData
+        )
+    }
+
+    @OnCommand
+    fun onDelete(command: DeleteUser): UserDeleted {
+        require(state.status != UserStatus.DISABLED) { "用户已被禁用" }
+        return UserDeleted(
+            reason = command.reason
         )
     }
 

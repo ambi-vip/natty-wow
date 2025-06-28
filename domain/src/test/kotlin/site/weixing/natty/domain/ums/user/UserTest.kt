@@ -15,6 +15,7 @@ class UserTest {
 
     val saveUserPrepare = mockk<SaveUserPrepare> {
         every { bindPrepare(any(), any()) } returns Mono.empty<Void>()
+        every { rollback(any(), any()) } returns Mono.empty<Void>()
     }
 
     @Test

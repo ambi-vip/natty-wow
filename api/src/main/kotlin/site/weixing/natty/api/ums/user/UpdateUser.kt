@@ -12,18 +12,11 @@ data class UpdateUser(
     @field:Size(max = 64)
     val name: String? = null,
 
-    @field:Size(max = 128)
-    val primaryEmail: String? = null,
-
-    val primaryPhone: String? = null,
-
     @field:Size(max = 2048)
     val avatar: String? = null,
 )
 
 data class UserUpdated(
     val name: String?,
-    val primaryEmail: String?,
-    val primaryPhone: String?,
     val avatar: String?,
 ) 

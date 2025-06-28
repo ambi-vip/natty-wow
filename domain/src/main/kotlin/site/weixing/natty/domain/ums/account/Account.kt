@@ -32,6 +32,7 @@ class Account(private val state: AccountState) {
             value = UsernameIndexValue(
                 userId = state.id,
                 password = "encodedPassword",
+                encryptionMethod = "",
             ),
         ) {
             require(it) {

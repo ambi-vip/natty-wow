@@ -1,7 +1,7 @@
 @startuml Context-Mapping
 !include ../layout.puml
 
-title 领域上下文映射 - Domain Context Mapping
+title 用户账户上下文映射 - [User] [Account] Domain Context Mapping
 
 package "用户领域 (User Domain)" as UserDomain {
     [User] <<Aggregate Root>> as UserAggregateRoot

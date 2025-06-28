@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 import me.ahoo.wow.api.annotation.CommandRoute
 import me.ahoo.wow.api.annotation.CreateAggregate
+import me.ahoo.wow.api.command.validation.CommandValidator
 
 @CreateAggregate
 @CommandRoute(
@@ -28,7 +29,14 @@ data class CreateUser(
 
     @field:Size(max = 2048)
     val avatar: String? = null,
-)
+) : CommandValidator {
+    override fun validate() {
+        val values = listOfNotNull(username, primaryEmail, primaryPhone).toSet()
+        if (values.size < 3) {
+            throw UserValidationException("Username, primaryEmail and primaryPhone must be unique.")
+        }
+    }
+}
 
 data class UserCreated(
     val name: String,
@@ -37,4 +45,9 @@ data class UserCreated(
     val primaryPhone: String?,
     val avatar: String?,
     val username: String?,
+    val passwordEncrypted: String?,
+    val passwordEncryptionMethod: String?,
 )
+
+
+class UserValidationException(message: String) : IllegalArgumentException(message)
