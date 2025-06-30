@@ -26,7 +26,6 @@ dependencies {
     api("me.ahoo.cosec:cosec-spring-boot-starter")
 
     testImplementation("me.ahoo.wow:wow-test")
-    testImplementation("io.projectreactor:reactor-test")
 }
 
 tasks.jacocoTestCoverageVerification {

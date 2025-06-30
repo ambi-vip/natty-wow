@@ -35,6 +35,7 @@ application {
 
 dependencies {
     implementation(platform(project(":dependencies")))
+    testImplementation(platform(libs.junit.bom))
     ksp(platform(project(":dependencies")))
     kapt(platform(project(":dependencies")))
     ksp("me.ahoo.wow:wow-compiler")
@@ -76,9 +77,11 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     kapt("org.springframework.boot:spring-boot-configuration-processor")
+    testImplementation("me.ahoo.wow:wow-test")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 
-    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui")
     implementation("com.github.xiaoymin:knife4j-openapi3-ui:4.5.0")
 
 }

@@ -16,4 +16,4 @@ data class UpdateUserCustomData(
 data class UserCustomDataUpdated(
     val customData: Map<String, Any>,
     val updatedAt: Long = System.currentTimeMillis()
-) 
+)

@@ -43,7 +43,6 @@ class UsernamePrepare(
             }
             .switchIfEmpty(Mono.just(false))
     }
-
 }
 
 // 用户名索引值，用于防重复

@@ -10,12 +10,17 @@ import reactor.core.publisher.Mono
 import site.weixing.natty.api.ums.user.CreateUser
 import site.weixing.natty.api.ums.user.UserCreated
 import site.weixing.natty.api.ums.user.UserStatus
+import site.weixing.natty.domain.ums.account.UsernameIndexValue
 
 class UserTest {
 
     val saveUserPrepare = mockk<SaveUserPrepare> {
-        every { bindPrepare(any(), any()) } returns Mono.empty<Void>()
-        every { rollback(any(), any()) } returns Mono.empty<Void>()
+        every { bindPrepare(any(), any()) } returns Mono.just(UsernameIndexValue(
+            userId = "1",
+            password = "123456",
+            encryptionMethod = ""
+        ))
+        every { rollback(any(), any()) } returns Mono.empty()
     }
 
     @Test
@@ -27,8 +32,6 @@ class UserTest {
             avatar = "avatar.jpg",
             accountId = null
         )
-
-
 
         aggregateVerifier<User, UserState>()
             .inject(saveUserPrepare)

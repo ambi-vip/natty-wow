@@ -4,7 +4,6 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 import me.ahoo.wow.api.annotation.CommandRoute
 
-
 @CommandRoute(
     method = CommandRoute.Method.PUT,
     action = "primary-email",

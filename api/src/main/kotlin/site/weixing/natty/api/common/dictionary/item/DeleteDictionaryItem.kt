@@ -2,7 +2,6 @@ package site.weixing.natty.api.common.dictionary.item
 
 import me.ahoo.wow.api.event.AggregateDeleted
 
-
 /**
  * 字典项删除事件 (逻辑删除)
  *

@@ -1,10 +1,8 @@
 package site.weixing.natty.api.crm.operatelog
 
 import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.NotNull
 import me.ahoo.wow.api.annotation.CommandRoute
 import me.ahoo.wow.api.annotation.CreateAggregate
-import java.time.LocalDateTime
 
 @CreateAggregate
 @CommandRoute(
@@ -38,4 +36,4 @@ data class OperateLogCreated(
     val targetType: String,
     val targetId: String,
     val remark: String?
-) 
+)

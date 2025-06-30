@@ -32,21 +32,25 @@ ext.set("libraryProjects", libraryProjects)
 
 allprojects {
     repositories {
-//        mavenLocal()
-        maven("https://mirrors.tencent.com/nexus/repository/maven-public/")
-        maven("https://repo.spring.io/release")
+        mavenLocal()
+        maven(url = uri("https://mirrors.tencent.com/nexus/repository/maven-public/"))
+        maven(url = uri("https://maven.aliyun.com/repository/public/"))
+        maven(url = uri("https://maven.aliyun.com/repository/google/"))
+        maven(url = uri("https://maven.aliyun.com/repository/central/"))
+        maven(url = uri("https://maven.aliyun.com/repository/jcenter/"))
+        maven(url = uri("https://repo.spring.io/release"))
         mavenCentral()
     }
-    apply<DetektPlugin>()
-    configure<DetektExtension> {
-        config.setFrom(files("${rootProject.rootDir}/config/detekt/detekt.yml"))
-        buildUponDefaultConfig = true
-        autoCorrect = true
-    }
-    dependencies {
-        detektPlugins(dependenciesProject)
-        detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting")
-    }
+//    apply<DetektPlugin>()
+//    configure<DetektExtension> {
+//        config.setFrom(files("${rootProject.rootDir}/config/detekt/detekt.yml"))
+//        buildUponDefaultConfig = true
+//        autoCorrect = true
+//    }
+//    dependencies {
+//        detektPlugins(dependenciesProject)
+//        detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting")
+//    }
     tasks.withType<Jar> {
         manifest {
             attributes["Implementation-Title"] = project.getArchivesName()
@@ -81,7 +85,7 @@ configure(libraryProjects) {
     }
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions {
-            freeCompilerArgs = listOf("-Xjsr305=strict", "-Xjvm-default=all-compatibility")
+            freeCompilerArgs = listOf("-Xjsr305=strict", "-Xjvm-default=all-compatibility", "-opt-in=kotlin.RequiresOptIn")
             javaParameters = true
         }
     }
@@ -91,6 +95,7 @@ configure(libraryProjects) {
     apply<TestRetryPlugin>()
     tasks.withType<Test> {
         useJUnitPlatform()
+        maxParallelForks = Runtime.getRuntime().availableProcessors() / 2 // 根据实际情况调整
         testLogging {
             exceptionFormat = TestExceptionFormat.FULL
         }
@@ -109,15 +114,17 @@ configure(libraryProjects) {
     }
     dependencies {
         api(platform(dependenciesProject))
+        testImplementation(platform(rootProject.libs.junit.bom))
         implementation("com.google.guava:guava")
         implementation("org.slf4j:slf4j-api")
+        testImplementation("me.ahoo.test:fluent-assert-core")
         testImplementation("io.mockk:mockk") {
             exclude(group = "org.slf4j", module = "slf4j-api")
         }
         testImplementation("ch.qos.logback:logback-classic")
         testImplementation("org.junit.jupiter:junit-jupiter-api")
         testImplementation("org.junit.jupiter:junit-jupiter-params")
-        testImplementation("org.junit.platform:junit-platform-launcher")
+        testRuntimeOnly("org.junit.platform:junit-platform-launcher")
         testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
     }
 }

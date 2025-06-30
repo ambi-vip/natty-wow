@@ -97,7 +97,6 @@ class UserState(override val id: String) : Identifier {
         primaryEmail = event.newEmail
     }
 
-
     @OnSourcing
     fun onPasswordChanged(event: UserPasswordChanged) {
         passwordEncrypted = event.encryptedPassword

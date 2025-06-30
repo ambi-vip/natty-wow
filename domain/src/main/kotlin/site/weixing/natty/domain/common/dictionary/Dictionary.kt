@@ -98,4 +98,4 @@ class Dictionary(private val state: DictionaryState) {
         return DictionaryPrepares.CODE.rollback(state.code)
             .map { DefaultAggregateDeleted }
     }
-} 
+}

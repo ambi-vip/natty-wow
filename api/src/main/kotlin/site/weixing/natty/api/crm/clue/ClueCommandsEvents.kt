@@ -167,4 +167,4 @@ data class ClueTransformRecordAdded(
 
 data class ClueDeleted(
     val id: String
-) 
+)

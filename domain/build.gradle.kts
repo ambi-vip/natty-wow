@@ -11,7 +11,6 @@ dependencies {
     api("me.ahoo.wow:wow-compensation-core")
     ksp("me.ahoo.wow:wow-compiler")
     testImplementation("me.ahoo.wow:wow-test")
-    testImplementation("io.projectreactor:reactor-test")
 }
 
 tasks.jacocoTestCoverageVerification {

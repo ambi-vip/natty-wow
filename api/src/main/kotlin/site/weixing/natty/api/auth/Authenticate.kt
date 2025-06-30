@@ -51,7 +51,6 @@ data class AuthError(
     val errorAt: Instant
 )
 
-
 enum class GrantType {
 
     AUTHORIZATION_CODE,
@@ -59,6 +58,4 @@ enum class GrantType {
     REFRESH_TOKEN,
     PASSWORD,
     CLIENT_CREDENTIALS,
-
-
 }

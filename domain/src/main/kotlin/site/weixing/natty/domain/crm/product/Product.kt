@@ -78,4 +78,4 @@ class Product(private val state: ProductState) {
         println("Error processing DeleteProduct command: ${error.message}")
         return Mono.empty()
     }
-} 
+}

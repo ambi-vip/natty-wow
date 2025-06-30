@@ -63,4 +63,4 @@ data class ProductUpdated(
     val description: String?
 )
 
-data class ProductDeleted(val id: String) 
+data class ProductDeleted(val id: String)

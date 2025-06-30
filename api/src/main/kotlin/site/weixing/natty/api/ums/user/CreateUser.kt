@@ -31,8 +31,9 @@ data class CreateUser(
     val avatar: String? = null,
 ) : CommandValidator {
     override fun validate() {
-        val values = listOfNotNull(username, primaryEmail, primaryPhone).toSet()
-        if (values.size < 3) {
+        val listOfNotNull = listOfNotNull(username, primaryEmail, primaryPhone)
+        val values = listOfNotNull.toSet()
+        if (values.size < listOfNotNull.size) {
             throw UserValidationException("Username, primaryEmail and primaryPhone must be unique.")
         }
     }
@@ -48,6 +49,5 @@ data class UserCreated(
     val passwordEncrypted: String?,
     val passwordEncryptionMethod: String?,
 )
-
 
 class UserValidationException(message: String) : IllegalArgumentException(message)

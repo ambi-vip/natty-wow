@@ -3,7 +3,6 @@ package site.weixing.natty.api.ums.user
 import jakarta.validation.constraints.NotBlank
 import me.ahoo.wow.api.annotation.CommandRoute
 
-
 @CommandRoute(
     method = CommandRoute.Method.PUT,
     action = "primary-phone",

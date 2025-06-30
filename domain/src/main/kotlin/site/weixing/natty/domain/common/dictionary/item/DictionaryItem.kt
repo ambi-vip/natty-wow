@@ -129,4 +129,4 @@ class DictionaryItem(private val state: DictionaryItemState) {
                 )
             }
     }
-} 
+}

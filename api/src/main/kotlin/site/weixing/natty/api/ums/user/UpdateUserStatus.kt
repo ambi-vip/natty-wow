@@ -2,7 +2,6 @@ package site.weixing.natty.api.ums.user
 
 import jakarta.validation.constraints.NotNull
 import me.ahoo.wow.api.annotation.CommandRoute
-import site.weixing.natty.api.ums.user.UserStatus
 
 @CommandRoute(
     method = CommandRoute.Method.PUT,
@@ -19,4 +18,4 @@ data class UserStatusUpdated(
     val status: UserStatus,
     val reason: String?,
     val updatedAt: Long = System.currentTimeMillis()
-) 
+)

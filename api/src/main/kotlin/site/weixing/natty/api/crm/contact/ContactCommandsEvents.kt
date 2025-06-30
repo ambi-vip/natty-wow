@@ -14,16 +14,16 @@ import me.ahoo.wow.api.command.DeleteAggregate
 data class CreateContact(
     @field:NotBlank
     val name: String,
-    
+
     @field:NotBlank
     val phone: String,
-    
+
     val email: String? = null,
-    
+
     val position: String? = null,
-    
+
     val customerId: String,
-    
+
     val remark: String? = null
 )
 
@@ -35,15 +35,15 @@ data class CreateContact(
 data class UpdateContact(
     @field:NotBlank
     val id: String,
-    
+
     val name: String? = null,
-    
+
     val phone: String? = null,
-    
+
     val email: String? = null,
-    
+
     val position: String? = null,
-    
+
     val remark: String? = null
 )
 

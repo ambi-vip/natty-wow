@@ -1,10 +1,8 @@
 package site.weixing.natty.domain.ums.user
 
-import me.ahoo.wow.infra.prepare.PreparedValue.Companion.toForever
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
 import site.weixing.natty.api.ums.user.CreateUser
-import site.weixing.natty.api.ums.user.UpdateUser
 import site.weixing.natty.domain.ums.account.UsernameIndexValue
 import site.weixing.natty.domain.ums.account.UsernamePrepare
 import site.weixing.natty.domain.ums.crypto.infra.PasswordEncoder
@@ -59,8 +57,6 @@ class DefaultSaveUserPrepare(
                     .then(Mono.error(createConflictError(failedFields)))
             }
         }
-
-
     }
 
     private fun rollbackSuccessfulFields(command: CreateUser, successFields: Set<String>): Mono<Void> {
@@ -94,7 +90,6 @@ class DefaultSaveUserPrepare(
         return IllegalStateException(errorMessage)
     }
 
-
     override fun rollback(
         command: CreateUser,
         user: UserState
@@ -110,5 +105,4 @@ class DefaultSaveUserPrepare(
             encryptionMethod = "bcrypt",
         )
     }
-
 }

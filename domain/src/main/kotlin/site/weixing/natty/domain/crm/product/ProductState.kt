@@ -39,4 +39,4 @@ class ProductState(override val id: String) : Identifier {
         description = event.description ?: description
         updateTime = LocalDateTime.now()
     }
-} 
+}

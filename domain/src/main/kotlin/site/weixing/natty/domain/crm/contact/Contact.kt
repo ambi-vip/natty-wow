@@ -80,4 +80,4 @@ class Contact(private val state: ContactState) {
         println("Error processing DeleteContact command: ${error.message}")
         return Mono.empty()
     }
-} 
+}

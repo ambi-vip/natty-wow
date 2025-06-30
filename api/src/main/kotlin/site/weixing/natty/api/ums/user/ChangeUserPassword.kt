@@ -11,7 +11,7 @@ import me.ahoo.wow.api.annotation.CommandRoute
 data class ChangeUserPassword(
     @field:NotBlank
     val oldPassword: String,
-    
+
     @field:NotBlank
     val newPassword: String
 )
@@ -20,4 +20,4 @@ data class UserPasswordChanged(
     val encryptedPassword: String,
     val encryptionMethod: String,
     val changedAt: Long = System.currentTimeMillis()
-) 
+)

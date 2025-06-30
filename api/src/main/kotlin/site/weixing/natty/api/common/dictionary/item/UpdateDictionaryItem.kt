@@ -1,7 +1,7 @@
 package site.weixing.natty.api.common.dictionary.item
 
-import me.ahoo.wow.api.annotation.CommandRoute
 import jakarta.validation.constraints.NotBlank
+import me.ahoo.wow.api.annotation.CommandRoute
 
 /**
  * 更新字典项命令
@@ -28,7 +28,6 @@ data class UpdateDictionaryItem(
     val description: String? = null,
     val localizedNames: Map<String, String>? = null
 )
-
 
 /**
  * 字典项更新事件

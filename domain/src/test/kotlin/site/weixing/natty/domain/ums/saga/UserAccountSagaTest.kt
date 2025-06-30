@@ -13,7 +13,9 @@ class UserAccountSagaTest {
             accountId = null,
             primaryPhone = "10000000001",
             avatar = "",
-            username = "123"
+            username = "123",
+            passwordEncrypted = "",
+            passwordEncryptionMethod = ""
         )
 
 //        sagaVerifier<UserAccountSaga>()

@@ -1,8 +1,8 @@
 package site.weixing.natty.api.common.dictionary
 
+import jakarta.validation.constraints.NotBlank
 import me.ahoo.wow.api.annotation.CommandRoute
 import me.ahoo.wow.api.annotation.CreateAggregate
-import jakarta.validation.constraints.NotBlank
 
 /**
  * 创建字典命令

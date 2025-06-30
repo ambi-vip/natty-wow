@@ -80,4 +80,4 @@ class Statistic(private val state: StatisticState) {
         println("Error processing DeleteStatistic command: ${error.message}")
         return Mono.empty()
     }
-} 
+}

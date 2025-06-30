@@ -14,13 +14,13 @@ import me.ahoo.wow.api.command.DeleteAggregate
 data class CreateCustomer(
     @field:NotBlank
     val name: String,
-    
+
     val phone: String? = null,
-    
+
     val email: String? = null,
-    
+
     val address: String? = null,
-    
+
     val remark: String? = null,
 
     val source: String? = null,
@@ -34,15 +34,15 @@ data class CreateCustomer(
 data class UpdateCustomer(
     @field:NotBlank
     val id: String,
-    
+
     val name: String? = null,
-    
+
     val phone: String? = null,
-    
+
     val email: String? = null,
-    
+
     val address: String? = null,
-    
+
     val remark: String? = null,
 
 )
@@ -69,4 +69,4 @@ data class CustomerUpdated(
     val remark: String?
 )
 
-data class CustomerDeleted(val id: String) 
+data class CustomerDeleted(val id: String)

@@ -1,6 +1,7 @@
 蔚兴源码 http://www.weixing.site
 项目： Natty 联系人 www.ambi.vip
 Application Title:   ${application.title}
+Application Name:    ${application.name}
 Application Version: ${application.version}
 Spring Boot Version: ${spring-boot.version}
 

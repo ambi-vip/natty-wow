@@ -65,7 +65,7 @@ class DictionaryTest {
             .expectEventType(DictionaryUpdated::class.java)
             .expectState {
                 assertThat(it.name).isEqualTo(command.name)
-                assertThat(it.name).isEqualTo(command.description)
+                assertThat(it.description).isEqualTo(command.description)
             }
             .verify()
     }
@@ -97,4 +97,4 @@ class DictionaryTest {
             }
             .verify()
     }
-} 
+}

@@ -1,7 +1,7 @@
 package site.weixing.natty.api.common.dictionary.item
 
-import me.ahoo.wow.api.annotation.CommandRoute
 import jakarta.validation.constraints.NotBlank
+import me.ahoo.wow.api.annotation.CommandRoute
 
 /**
  * 改变字典项状态命令

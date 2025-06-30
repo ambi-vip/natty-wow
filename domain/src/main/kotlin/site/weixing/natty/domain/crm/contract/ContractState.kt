@@ -64,4 +64,4 @@ enum class ContractStatus {
     EFFECTIVE, // 生效中
     TERMINATED, // 已终止
     EXPIRED // 已过期
-} 
+}

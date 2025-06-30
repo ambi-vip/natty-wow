@@ -152,8 +152,6 @@ class User(private val state: UserState) {
         }
     }
 
-
-
     @OnCommand
     fun onChangePassword(
         command: ChangeUserPassword,
