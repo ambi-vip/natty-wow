@@ -1,7 +1,3 @@
-spring:
-  data:
-    mongodb:
-      uri: mongodb://natty:natty_123123@devops.weixing.site/natty
 
 
 wow:
