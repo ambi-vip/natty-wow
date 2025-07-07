@@ -43,8 +43,9 @@ class Dictionary(private val state: DictionaryState) {
     @OnCommand
     fun onCreate(
         command: CreateDictionary,
+        dictionaryPrepares: DictionaryPrepares
     ): Mono<DictionaryCreated> {
-        return DictionaryPrepares.CODE.usingPrepare(
+        return dictionaryPrepares.usingPrepare(
             key = command.code,
             value = state.code,
         ) {
@@ -102,9 +103,12 @@ class Dictionary(private val state: DictionaryState) {
      * @return 字典删除事件
      */
     @OnCommand
-    fun onDelete(command: DefaultDeleteAggregate): Mono<DictionaryDeleted> {
-        return DictionaryPrepares.CODE.rollback(state.code)
-            .map { 
+    fun onDelete(
+        command: DefaultDeleteAggregate,
+        dictionaryPrepares: DictionaryPrepares,
+    ): Mono<DictionaryDeleted> {
+        return dictionaryPrepares.rollback(state.code)
+            .map {
                 DictionaryDeleted(
                     dictionaryId = state.id,
                     code = state.code,
@@ -122,7 +126,7 @@ class Dictionary(private val state: DictionaryState) {
     @OnCommand
     fun onAddItem(command: AddDictionaryItem): DictionaryItemAdded {
         require(state.status == DictionaryStatus.ACTIVE) {
-            "字典[${command.dictionaryId}]状态不允许添加字典项。"
+            "字典[${state.code}]状态不允许添加字典项。"
         }
         require(!state.hasItem(command.itemCode)) {
             "字典项编码[${command.itemCode}]已存在。"
@@ -131,7 +135,7 @@ class Dictionary(private val state: DictionaryState) {
         val itemValue = command.itemValue?.ifEmpty { command.itemCode } ?: command.itemCode
         
         return DictionaryItemAdded(
-            dictionaryId = command.dictionaryId,
+            dictionaryId = state.id,
             itemCode = command.itemCode,
             itemName = command.itemName,
             itemValue = itemValue,

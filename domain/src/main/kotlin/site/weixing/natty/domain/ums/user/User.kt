@@ -124,7 +124,7 @@ class User(private val state: UserState) {
         )
 
         return if (state.primaryPhone.isNullOrBlank()) {
-            // 用户没有手机号，直接准备新手机号
+            // 用户没有邮箱，直接准备新邮箱
             usernamePrepare.usingPrepare(
                 key = command.newEmail,
                 value = usernameIndexValue,
@@ -136,7 +136,7 @@ class User(private val state: UserState) {
                 ).toMono()
             }
         } else {
-            // 用户已有手机号，使用 reprepare 替换
+            // 用户已有邮箱，使用 reprepare 替换
             usernamePrepare.reprepare(
                 oldKey = state.primaryPhone!!,
                 oldValue = usernameIndexValue,

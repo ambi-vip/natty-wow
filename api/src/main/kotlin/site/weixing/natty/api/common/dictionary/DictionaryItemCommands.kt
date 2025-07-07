@@ -2,6 +2,7 @@ package site.weixing.natty.api.common.dictionary
 
 import jakarta.validation.constraints.NotBlank
 import me.ahoo.wow.api.annotation.CommandRoute
+import me.ahoo.wow.api.annotation.Description
 
 /**
  * 添加字典项命令
@@ -13,8 +14,6 @@ import me.ahoo.wow.api.annotation.CommandRoute
     summary = "添加字典项"
 )
 data class AddDictionaryItem(
-    @CommandRoute.PathVariable
-    val dictionaryId: String,
     @field:NotBlank
     val itemCode: String,
     @field:NotBlank
@@ -32,8 +31,8 @@ data class AddDictionaryItem(
     appendIdPath = CommandRoute.AppendPath.ALWAYS,
     action = "items/{itemCode}",
     method = CommandRoute.Method.PUT,
-    summary = "更新字典项"
 )
+@Description("更新字典项")
 data class UpdateDictionaryItem(
     @CommandRoute.PathVariable
     val dictionaryId: String,

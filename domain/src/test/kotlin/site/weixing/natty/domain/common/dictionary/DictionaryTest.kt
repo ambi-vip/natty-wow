@@ -36,7 +36,6 @@ class DictionaryTest {
         // 初始化PrepareKey工厂
         val prepareKeyFactory = TestPrepareKeyFactory.create()
         val dictionaryPrepares = DictionaryPrepares(prepareKeyFactory)
-        dictionaryPrepares.init()
     }
 
     /**
@@ -134,7 +133,6 @@ class DictionaryTest {
             description = "这是一个测试字典"
         )
         val command = AddDictionaryItem(
-            dictionaryId = dictionaryId,
             itemCode = "ITEM001",
             itemName = "测试项目",
             itemValue = "测试值",
@@ -306,7 +304,6 @@ class DictionaryTest {
             )
         )
         val command = AddDictionaryItem(
-            dictionaryId = dictionaryId,
             itemCode = itemCode, // 重复的编码
             itemName = "新项目",
             itemValue = "新值",
@@ -339,7 +336,6 @@ class DictionaryTest {
             )
         )
         val command = AddDictionaryItem(
-            dictionaryId = dictionaryId,
             itemCode = "ITEM001",
             itemName = "测试项目",
             itemValue = "测试值"
