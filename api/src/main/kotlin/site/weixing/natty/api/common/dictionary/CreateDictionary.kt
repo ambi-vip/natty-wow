@@ -24,18 +24,3 @@ data class CreateDictionary(
     val name: String,
     val description: String? = null
 )
-
-/**
- * 字典创建事件
- *
- * @param dictionaryId 字典ID
- * @param code 字典编码
- * @param name 字典名称
- * @param description 字典描述
- */
-data class DictionaryCreated(
-    val dictionaryId: String,
-    val code: String,
-    val name: String,
-    val description: String? = null
-)

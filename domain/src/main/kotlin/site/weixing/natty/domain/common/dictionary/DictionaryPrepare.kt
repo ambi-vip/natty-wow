@@ -13,16 +13,11 @@ class DictionaryPrepares(
     @PostConstruct
     fun init() {
         CODE = prepareKeyFactory.create("com_dict_code", String::class.java)
-        ITEM_CODE = prepareKeyFactory.create("com_dict_item_code", String::class.java)
     }
 
     companion object {
         @JvmStatic
         lateinit var CODE: PrepareKey<String>
-            private set
-
-        @JvmStatic
-        lateinit var ITEM_CODE: PrepareKey<String>
             private set
     }
 }

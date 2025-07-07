@@ -38,7 +38,7 @@ allprojects {
         maven(url = uri("https://maven.aliyun.com/repository/google/"))
         maven(url = uri("https://maven.aliyun.com/repository/central/"))
         maven(url = uri("https://maven.aliyun.com/repository/jcenter/"))
-        maven(url = uri("https://repo.spring.io/release"))
+//        maven(url = uri("https://repo.spring.io/release"))
         mavenCentral()
     }
 //    apply<DetektPlugin>()

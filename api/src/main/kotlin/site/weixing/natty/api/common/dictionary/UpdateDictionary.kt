@@ -22,16 +22,3 @@ data class UpdateDictionary(
     val name: String,
     val description: String? = null
 )
-
-/**
- * 字典更新事件
- *
- * @param dictionaryId 字典ID
- * @param name 字典名称
- * @param description 字典描述
- */
-data class DictionaryUpdated(
-    val dictionaryId: String,
-    val name: String,
-    val description: String? = null
-)

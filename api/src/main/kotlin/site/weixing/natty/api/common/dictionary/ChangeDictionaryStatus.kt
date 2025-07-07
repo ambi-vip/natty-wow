@@ -1,6 +1,5 @@
 package site.weixing.natty.api.common.dictionary
 
-import jakarta.validation.constraints.NotBlank
 import me.ahoo.wow.api.annotation.CommandRoute
 
 /**
@@ -17,17 +16,5 @@ import me.ahoo.wow.api.annotation.CommandRoute
 data class ChangeDictionaryStatus(
     @CommandRoute.PathVariable
     val id: String,
-    @field:NotBlank
-    val status: String
-)
-
-/**
- * 字典状态改变事件
- *
- * @param dictionaryId 字典ID
- * @param status 字典状态
- */
-data class DictionaryStatusChanged(
-    val dictionaryId: String,
-    val status: String
+    val status: DictionaryStatus
 )

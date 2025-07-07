@@ -6,7 +6,7 @@
 // import jakarta.persistence.Enumerated
 // import jakarta.persistence.Id
 // import jakarta.persistence.Table
-// import site.weixing.natty.domain.dictionary.dictionary.DictionaryState.DictionaryStatus
+// import site.weixing.natty.domain.dictionary.dictionary.DictionaryStatus
 //
 // /**
 // * 字典查询实体

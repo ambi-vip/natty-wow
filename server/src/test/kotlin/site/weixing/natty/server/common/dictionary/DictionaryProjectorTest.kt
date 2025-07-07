@@ -16,7 +16,7 @@
 // import site.weixing.natty.api.common.dictionary.DictionaryStatusChanged
 // import site.weixing.natty.api.common.dictionary.DictionaryUpdated
 // import site.weixing.natty.domain.common.dictionary.DictionaryState
-// import site.weixing.natty.domain.common.dictionary.DictionaryState.DictionaryStatus
+// import site.weixing.natty.domain.common.dictionary.DictionaryStatus
 // import java.util.Optional
 //
 // /**
