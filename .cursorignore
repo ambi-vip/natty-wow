@@ -25,3 +25,4 @@ log*.json
 .DS_Store
 .npmrc
 .yarnrc
+style.svg
