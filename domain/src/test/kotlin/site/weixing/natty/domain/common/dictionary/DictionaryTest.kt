@@ -180,7 +180,6 @@ class DictionaryTest {
             )
         )
         val command = UpdateDictionaryItem(
-            dictionaryId = dictionaryId,
             itemCode = itemCode,
             itemName = "新项目名",
             itemValue = "新值",
@@ -226,7 +225,6 @@ class DictionaryTest {
             )
         )
         val command = ChangeDictionaryItemStatus(
-            dictionaryId = dictionaryId,
             itemCode = itemCode,
             status = DictionaryItemStatus.INACTIVE
         )
@@ -266,7 +264,6 @@ class DictionaryTest {
             )
         )
         val command = RemoveDictionaryItem(
-            dictionaryId = dictionaryId,
             itemCode = itemCode
         )
 
