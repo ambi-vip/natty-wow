@@ -1,3 +1,5 @@
+@file:Suppress("SpringJavaInjectionPointsAutowiringInspection")
+
 package site.weixing.natty.server.common.dictionary
 
 import io.swagger.v3.oas.annotations.Operation
@@ -33,7 +35,7 @@ import site.weixing.natty.domain.common.dictionary.DictionaryState
 @RestController
 @RequestMapping("/dictionary")
 @Tag(name = CommonService.SERVICE_ALIAS + ".dictionary")
-class DictionaryQueryController(
+class DictionaryController(
     private val queryService: SnapshotQueryService<DictionaryState>
 ) {
 

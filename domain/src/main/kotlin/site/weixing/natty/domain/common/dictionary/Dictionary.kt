@@ -154,7 +154,7 @@ class Dictionary(private val state: DictionaryState) {
     @OnCommand
     fun onUpdateItem(command: UpdateDictionaryItem): DictionaryItemUpdated {
         require(state.status == DictionaryStatus.ACTIVE) {
-            "字典[${command.dictionaryId}]状态不允许更新字典项。"
+            "字典[${state.code}]状态不允许更新字典项。"
         }
         
         val existingItem = state.getItem(command.itemCode)
@@ -168,7 +168,7 @@ class Dictionary(private val state: DictionaryState) {
         val itemValue = command.itemValue?.ifEmpty { command.itemCode } ?: command.itemCode
         
         return DictionaryItemUpdated(
-            dictionaryId = command.dictionaryId,
+            dictionaryId = state.id,
             itemCode = command.itemCode,
             itemName = command.itemName,
             itemValue = itemValue,
@@ -195,7 +195,7 @@ class Dictionary(private val state: DictionaryState) {
         }
         
         return DictionaryItemStatusChanged(
-            dictionaryId = command.dictionaryId,
+            dictionaryId = state.id,
             itemCode = command.itemCode,
             status = command.status
         )
@@ -214,7 +214,7 @@ class Dictionary(private val state: DictionaryState) {
         }
         
         return DictionaryItemRemoved(
-            dictionaryId = command.dictionaryId,
+            dictionaryId = state.id,
             itemCode = command.itemCode
         )
     }

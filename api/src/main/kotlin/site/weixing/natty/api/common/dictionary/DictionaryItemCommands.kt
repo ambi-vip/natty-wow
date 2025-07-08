@@ -35,8 +35,6 @@ data class AddDictionaryItem(
 @Description("更新字典项")
 data class UpdateDictionaryItem(
     @CommandRoute.PathVariable
-    val dictionaryId: String,
-    @CommandRoute.PathVariable
     val itemCode: String,
     @field:NotBlank
     val itemName: String,
@@ -57,8 +55,6 @@ data class UpdateDictionaryItem(
 )
 data class ChangeDictionaryItemStatus(
     @CommandRoute.PathVariable
-    val dictionaryId: String,
-    @CommandRoute.PathVariable
     val itemCode: String,
     val status: DictionaryItemStatus
 )
@@ -73,8 +69,6 @@ data class ChangeDictionaryItemStatus(
     summary = "移除字典项"
 )
 data class RemoveDictionaryItem(
-    @CommandRoute.PathVariable
-    val dictionaryId: String,
     @CommandRoute.PathVariable
     val itemCode: String
 ) 
