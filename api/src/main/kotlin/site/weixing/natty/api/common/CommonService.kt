@@ -4,7 +4,7 @@ import me.ahoo.wow.api.annotation.BoundedContext
 import site.weixing.natty.api.common.dictionary.CreateDictionary
 import site.weixing.natty.api.common.filestorage.folder.CreateFileFolder
 import site.weixing.natty.api.common.filestorage.file.UploadFile
-import site.weixing.natty.api.common.filestorage.storage.CreateStorageConfig
+import site.weixing.natty.api.common.filestorage.storage.*
 import site.weixing.natty.api.common.filestorage.cdn.CreateCdnConfig
 
 @BoundedContext(
