@@ -72,6 +72,13 @@ RIPER-5协议要求：
 - 阻碍因素：ThumbnailProcessor.collectList()过程中直接调用buffer.get()消费了ByteBuffer
 - 状态：成功
 
+[2025-01-14 22:47:45]
+- 已修改：LocalFileStorageService.kt, FileStorageEventHandler.kt - 更新默认存储目录
+- 更改：将baseDirectory从/tmp/natty-files改为项目根目录/storage/files
+- 原因：使用项目目录便于管理文件，避免依赖系统临时目录
+- 阻碍因素：无
+- 状态：成功
+
 # 最终审查
 智能存储路由器架构改造和相关问题修复已完成：
 

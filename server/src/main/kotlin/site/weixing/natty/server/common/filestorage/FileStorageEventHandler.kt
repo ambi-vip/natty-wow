@@ -105,14 +105,17 @@ class FileStorageEventHandler(
      * TODO: 这里应该从配置服务或存储配置聚合中获取
      */
     private fun getDefaultLocalStorageConfig(): Map<String, Any> {
+        // 获取当前项目根目录
+        val projectRoot = System.getProperty("user.dir")
+        
         // 检查是否在测试环境
         val isTestEnvironment = System.getProperty("spring.profiles.active")?.contains("test") == true ||
                                 System.getenv("SPRING_PROFILES_ACTIVE")?.contains("test") == true
         
         val baseDirectory = if (isTestEnvironment) {
-            "/tmp/natty-files-test"
+            "$projectRoot/storage/files-test"
         } else {
-            "/tmp/natty-files" // 临时目录，实际应该配置到正式的存储目录
+            "$projectRoot/storage/files"
         }
         
         return mapOf(

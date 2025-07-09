@@ -34,7 +34,7 @@ class LocalFileStorageService(
     /**
      * 获取或创建存储策略
      */
-    private fun getOrCreateStrategy(
+    fun getOrCreateStrategy(
         provider: StorageProvider,
         config: Map<String, Any>
     ): FileStorageStrategy {
@@ -42,6 +42,18 @@ class LocalFileStorageService(
         return strategyCache.computeIfAbsent(cacheKey) {
             fileStorageStrategyFactory.createStrategy(provider, config)
         }
+    }
+
+    fun defaultStrategy() : FileStorageStrategy {
+        // 获取当前项目根目录
+        val projectRoot = System.getProperty("user.dir")
+        val defaultConfig = mapOf(
+            "baseDirectory" to "$projectRoot/storage/files",
+            "maxFileSize" to (10 * 1024 * 1024L), // 10MB
+            "enableChecksumValidation" to true
+        )
+        logger.info("创建默认本地存储策略 {}", defaultConfig)
+        return getOrCreateStrategy(StorageProvider.LOCAL, defaultConfig)
     }
 
     /**
