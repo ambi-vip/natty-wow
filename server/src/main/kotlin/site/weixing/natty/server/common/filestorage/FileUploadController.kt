@@ -2,13 +2,19 @@ package site.weixing.natty.server.common.filestorage
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.core.io.buffer.DataBuffer
+import org.springframework.core.io.buffer.DataBufferUtils
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.http.codec.multipart.FilePart
 import org.springframework.http.codec.multipart.Part
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Mono
+import java.io.ByteArrayOutputStream
+import java.io.InputStream
+import java.io.PipedInputStream
+import java.io.PipedOutputStream
 import java.security.MessageDigest
+import java.util.concurrent.Executors
 
 /**
  * 文件上传REST控制器
@@ -22,6 +28,7 @@ class FileUploadController(
     
     companion object {
         private val logger = KotlinLogging.logger {}
+        private val executorService = Executors.newCachedThreadPool()
     }
     
     /**
@@ -45,51 +52,23 @@ class FileUploadController(
             
             logger.info { "接收文件上传请求: $fileName (类型: $contentType)" }
             
-            // 读取文件内容
-            part.content()
-                .map { dataBuffer ->
-                    val bytes = ByteArray(dataBuffer.readableByteCount())
-                    dataBuffer.read(bytes)
-                    bytes
-                }
-                .reduce { acc, bytes -> acc + bytes }
-                .flatMap { fileContent ->
-                    // 验证文件
-                    require(fileContent.isNotEmpty()) { "文件不能为空" }
-                    require(fileName.isNotBlank()) { "文件名不能为空" }
-                    
-                    // 计算文件校验和
-                    val checksum = calculateSHA256(fileContent)
-                    
-                    // 解析自定义元数据（简化实现）
-                    val customMetadata = parseCustomMetadata(customMetadataJson)
-                    
-                    val request = FileUploadRequest(
-                        fileName = fileName,
-                        folderId = folderId,
-                        uploaderId = uploaderId,
-                        fileSize = fileContent.size.toLong(),
-                        contentType = contentType,
-                        fileContent = fileContent,
-                        checksum = checksum,
-                        isPublic = isPublic,
-                        tags = tags ?: emptyList(),
-                        customMetadata = customMetadata,
-                        replaceIfExists = replaceIfExists
-                    )
-                    
-                    fileUploadApplicationService.uploadFile(request)
-                        .map { fileId ->
-                            val response = FileUploadResponse(
-                                fileId = fileId,
-                                fileName = fileName,
-                                fileSize = fileContent.size.toLong(),
-                                contentType = contentType,
-                                message = "文件上传成功"
-                            )
-                            ResponseEntity.ok(response)
-                        }
-                }
+            // 检查文件大小限制（来自Content-Length header）
+            val contentLength = part.headers().contentLength
+            if (contentLength > 100 * 1024 * 1024L) { // 100MB 限制
+                return@flatMap Mono.error<ResponseEntity<FileUploadResponse>>(
+                    IllegalArgumentException("文件大小超过限制（最大100MB）")
+                )
+            }
+            
+            // 对于大文件使用流式处理
+            if (contentLength > 10 * 1024 * 1024L) { // 10MB以上使用流式处理
+                processLargeFileUpload(part, fileName, contentType, folderId, uploaderId, 
+                                     isPublic, tags, replaceIfExists, customMetadataJson, contentLength)
+            } else {
+                // 小文件仍然可以使用内存处理（优化后的方式）
+                processSmallFileUpload(part, fileName, contentType, folderId, uploaderId, 
+                                     isPublic, tags, replaceIfExists, customMetadataJson)
+            }
         }
         .onErrorResume { error ->
             logger.error(error) { "文件上传失败: ${error.message}" }
@@ -129,6 +108,155 @@ class FileUploadController(
             "fileId" to fileId,
             "message" to "文件下载功能待实现"
         )))
+    }
+    
+    /**
+     * 处理大文件上传 - 使用流式处理
+     */
+    private fun processLargeFileUpload(
+        part: FilePart,
+        fileName: String,
+        contentType: String,
+        folderId: String,
+        uploaderId: String,
+        isPublic: Boolean,
+        tags: List<String>?,
+        replaceIfExists: Boolean,
+        customMetadataJson: String?,
+        fileSize: Long
+    ): Mono<ResponseEntity<FileUploadResponse>> {
+        
+        logger.info { "使用流式处理大文件: $fileName (${fileSize / 1024 / 1024}MB)" }
+        
+        return Mono.fromCallable {
+            // 创建管道流进行流式传输
+            val pipedOutputStream = PipedOutputStream()
+            val pipedInputStream = PipedInputStream(pipedOutputStream, 64 * 1024) // 64KB缓冲区
+            
+            // 异步写入数据到管道
+            executorService.submit {
+                try {
+                    DataBufferUtils.write(part.content(), pipedOutputStream)
+                        .doFinally { pipedOutputStream.close() }
+                        .subscribe(
+                            { },
+                            { error -> 
+                                logger.error(error) { "流式写入失败: $fileName" }
+                                pipedOutputStream.close()
+                            },
+                            { pipedOutputStream.close() }
+                        )
+                } catch (e: Exception) {
+                    logger.error(e) { "管道写入异常: $fileName" }
+                    try { pipedOutputStream.close() } catch (ignore: Exception) {}
+                }
+            }
+            
+            // 对于流式处理，我们使用声明的文件大小，校验和将由管道处理
+            val request = FileUploadRequest(
+                fileName = fileName,
+                folderId = folderId,
+                uploaderId = uploaderId,
+                fileSize = fileSize,
+                contentType = contentType,
+                fileContent = ByteArray(0), // 流式处理时不使用byte数组
+                checksum = null, // 校验和将由流式处理管道计算
+                isPublic = isPublic,
+                tags = tags ?: emptyList(),
+                customMetadata = parseCustomMetadata(customMetadataJson),
+                replaceIfExists = replaceIfExists,
+                inputStream = pipedInputStream // 添加输入流
+            )
+            
+            request
+        }
+        .flatMap { request ->
+            fileUploadApplicationService.uploadFileStream(request)
+                .map { fileId ->
+                    val response = FileUploadResponse(
+                        fileId = fileId,
+                        fileName = fileName,
+                        fileSize = fileSize,
+                        contentType = contentType,
+                        message = "大文件上传成功"
+                    )
+                    ResponseEntity.ok(response)
+                }
+        }
+    }
+    
+    /**
+     * 处理小文件上传 - 优化的内存处理
+     */
+    private fun processSmallFileUpload(
+        part: FilePart,
+        fileName: String,
+        contentType: String,
+        folderId: String,
+        uploaderId: String,
+        isPublic: Boolean,
+        tags: List<String>?,
+        replaceIfExists: Boolean,
+        customMetadataJson: String?
+    ): Mono<ResponseEntity<FileUploadResponse>> {
+        
+        return part.content()
+            .collectList() // 收集所有DataBuffer
+            .map { dataBuffers ->
+                // 计算总大小
+                val totalSize = dataBuffers.sumOf { it.readableByteCount() }
+                logger.debug { "处理小文件: $fileName (${totalSize}bytes)" }
+                
+                // 使用ByteArrayOutputStream避免重复拷贝
+                val outputStream = ByteArrayOutputStream(totalSize)
+                
+                try {
+                    dataBuffers.forEach { dataBuffer ->
+                        val bytes = ByteArray(dataBuffer.readableByteCount())
+                        dataBuffer.read(bytes)
+                        outputStream.write(bytes)
+                        DataBufferUtils.release(dataBuffer) // 释放DataBuffer
+                    }
+                    
+                    outputStream.toByteArray()
+                } finally {
+                    outputStream.close()
+                }
+            }
+            .flatMap { fileContent ->
+                // 验证文件
+                require(fileContent.isNotEmpty()) { "文件不能为空" }
+                require(fileName.isNotBlank()) { "文件名不能为空" }
+                
+                // 计算文件校验和
+                val checksum = calculateSHA256(fileContent)
+                
+                val request = FileUploadRequest(
+                    fileName = fileName,
+                    folderId = folderId,
+                    uploaderId = uploaderId,
+                    fileSize = fileContent.size.toLong(),
+                    contentType = contentType,
+                    fileContent = fileContent,
+                    checksum = checksum,
+                    isPublic = isPublic,
+                    tags = tags ?: emptyList(),
+                    customMetadata = parseCustomMetadata(customMetadataJson),
+                    replaceIfExists = replaceIfExists
+                )
+                
+                fileUploadApplicationService.uploadFile(request)
+                    .map { fileId ->
+                        val response = FileUploadResponse(
+                            fileId = fileId,
+                            fileName = fileName,
+                            fileSize = fileContent.size.toLong(),
+                            contentType = contentType,
+                            message = "文件上传成功"
+                        )
+                        ResponseEntity.ok(response)
+                    }
+            }
     }
     
     /**

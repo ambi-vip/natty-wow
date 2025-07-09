@@ -49,7 +49,7 @@ class LocalFileStorageService(
         val projectRoot = System.getProperty("user.dir")
         val defaultConfig = mapOf(
             "baseDirectory" to "$projectRoot/storage/files",
-            "maxFileSize" to (10 * 1024 * 1024L), // 10MB
+            "maxFileSize" to (100 * 1024 * 1024L), // 100MB
             "enableChecksumValidation" to true
         )
         logger.info("创建默认本地存储策略 {}", defaultConfig)
