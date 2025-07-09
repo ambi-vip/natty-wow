@@ -39,25 +39,42 @@ class FileUploadPipeline(
         
         return createProcessorChain(context)
             .flatMap { activeProcessors ->
+                logger.info("激活的处理器数量: ${activeProcessors.size}, 处理器: ${activeProcessors.map { it.name }}")
+                
                 // 初始化所有处理器
                 initializeProcessors(activeProcessors, context)
                     .then(
                         // 创建输入字节流
                         createInputByteStream(inputStream, context)
                             .let { inputStream ->
-                                // 依次通过所有处理器
-                                activeProcessors.fold(inputStream) { stream, processor ->
-                                    processWithProcessor(stream, processor, context)
+                                // 如果没有激活的处理器，直接处理输入流
+                                if (activeProcessors.isEmpty()) {
+                                    logger.info("没有激活的处理器，直接处理输入流")
+                                    inputStream
+                                } else {
+                                    // 依次通过所有处理器
+                                    activeProcessors.fold(inputStream) { stream, processor ->
+                                        processWithProcessor(stream, processor, context)
+                                    }
                                 }
                             }
                             // 收集处理结果
                             .collectList()
                             .map { buffers ->
+                                logger.info("收集到 ${buffers.size} 个缓冲区")
+                                // 在ByteBuffer被消费之前计算总大小
+                                val totalBytes = buffers.sumOf { buffer ->
+                                    // 使用duplicate()避免影响原始ByteBuffer的position
+                                    buffer.duplicate().remaining().toLong()
+                                }
+                                logger.info("计算总字节数: $totalBytes")
+                                
                                 PipelineResult(
                                     processedData = buffers,
                                     context = context,
                                     statistics = collectStatistics(activeProcessors),
-                                    success = true
+                                    success = true,
+                                    _totalBytes = totalBytes
                                 )
                             }
                     )
@@ -69,7 +86,7 @@ class FileUploadPipeline(
             }
             .timeout(Duration.ofMillis(context.processingOptions.maxProcessingTime))
             .doOnSuccess { result ->
-                logger.info("文件流式处理完成: ${context.fileName} (耗时: ${context.getProcessingDuration()}ms)")
+                logger.info("文件流式处理完成: ${context.fileName} (耗时: ${context.getProcessingDuration()}ms), 总字节数: ${result.getTotalBytes()}")
             }
             .doOnError { error ->
                 logger.error("文件流式处理失败: ${context.fileName}", error)
@@ -80,7 +97,8 @@ class FileUploadPipeline(
                     context = context,
                     statistics = emptyMap(),
                     success = false,
-                    error = "处理失败"
+                    error = "处理失败",
+                    _totalBytes = 0L
                 )
             )
     }
@@ -215,15 +233,22 @@ data class PipelineResult(
     val statistics: Map<String, ProcessorStatistics>,
     val success: Boolean,
     val error: String? = null,
-    val processingTime: Long = System.currentTimeMillis()
+    val processingTime: Long = System.currentTimeMillis(),
+    private val _totalBytes: Long? = null
 ) {
+    
+    // 缓存的总字节数，避免重复计算和ByteBuffer状态问题
+    private val cachedTotalBytes: Long by lazy {
+        _totalBytes ?: processedData.sumOf { buffer ->
+            // 使用duplicate()避免影响原始ByteBuffer的position
+            buffer.duplicate().remaining().toLong()
+        }
+    }
     
     /**
      * 获取处理后的总字节数
      */
-    fun getTotalBytes(): Long {
-        return processedData.sumOf { it.remaining().toLong() }
-    }
+    fun getTotalBytes(): Long = cachedTotalBytes
     
     /**
      * 获取处理时间
@@ -241,8 +266,10 @@ data class PipelineResult(
         var offset = 0
         
         processedData.forEach { buffer ->
-            val remaining = buffer.remaining()
-            buffer.get(result, offset, remaining)
+            // 使用duplicate()避免修改原始ByteBuffer的position
+            val duplicateBuffer = buffer.duplicate()
+            val remaining = duplicateBuffer.remaining()
+            duplicateBuffer.get(result, offset, remaining)
             offset += remaining
         }
         

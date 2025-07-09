@@ -51,14 +51,16 @@ class ThumbnailProcessor(
         return input
             .collectList() // 收集所有数据进行缩略图生成
             .flatMapMany { buffers ->
-                // 合并所有buffer
+                // 合并所有buffer，使用duplicate()避免修改原始buffer
                 val totalSize = buffers.sumOf { it.remaining() }
                 val inputBytes = ByteArray(totalSize)
                 var offset = 0
                 
                 buffers.forEach { buffer ->
-                    val remaining = buffer.remaining()
-                    buffer.get(inputBytes, offset, remaining)
+                    // 使用duplicate()创建副本，避免修改原始ByteBuffer的position
+                    val duplicate = buffer.duplicate()
+                    val remaining = duplicate.remaining()
+                    duplicate.get(inputBytes, offset, remaining)
                     offset += remaining
                 }
                 

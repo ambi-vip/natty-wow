@@ -1,5 +1,7 @@
 package site.weixing.natty.api.common.filestorage.storage
 
+import me.ahoo.wow.api.event.AggregateDeleted
+
 /**
  * 存储配置创建事件
  */
@@ -37,7 +39,7 @@ data class StorageProviderSwitched(
 data class StorageConfigDeleted(
     val name: String,
     val provider: StorageProvider
-)
+) : AggregateDeleted
 
 /**
  * 默认存储配置变更事件
