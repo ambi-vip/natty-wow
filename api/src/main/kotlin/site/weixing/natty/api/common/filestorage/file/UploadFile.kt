@@ -76,4 +76,20 @@ data class UploadFile(
         result = 31 * result + replaceIfExists.hashCode()
         return result
     }
+    
+    override fun toString(): String {
+        return "UploadFile(" +
+                "fileName='$fileName', " +
+                "folderId='$folderId', " +
+                "uploaderId='$uploaderId', " +
+                "fileSize=$fileSize, " +
+                "contentType='$contentType', " +
+                "fileContent=[ByteArray(size=${fileContent.size})], " +
+                "checksum=$checksum, " +
+                "isPublic=$isPublic, " +
+                "tags=$tags, " +
+                "customMetadata=$customMetadata, " +
+                "replaceIfExists=$replaceIfExists" +
+                ")"
+    }
 } 

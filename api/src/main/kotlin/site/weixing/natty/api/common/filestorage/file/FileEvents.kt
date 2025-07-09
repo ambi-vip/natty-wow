@@ -10,13 +10,13 @@ data class FileUploaded(
     val fileSize: Long,
     val contentType: String,
     val storagePath: String,
-    val checksum: String?,
+    val actualStoragePath: String, // 实际物理存储路径
+    val checksum: String,
     val isPublic: Boolean,
     val tags: List<String>,
     val customMetadata: Map<String, String>,
-    // 临时解决方案：在事件中包含文件内容引用ID
-    // 在生产环境中，应该使用临时存储服务
-    val tempFileId: String
+    val storageProvider: String, // 使用的存储提供商
+    val uploadTimestamp: Long // 上传时间戳
 )
 
 /**

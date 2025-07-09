@@ -6,16 +6,14 @@ import me.ahoo.wow.command.toCommandMessage
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import site.weixing.natty.api.common.filestorage.file.UploadFile
-import site.weixing.natty.domain.common.filestorage.service.TempFileStorageService
 import java.util.UUID
 
 /**
  * 文件上传应用服务
- * 协调文件上传的完整流程：临时存储 -> 领域处理 -> 物理存储
+ * 协调文件上传的完整流程：权限验证 -> 领域处理（直接存储）
  */
 @Service
 class FileUploadApplicationService(
-    private val tempFileStorageService: TempFileStorageService,
     private val commandGateway: CommandGateway
 ) {
     
@@ -29,38 +27,26 @@ class FileUploadApplicationService(
      * @return 文件ID
      */
     fun uploadFile(request: FileUploadRequest): Mono<String> {
-        logger.info { "开始处理文件上传: ${request.fileName}" }
+        logger.info { "开始处理文件上传: ${request.fileName} (大小: ${request.fileSize} bytes)" }
         
         return Mono.fromCallable {
-            // 1. 将文件内容存储到临时存储
-            val tempFileId = tempFileStorageService.storeTempFile(
-                fileContent = request.fileContent,
-                fileName = request.fileName,
-                contentType = request.contentType
-            )
+            // 基本验证
+            require(request.fileName.isNotBlank()) { "文件名不能为空" }
+            require(request.fileSize > 0) { "文件大小必须大于0" }
+            require(request.fileContent.size.toLong() == request.fileSize) { "文件内容大小与声明不匹配" }
             
-            logger.debug { "文件内容已存储到临时存储: $tempFileId for ${request.fileName}" }
-            
-            // 2. 将临时文件ID存储到全局映射中，供事件处理器使用
-            FileContentRegistry.storeTempFileContent(
-                tempFileId = tempFileId,
-                content = request.fileContent,
-                fileName = request.fileName
-            )
-            
-            tempFileId
+            // 生成文件ID
+            UUID.randomUUID().toString()
         }
-        .flatMap { tempFileId ->
-            // 3. 生成文件ID并发送命令到聚合根
-            val fileId = UUID.randomUUID().toString()
-            
+        .flatMap { fileId ->
+            // 创建上传命令并发送到聚合根
             val uploadCommand = UploadFile(
                 fileName = request.fileName,
                 folderId = request.folderId,
                 uploaderId = request.uploaderId,
                 fileSize = request.fileSize,
                 contentType = request.contentType,
-                fileContent = request.fileContent, // 仍然需要在命令中包含，用于校验
+                fileContent = request.fileContent,
                 checksum = request.checksum,
                 isPublic = request.isPublic,
                 tags = request.tags,
@@ -68,8 +54,9 @@ class FileUploadApplicationService(
                 replaceIfExists = request.replaceIfExists
             )
 
-            commandGateway.send(uploadCommand.toCommandMessage(aggregateId = fileId))
-                .then(Mono.fromCallable { fileId })
+            // 发送命令到File聚合根，聚合根将直接处理存储
+            commandGateway.sendAndWaitForSnapshot(uploadCommand.toCommandMessage(aggregateId = fileId))
+                .then(Mono.just(fileId))
         }
         .doOnSuccess { fileId ->
             logger.info { "文件上传命令发送成功: ${request.fileName} -> $fileId" }

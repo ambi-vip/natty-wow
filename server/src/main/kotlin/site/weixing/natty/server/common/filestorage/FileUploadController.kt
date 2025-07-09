@@ -1,10 +1,12 @@
 package site.weixing.natty.server.common.filestorage
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.http.codec.multipart.FilePart
+import org.springframework.http.codec.multipart.Part
 import org.springframework.web.bind.annotation.*
-import org.springframework.web.multipart.MultipartFile
 import reactor.core.publisher.Mono
 import java.security.MessageDigest
 
@@ -28,7 +30,7 @@ class FileUploadController(
      */
     @PostMapping("/upload", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun uploadFile(
-        @RequestParam("file") file: MultipartFile,
+        @RequestPart("file") file: Mono<FilePart>,
         @RequestParam("folderId") folderId: String,
         @RequestParam("uploaderId") uploaderId: String,
         @RequestParam("isPublic", defaultValue = "false") isPublic: Boolean,
@@ -37,58 +39,65 @@ class FileUploadController(
         @RequestParam("customMetadata", required = false) customMetadataJson: String?
     ): Mono<ResponseEntity<FileUploadResponse>> {
         
-        logger.info { "接收文件上传请求: ${file.originalFilename} (大小: ${file.size} 字节)" }
-        
-        return Mono.fromCallable {
-            // 验证文件
-            require(!file.isEmpty) { "文件不能为空" }
-            require(file.originalFilename?.isNotBlank() == true) { "文件名不能为空" }
-            require(file.size > 0) { "文件大小必须大于0" }
+        return file.flatMap { part ->
+            val fileName = part.filename()
+            val contentType = part.headers().contentType?.toString() ?: "application/octet-stream"
             
-            val fileName = file.originalFilename!!
-            val fileContent = file.bytes
-            val contentType = file.contentType ?: "application/octet-stream"
+            logger.info { "接收文件上传请求: $fileName (类型: $contentType)" }
             
-            // 计算文件校验和
-            val checksum = calculateSHA256(fileContent)
-            
-            // 解析自定义元数据（简化实现）
-            val customMetadata = parseCustomMetadata(customMetadataJson)
-            
-            FileUploadRequest(
-                fileName = fileName,
-                folderId = folderId,
-                uploaderId = uploaderId,
-                fileSize = file.size,
-                contentType = contentType,
-                fileContent = fileContent,
-                checksum = checksum,
-                isPublic = isPublic,
-                tags = tags ?: emptyList(),
-                customMetadata = customMetadata,
-                replaceIfExists = replaceIfExists
-            )
-        }
-        .flatMap { request ->
-            fileUploadApplicationService.uploadFile(request)
-        }
-        .map { fileId ->
-            val response = FileUploadResponse(
-                fileId = fileId,
-                fileName = file.originalFilename!!,
-                fileSize = file.size,
-                contentType = file.contentType ?: "application/octet-stream",
-                message = "文件上传成功"
-            )
-            ResponseEntity.ok(response)
+            // 读取文件内容
+            part.content()
+                .map { dataBuffer ->
+                    val bytes = ByteArray(dataBuffer.readableByteCount())
+                    dataBuffer.read(bytes)
+                    bytes
+                }
+                .reduce { acc, bytes -> acc + bytes }
+                .flatMap { fileContent ->
+                    // 验证文件
+                    require(fileContent.isNotEmpty()) { "文件不能为空" }
+                    require(fileName.isNotBlank()) { "文件名不能为空" }
+                    
+                    // 计算文件校验和
+                    val checksum = calculateSHA256(fileContent)
+                    
+                    // 解析自定义元数据（简化实现）
+                    val customMetadata = parseCustomMetadata(customMetadataJson)
+                    
+                    val request = FileUploadRequest(
+                        fileName = fileName,
+                        folderId = folderId,
+                        uploaderId = uploaderId,
+                        fileSize = fileContent.size.toLong(),
+                        contentType = contentType,
+                        fileContent = fileContent,
+                        checksum = checksum,
+                        isPublic = isPublic,
+                        tags = tags ?: emptyList(),
+                        customMetadata = customMetadata,
+                        replaceIfExists = replaceIfExists
+                    )
+                    
+                    fileUploadApplicationService.uploadFile(request)
+                        .map { fileId ->
+                            val response = FileUploadResponse(
+                                fileId = fileId,
+                                fileName = fileName,
+                                fileSize = fileContent.size.toLong(),
+                                contentType = contentType,
+                                message = "文件上传成功"
+                            )
+                            ResponseEntity.ok(response)
+                        }
+                }
         }
         .onErrorResume { error ->
-            logger.error(error) { "文件上传失败: ${file.originalFilename}" }
+            logger.error(error) { "文件上传失败: ${error.message}" }
             val errorResponse = FileUploadResponse(
                 fileId = "",
-                fileName = file.originalFilename ?: "unknown",
-                fileSize = file.size,
-                contentType = file.contentType ?: "application/octet-stream",
+                fileName = "unknown",
+                fileSize = 0L,
+                contentType = "application/octet-stream",
                 message = "文件上传失败: ${error.message}",
                 error = true
             )

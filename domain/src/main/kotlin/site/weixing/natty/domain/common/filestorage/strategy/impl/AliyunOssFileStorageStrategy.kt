@@ -27,7 +27,8 @@ class AliyunOssFileStorageStrategy(
         filePath: String,
         inputStream: InputStream,
         contentType: String,
-        fileSize: Long
+        fileSize: Long,
+        metadata: Map<String, String>
     ): Mono<StorageInfo> {
         return Mono.error(StorageProviderUnavailableException(
             provider = "ALIYUN_OSS",
@@ -128,5 +129,10 @@ class AliyunOssFileStorageStrategy(
             provider = "ALIYUN_OSS",
             reason = "阿里云OSS存储策略尚未实现"
         ))
+    }
+
+    override fun isAvailable(): Mono<Boolean> {
+        // 阿里云OSS策略尚未实现，标记为不可用
+        return Mono.just(false)
     }
 } 

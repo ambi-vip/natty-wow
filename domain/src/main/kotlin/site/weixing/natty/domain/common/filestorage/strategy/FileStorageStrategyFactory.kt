@@ -6,17 +6,18 @@ import site.weixing.natty.domain.common.filestorage.strategy.impl.S3FileStorageS
 import site.weixing.natty.domain.common.filestorage.strategy.impl.AliyunOssFileStorageStrategy
 import site.weixing.natty.domain.common.filestorage.exception.StorageConfigurationException
 import org.slf4j.LoggerFactory
-import site.weixing.natty.api.common.filestorage.config.AliyunOssStorageParams
-import site.weixing.natty.api.common.filestorage.config.LocalStorageParams
-import site.weixing.natty.api.common.filestorage.config.S3StorageParams
+import org.springframework.stereotype.Service
 
 /**
  * 文件存储策略工厂
  * 根据存储提供商和配置参数创建对应的存储策略实例
  */
-object FileStorageStrategyFactory {
+@Service
+class FileStorageStrategyFactory {
 
-    private val logger = LoggerFactory.getLogger(FileStorageStrategyFactory::class.java)
+    companion object {
+        private val logger = LoggerFactory.getLogger(FileStorageStrategyFactory::class.java)
+    }
 
     /**
      * 创建存储策略实例
@@ -106,44 +107,7 @@ object FileStorageStrategyFactory {
         }
     }
 
-    /**
-     * 从LocalStorageParams创建本地存储策略
-     */
-    fun createLocalStrategy(params: LocalStorageParams): LocalFileStorageStrategy {
-        return LocalFileStorageStrategy(
-            baseDirectory = params.basePath,
-            maxFileSize = params.maxFileSize,
-            allowedContentTypes = params.allowedExtensions,
-            enableChecksumValidation = params.enableVersioning,
-            urlPrefix = "file://"
-        )
-    }
 
-    /**
-     * 从S3StorageParams创建S3存储策略
-     */
-    fun createS3Strategy(params: S3StorageParams): S3FileStorageStrategy {
-        return S3FileStorageStrategy(
-            accessKeyId = params.accessKeyId,
-            secretAccessKey = params.secretAccessKey,
-            region = params.region,
-            bucketName = params.bucketName,
-            endpointUrl = params.endpoint
-        )
-    }
-
-    /**
-     * 从AliyunOssStorageParams创建阿里云OSS存储策略
-     */
-    fun createAliyunOssStrategy(params: AliyunOssStorageParams): AliyunOssFileStorageStrategy {
-        return AliyunOssFileStorageStrategy(
-            accessKeyId = params.accessKeyId,
-            accessKeySecret = params.accessKeySecret,
-            endpoint = params.endpoint,
-            bucketName = params.bucketName,
-            region = ""
-        )
-    }
 
     /**
      * 验证存储配置参数的完整性

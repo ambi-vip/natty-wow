@@ -20,7 +20,9 @@ import java.util.concurrent.ConcurrentHashMap
  * 提供高级的文件存储操作和管理功能
  */
 @Service
-class LocalFileStorageService {
+class LocalFileStorageService(
+    private val fileStorageStrategyFactory: FileStorageStrategyFactory
+) {
 
     companion object {
         private val logger = LoggerFactory.getLogger(LocalFileStorageService::class.java)
@@ -38,7 +40,7 @@ class LocalFileStorageService {
     ): FileStorageStrategy {
         val cacheKey = "${provider.name}_${config.hashCode()}"
         return strategyCache.computeIfAbsent(cacheKey) {
-            FileStorageStrategyFactory.createStrategy(provider, config)
+            fileStorageStrategyFactory.createStrategy(provider, config)
         }
     }
 

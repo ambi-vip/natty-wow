@@ -8,8 +8,10 @@ import me.ahoo.wow.models.tree.command.Deleted
 
 @CommandRoute(
     method = CommandRoute.Method.DELETE,
-    action = "",
-    summary = "删除文件夹"
+    appendIdPath = CommandRoute.AppendPath.ALWAYS,
+    action = "{code}",
+    summary = "删除文件夹",
+    description = "Id 为租户ID."
 )
 data class DeleteFileFolder(
     @field:NotBlank

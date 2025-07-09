@@ -59,7 +59,8 @@ class LocalFileStorageStrategy(
         filePath: String,
         inputStream: InputStream,
         contentType: String,
-        fileSize: Long
+        fileSize: Long,
+        metadata: Map<String, String>
     ): Mono<StorageInfo> {
         return Mono.fromCallable {
             validateFilePath(filePath)
@@ -553,5 +554,41 @@ class LocalFileStorageStrategy(
 
     private fun bytesToHex(bytes: ByteArray): String {
         return bytes.joinToString("") { "%02x".format(it) }
+    }
+
+    override fun isAvailable(): Mono<Boolean> {
+        return Mono.fromCallable {
+            try {
+                // 检查基础目录是否存在且可访问
+                if (!Files.exists(basePath)) {
+                    logger.warn("本地存储基础目录不存在: {}", basePath)
+                    return@fromCallable false
+                }
+
+                if (!Files.isDirectory(basePath)) {
+                    logger.warn("本地存储路径不是目录: {}", basePath)
+                    return@fromCallable false
+                }
+
+                if (!Files.isReadable(basePath) || !Files.isWritable(basePath)) {
+                    logger.warn("本地存储目录无读写权限: {}", basePath)
+                    return@fromCallable false
+                }
+
+                // 尝试创建临时文件来测试写入权限
+                val testFile = basePath.resolve(".storage_test_${System.currentTimeMillis()}")
+                try {
+                    Files.write(testFile, "test".toByteArray())
+                    Files.delete(testFile)
+                    true
+                } catch (e: Exception) {
+                    logger.warn("本地存储写入测试失败: {}", basePath, e)
+                    false
+                }
+            } catch (e: Exception) {
+                logger.error("检查本地存储可用性失败", e)
+                false
+            }
+        }
     }
 } 

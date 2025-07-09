@@ -22,13 +22,15 @@ interface FileStorageStrategy {
      * @param inputStream 文件输入流
      * @param contentType 文件内容类型
      * @param fileSize 文件大小
+     * @param metadata 文件元数据
      * @return 存储信息
      */
     fun uploadFile(
         filePath: String,
         inputStream: InputStream,
         contentType: String,
-        fileSize: Long
+        fileSize: Long,
+        metadata: Map<String, String> = emptyMap()
     ): Mono<StorageInfo>
     
     /**
@@ -147,6 +149,12 @@ interface FileStorageStrategy {
      * @return 清理的文件数量
      */
     fun cleanup(olderThanDays: Int = 7): Mono<Long>
+    
+    /**
+     * 检查存储策略是否可用
+     * @return 存储策略是否可用
+     */
+    fun isAvailable(): Mono<Boolean> = Mono.just(true)
 }
 
 /**

@@ -10,6 +10,7 @@ node_modules
 build/
 dist/**
 server/src/main/resources/**
+server/src/main/resources/compensation/**
 # 匹配文件类型
 *.log
 *.txt

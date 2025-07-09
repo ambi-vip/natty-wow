@@ -27,7 +27,8 @@ class S3FileStorageStrategy(
         filePath: String,
         inputStream: InputStream,
         contentType: String,
-        fileSize: Long
+        fileSize: Long,
+        metadata: Map<String, String>
     ): Mono<StorageInfo> {
         return Mono.error(StorageProviderUnavailableException(
             provider = "S3",
@@ -128,5 +129,10 @@ class S3FileStorageStrategy(
             provider = "S3",
             reason = "S3存储策略尚未实现"
         ))
+    }
+
+    override fun isAvailable(): Mono<Boolean> {
+        // S3策略尚未实现，标记为不可用
+        return Mono.just(false)
     }
 } 
