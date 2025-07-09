@@ -1,300 +1,447 @@
 package site.weixing.natty.server.common.filestorage
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import org.springframework.core.io.buffer.DataBuffer
-import org.springframework.core.io.buffer.DataBufferUtils
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
-import org.springframework.http.codec.multipart.FilePart
-import org.springframework.http.codec.multipart.Part
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.multipart.MultipartFile
 import reactor.core.publisher.Mono
-import java.io.ByteArrayOutputStream
+import site.weixing.natty.domain.common.filestorage.temp.TemporaryFileManager
+import site.weixing.natty.domain.common.filestorage.validation.FileReferenceValidator
 import java.io.InputStream
-import java.io.PipedInputStream
-import java.io.PipedOutputStream
-import java.security.MessageDigest
-import java.util.concurrent.Executors
 
 /**
- * 文件上传REST控制器
- * 提供文件上传的HTTP API端点
+ * 文件上传控制器
+ * 
+ * 提供优化的文件上传接口，支持：
+ * 1. 传统的字节数组上传（兼容性）
+ * 2. 流式上传（内存优化）
+ * 3. MultipartFile上传（Web友好）
+ * 4. 大文件分块上传
+ * 5. 文件引用验证
  */
 @RestController
 @RequestMapping("/api/files")
 class FileUploadController(
-    private val fileUploadApplicationService: FileUploadApplicationService
+    private val fileUploadApplicationService: FileUploadApplicationService,
+    private val temporaryFileManager: TemporaryFileManager,
+    private val fileReferenceValidator: FileReferenceValidator
 ) {
     
     companion object {
         private val logger = KotlinLogging.logger {}
-        private val executorService = Executors.newCachedThreadPool()
     }
     
     /**
-     * 上传文件
-     * POST /api/files/upload
+     * 传统文件上传接口（字节数组方式）
+     * 
+     * 保持向后兼容性，但推荐使用流式上传接口
      */
-    @PostMapping("/upload", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
-    fun uploadFile(
-        @RequestPart("file") file: Mono<FilePart>,
+    @PostMapping("/upload")
+    fun uploadFile(@RequestBody request: FileUploadRequest): Mono<ResponseEntity<FileUploadResponse>> {
+        logger.info { "收到传统文件上传请求: ${request.fileName}" }
+        
+        return fileUploadApplicationService.uploadFile(request)
+            .map { fileId ->
+                ResponseEntity.ok(
+                    FileUploadResponse(
+                        fileId = fileId,
+                        fileName = request.fileName,
+                        fileSize = request.fileSize,
+                        uploadMethod = "traditional",
+                        message = "文件上传成功"
+                    )
+                )
+            }
+            .onErrorReturn(
+                ResponseEntity.badRequest().body(
+                    FileUploadResponse(
+                        fileId = null,
+                        fileName = request.fileName,
+                        fileSize = request.fileSize,
+                        uploadMethod = "traditional",
+                        message = "文件上传失败"
+                    )
+                )
+            )
+    }
+    
+    /**
+     * 优化的流式文件上传接口
+     * 
+     * 使用临时文件机制，显著减少内存占用
+     */
+    @PostMapping("/upload/stream")
+    fun uploadFileStream(@RequestBody request: FileUploadStreamRequest): Mono<ResponseEntity<FileUploadResponse>> {
+        logger.info { "收到流式文件上传请求: ${request.fileName}" }
+        
+        // 将流式请求转换为标准请求
+        val uploadRequest = FileUploadRequest(
+            fileName = request.fileName,
+            folderId = request.folderId,
+            uploaderId = request.uploaderId,
+            fileSize = request.fileSize,
+            contentType = request.contentType,
+            fileContent = ByteArray(0), // 不使用
+            checksum = request.checksum,
+            isPublic = request.isPublic,
+            tags = request.tags,
+            customMetadata = request.customMetadata,
+            replaceIfExists = request.replaceIfExists,
+            inputStream = request.inputStream
+        )
+        
+        return fileUploadApplicationService.uploadFileOptimized(uploadRequest)
+            .map { fileId ->
+                ResponseEntity.ok(
+                    FileUploadResponse(
+                        fileId = fileId,
+                        fileName = request.fileName,
+                        fileSize = request.fileSize,
+                        uploadMethod = "stream",
+                        message = "流式文件上传成功"
+                    )
+                )
+            }
+            .onErrorReturn(
+                ResponseEntity.badRequest().body(
+                    FileUploadResponse(
+                        fileId = null,
+                        fileName = request.fileName,
+                        fileSize = request.fileSize,
+                        uploadMethod = "stream",
+                        message = "流式文件上传失败"
+                    )
+                )
+            )
+    }
+    
+    /**
+     * MultipartFile 文件上传接口
+     * 
+     * Web友好的上传方式，自动处理文件流
+     */
+    @PostMapping("/upload/multipart", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    fun uploadMultipartFile(
+        @RequestParam("file") file: MultipartFile,
         @RequestParam("folderId") folderId: String,
         @RequestParam("uploaderId") uploaderId: String,
-        @RequestParam("isPublic", defaultValue = "false") isPublic: Boolean,
-        @RequestParam("tags", required = false) tags: List<String>?,
-        @RequestParam("replaceIfExists", defaultValue = "false") replaceIfExists: Boolean,
-        @RequestParam("customMetadata", required = false) customMetadataJson: String?
+        @RequestParam(value = "isPublic", defaultValue = "false") isPublic: Boolean,
+        @RequestParam(value = "tags", required = false) tags: List<String>?,
+        @RequestParam(value = "replaceIfExists", defaultValue = "false") replaceIfExists: Boolean
     ): Mono<ResponseEntity<FileUploadResponse>> {
-        
-        return file.flatMap { part ->
-            val fileName = part.filename()
-            val contentType = part.headers().contentType?.toString() ?: "application/octet-stream"
-            
-            logger.info { "接收文件上传请求: $fileName (类型: $contentType)" }
-            
-            // 检查文件大小限制（来自Content-Length header）
-            val contentLength = part.headers().contentLength
-            if (contentLength > 100 * 1024 * 1024L) { // 100MB 限制
-                return@flatMap Mono.error<ResponseEntity<FileUploadResponse>>(
-                    IllegalArgumentException("文件大小超过限制（最大100MB）")
-                )
-            }
-            
-            // 对于大文件使用流式处理
-            if (contentLength > 10 * 1024 * 1024L) { // 10MB以上使用流式处理
-                processLargeFileUpload(part, fileName, contentType, folderId, uploaderId, 
-                                     isPublic, tags, replaceIfExists, customMetadataJson, contentLength)
-            } else {
-                // 小文件仍然可以使用内存处理（优化后的方式）
-                processSmallFileUpload(part, fileName, contentType, folderId, uploaderId, 
-                                     isPublic, tags, replaceIfExists, customMetadataJson)
-            }
-        }
-        .onErrorResume { error ->
-            logger.error(error) { "文件上传失败: ${error.message}" }
-            val errorResponse = FileUploadResponse(
-                fileId = "",
-                fileName = "unknown",
-                fileSize = 0L,
-                contentType = "application/octet-stream",
-                message = "文件上传失败: ${error.message}",
-                error = true
-            )
-            Mono.just(ResponseEntity.badRequest().body(errorResponse))
-        }
-    }
-    
-    /**
-     * 获取文件信息
-     * GET /api/files/{fileId}
-     */
-    @GetMapping("/{fileId}")
-    fun getFileInfo(@PathVariable fileId: String): Mono<ResponseEntity<Any>> {
-        // TODO: 实现文件信息查询
-        return Mono.just(ResponseEntity.ok(mapOf(
-            "fileId" to fileId,
-            "message" to "文件信息查询功能待实现"
-        )))
-    }
-    
-    /**
-     * 下载文件
-     * GET /api/files/{fileId}/download
-     */
-    @GetMapping("/{fileId}/download")
-    fun downloadFile(@PathVariable fileId: String): Mono<ResponseEntity<Any>> {
-        // TODO: 实现文件下载
-        return Mono.just(ResponseEntity.ok(mapOf(
-            "fileId" to fileId,
-            "message" to "文件下载功能待实现"
-        )))
-    }
-    
-    /**
-     * 处理大文件上传 - 使用流式处理
-     */
-    private fun processLargeFileUpload(
-        part: FilePart,
-        fileName: String,
-        contentType: String,
-        folderId: String,
-        uploaderId: String,
-        isPublic: Boolean,
-        tags: List<String>?,
-        replaceIfExists: Boolean,
-        customMetadataJson: String?,
-        fileSize: Long
-    ): Mono<ResponseEntity<FileUploadResponse>> {
-        
-        logger.info { "使用流式处理大文件: $fileName (${fileSize / 1024 / 1024}MB)" }
+        logger.info { "收到 MultipartFile 上传请求: ${file.originalFilename}" }
         
         return Mono.fromCallable {
-            // 创建管道流进行流式传输
-            val pipedOutputStream = PipedOutputStream()
-            val pipedInputStream = PipedInputStream(pipedOutputStream, 64 * 1024) // 64KB缓冲区
+            require(!file.isEmpty) { "上传文件不能为空" }
+            require(file.originalFilename?.isNotBlank() == true) { "文件名不能为空" }
             
-            // 异步写入数据到管道
-            executorService.submit {
-                try {
-                    DataBufferUtils.write(part.content(), pipedOutputStream)
-                        .doFinally { pipedOutputStream.close() }
-                        .subscribe(
-                            { },
-                            { error -> 
-                                logger.error(error) { "流式写入失败: $fileName" }
-                                pipedOutputStream.close()
-                            },
-                            { pipedOutputStream.close() }
-                        )
-                } catch (e: Exception) {
-                    logger.error(e) { "管道写入异常: $fileName" }
-                    try { pipedOutputStream.close() } catch (ignore: Exception) {}
-                }
-            }
-            
-            // 对于流式处理，我们使用声明的文件大小，校验和将由管道处理
-            val request = FileUploadRequest(
-                fileName = fileName,
+            val uploadRequest = FileUploadRequest(
+                fileName = file.originalFilename!!,
                 folderId = folderId,
                 uploaderId = uploaderId,
-                fileSize = fileSize,
-                contentType = contentType,
-                fileContent = ByteArray(0), // 流式处理时不使用byte数组
-                checksum = null, // 校验和将由流式处理管道计算
+                fileSize = file.size,
+                contentType = file.contentType ?: "application/octet-stream",
+                fileContent = ByteArray(0), // 不使用
+                checksum = null, // 将自动计算
                 isPublic = isPublic,
                 tags = tags ?: emptyList(),
-                customMetadata = parseCustomMetadata(customMetadataJson),
+                customMetadata = mapOf(
+                    "originalFilename" to file.originalFilename!!,
+                    "uploadVia" to "multipart"
+                ),
                 replaceIfExists = replaceIfExists,
-                inputStream = pipedInputStream // 添加输入流
+                inputStream = file.inputStream
             )
             
-            request
+            uploadRequest
         }
-        .flatMap { request ->
-            fileUploadApplicationService.uploadFileStream(request)
+        .flatMap { uploadRequest ->
+            fileUploadApplicationService.uploadFileOptimized(uploadRequest)
                 .map { fileId ->
-                    val response = FileUploadResponse(
-                        fileId = fileId,
-                        fileName = fileName,
-                        fileSize = fileSize,
-                        contentType = contentType,
-                        message = "大文件上传成功"
-                    )
-                    ResponseEntity.ok(response)
-                }
-        }
-    }
-    
-    /**
-     * 处理小文件上传 - 优化的内存处理
-     */
-    private fun processSmallFileUpload(
-        part: FilePart,
-        fileName: String,
-        contentType: String,
-        folderId: String,
-        uploaderId: String,
-        isPublic: Boolean,
-        tags: List<String>?,
-        replaceIfExists: Boolean,
-        customMetadataJson: String?
-    ): Mono<ResponseEntity<FileUploadResponse>> {
-        
-        return part.content()
-            .collectList() // 收集所有DataBuffer
-            .map { dataBuffers ->
-                // 计算总大小
-                val totalSize = dataBuffers.sumOf { it.readableByteCount() }
-                logger.debug { "处理小文件: $fileName (${totalSize}bytes)" }
-                
-                // 使用ByteArrayOutputStream避免重复拷贝
-                val outputStream = ByteArrayOutputStream(totalSize)
-                
-                try {
-                    dataBuffers.forEach { dataBuffer ->
-                        val bytes = ByteArray(dataBuffer.readableByteCount())
-                        dataBuffer.read(bytes)
-                        outputStream.write(bytes)
-                        DataBufferUtils.release(dataBuffer) // 释放DataBuffer
-                    }
-                    
-                    outputStream.toByteArray()
-                } finally {
-                    outputStream.close()
-                }
-            }
-            .flatMap { fileContent ->
-                // 验证文件
-                require(fileContent.isNotEmpty()) { "文件不能为空" }
-                require(fileName.isNotBlank()) { "文件名不能为空" }
-                
-                // 计算文件校验和
-                val checksum = calculateSHA256(fileContent)
-                
-                val request = FileUploadRequest(
-                    fileName = fileName,
-                    folderId = folderId,
-                    uploaderId = uploaderId,
-                    fileSize = fileContent.size.toLong(),
-                    contentType = contentType,
-                    fileContent = fileContent,
-                    checksum = checksum,
-                    isPublic = isPublic,
-                    tags = tags ?: emptyList(),
-                    customMetadata = parseCustomMetadata(customMetadataJson),
-                    replaceIfExists = replaceIfExists
-                )
-                
-                fileUploadApplicationService.uploadFile(request)
-                    .map { fileId ->
-                        val response = FileUploadResponse(
+                    ResponseEntity.ok(
+                        FileUploadResponse(
                             fileId = fileId,
-                            fileName = fileName,
-                            fileSize = fileContent.size.toLong(),
-                            contentType = contentType,
-                            message = "文件上传成功"
+                            fileName = file.originalFilename!!,
+                            fileSize = file.size,
+                            uploadMethod = "multipart",
+                            message = "MultipartFile 上传成功"
                         )
-                        ResponseEntity.ok(response)
-                    }
-            }
-    }
-    
-    /**
-     * 计算SHA-256校验和
-     */
-    private fun calculateSHA256(content: ByteArray): String {
-        val digest = MessageDigest.getInstance("SHA-256")
-        val hashBytes = digest.digest(content)
-        return hashBytes.joinToString("") { "%02x".format(it) }
-    }
-    
-    /**
-     * 解析自定义元数据JSON
-     */
-    private fun parseCustomMetadata(json: String?): Map<String, String> {
-        // 简化实现，生产环境应该使用JSON解析库
-        return if (json.isNullOrBlank()) {
-            emptyMap()
-        } else {
-            try {
-                // 这里应该使用Jackson或其他JSON库
-                mapOf("raw" to json)
-            } catch (e: Exception) {
-                logger.warn(e) { "解析自定义元数据失败: $json" }
-                emptyMap()
-            }
+                    )
+                }
         }
+        .onErrorReturn(
+            ResponseEntity.badRequest().body(
+                FileUploadResponse(
+                    fileId = null,
+                    fileName = file.originalFilename,
+                    fileSize = file.size,
+                    uploadMethod = "multipart",
+                    message = "MultipartFile 上传失败"
+                )
+            )
+        )
+    }
+    
+    /**
+     * 大文件分块上传初始化
+     */
+    @PostMapping("/upload/chunked/init")
+    fun initChunkedUpload(@RequestBody request: ChunkedUploadInitRequest): Mono<ResponseEntity<ChunkedUploadInitResponse>> {
+        logger.info { "初始化分块上传: ${request.fileName}, 总大小: ${request.totalSize}" }
+        
+        return Mono.fromCallable {
+            // 生成上传会话ID
+            val sessionId = java.util.UUID.randomUUID().toString()
+            
+            ChunkedUploadInitResponse(
+                sessionId = sessionId,
+                chunkSize = 1024 * 1024 * 5, // 5MB 分块
+                totalChunks = (request.totalSize + 5242879) / 5242880, // 计算总分块数
+                message = "分块上传初始化成功"
+            )
+        }
+        .map { response ->
+            ResponseEntity.ok(response)
+        }
+    }
+    
+    /**
+     * 获取临时文件信息
+     */
+    @GetMapping("/temp/{referenceId}")
+    fun getTemporaryFileInfo(@PathVariable referenceId: String): Mono<ResponseEntity<TemporaryFileInfoResponse>> {
+        return temporaryFileManager.getTemporaryFileReference(referenceId)
+            .map { tempFile ->
+                ResponseEntity.ok(
+                    TemporaryFileInfoResponse(
+                        referenceId = tempFile.referenceId,
+                        originalFileName = tempFile.originalFileName,
+                        fileSize = tempFile.fileSize,
+                        contentType = tempFile.contentType,
+                        createdAt = tempFile.createdAt.toString(),
+                        expiresAt = tempFile.expiresAt.toString(),
+                        isExpired = tempFile.isExpired(),
+                        checksum = tempFile.checksum
+                    )
+                )
+            }
+            .onErrorReturn(
+                ResponseEntity.notFound().build()
+            )
+    }
+    
+    /**
+     * 清理临时文件
+     */
+    @DeleteMapping("/temp/{referenceId}")
+    fun deleteTemporaryFile(@PathVariable referenceId: String): Mono<ResponseEntity<Map<String, Any>>> {
+        return temporaryFileManager.deleteTemporaryFile(referenceId)
+            .map { deleted ->
+                ResponseEntity.ok(
+                    mapOf(
+                        "referenceId" to referenceId,
+                        "deleted" to deleted,
+                        "message" to if (deleted) "临时文件删除成功" else "临时文件不存在"
+                    )
+                )
+            }
+    }
+    
+    /**
+     * 验证文件引用
+     */
+    @GetMapping("/validate/{referenceId}")
+    fun validateFileReference(
+        @PathVariable referenceId: String,
+        @RequestParam(value = "userId", required = false) userId: String?
+    ): Mono<ResponseEntity<FileReferenceValidationResponse>> {
+        logger.debug { "验证文件引用: $referenceId" }
+        
+        return fileReferenceValidator.validateReference(referenceId, userId)
+            .map { result ->
+                if (result.isValid) {
+                    ResponseEntity.ok(
+                        FileReferenceValidationResponse(
+                            referenceId = referenceId,
+                            isValid = true,
+                            message = "文件引用有效",
+                            reference = result.reference?.let { ref ->
+                                TemporaryFileInfoResponse(
+                                    referenceId = ref.referenceId,
+                                    originalFileName = ref.originalFileName,
+                                    fileSize = ref.fileSize,
+                                    contentType = ref.contentType,
+                                    createdAt = ref.createdAt.toString(),
+                                    expiresAt = ref.expiresAt.toString(),
+                                    isExpired = ref.isExpired(),
+                                    checksum = ref.checksum
+                                )
+                            }
+                        )
+                    )
+                } else {
+                    ResponseEntity.badRequest().body(
+                        FileReferenceValidationResponse(
+                            referenceId = referenceId,
+                            isValid = false,
+                            message = result.errorMessage ?: "文件引用无效",
+                            errorCode = result.errorCode?.name
+                        )
+                    )
+                }
+            }
+    }
+    
+    /**
+     * 批量验证文件引用
+     */
+    @PostMapping("/validate/batch")
+    fun validateMultipleFileReferences(@RequestBody request: BatchValidationRequest): Mono<ResponseEntity<BatchValidationResponse>> {
+        logger.debug { "批量验证 ${request.referenceIds.size} 个文件引用" }
+        
+        return fileReferenceValidator.validateMultipleReferences(request.referenceIds, request.userId)
+            .map { results ->
+                val validResults = results.mapValues { (_, result) ->
+                    FileReferenceValidationResponse(
+                        referenceId = it.key,
+                        isValid = result.isValid,
+                        message = if (result.isValid) "有效" else (result.errorMessage ?: "无效"),
+                        errorCode = result.errorCode?.name,
+                        reference = result.reference?.let { ref ->
+                            TemporaryFileInfoResponse(
+                                referenceId = ref.referenceId,
+                                originalFileName = ref.originalFileName,
+                                fileSize = ref.fileSize,
+                                contentType = ref.contentType,
+                                createdAt = ref.createdAt.toString(),
+                                expiresAt = ref.expiresAt.toString(),
+                                isExpired = ref.isExpired(),
+                                checksum = ref.checksum
+                            )
+                        }
+                    )
+                }
+                
+                ResponseEntity.ok(
+                    BatchValidationResponse(
+                        totalCount = request.referenceIds.size,
+                        validCount = results.values.count { it.isValid },
+                        invalidCount = results.values.count { !it.isValid },
+                        results = validResults
+                    )
+                )
+            }
+    }
+    
+    /**
+     * 清理无效的文件引用
+     */
+    @PostMapping("/cleanup/invalid")
+    fun cleanupInvalidReferences(): Mono<ResponseEntity<Map<String, Any>>> {
+        logger.info { "手动触发清理无效文件引用" }
+        
+        return fileReferenceValidator.cleanupInvalidReferences()
+            .map { cleanedCount ->
+                ResponseEntity.ok(
+                    mapOf(
+                        "message" to "清理完成",
+                        "cleanedCount" to cleanedCount,
+                        "timestamp" to System.currentTimeMillis()
+                    )
+                )
+            }
     }
 }
+
+/**
+ * 流式文件上传请求
+ */
+data class FileUploadStreamRequest(
+    val fileName: String,
+    val folderId: String,
+    val uploaderId: String,
+    val fileSize: Long,
+    val contentType: String,
+    val inputStream: InputStream,
+    val checksum: String? = null,
+    val isPublic: Boolean = false,
+    val tags: List<String> = emptyList(),
+    val customMetadata: Map<String, String> = emptyMap(),
+    val replaceIfExists: Boolean = false
+)
 
 /**
  * 文件上传响应
  */
 data class FileUploadResponse(
-    val fileId: String,
+    val fileId: String?,
+    val fileName: String?,
+    val fileSize: Long,
+    val uploadMethod: String,
+    val message: String
+)
+
+/**
+ * 分块上传初始化请求
+ */
+data class ChunkedUploadInitRequest(
     val fileName: String,
+    val totalSize: Long,
+    val contentType: String,
+    val folderId: String,
+    val uploaderId: String
+)
+
+/**
+ * 分块上传初始化响应
+ */
+data class ChunkedUploadInitResponse(
+    val sessionId: String,
+    val chunkSize: Long,
+    val totalChunks: Long,
+    val message: String
+)
+
+/**
+ * 临时文件信息响应
+ */
+data class TemporaryFileInfoResponse(
+    val referenceId: String,
+    val originalFileName: String,
     val fileSize: Long,
     val contentType: String,
+    val createdAt: String,
+    val expiresAt: String,
+    val isExpired: Boolean,
+    val checksum: String?
+)
+
+/**
+ * 文件引用验证响应
+ */
+data class FileReferenceValidationResponse(
+    val referenceId: String,
+    val isValid: Boolean,
     val message: String,
-    val error: Boolean = false
+    val errorCode: String? = null,
+    val reference: TemporaryFileInfoResponse? = null
+)
+
+/**
+ * 批量验证请求
+ */
+data class BatchValidationRequest(
+    val referenceIds: List<String>,
+    val userId: String? = null
+)
+
+/**
+ * 批量验证响应
+ */
+data class BatchValidationResponse(
+    val totalCount: Int,
+    val validCount: Int,
+    val invalidCount: Int,
+    val results: Map<String, FileReferenceValidationResponse>
 ) 

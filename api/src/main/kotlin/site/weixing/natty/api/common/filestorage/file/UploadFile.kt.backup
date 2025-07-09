@@ -28,8 +28,8 @@ data class UploadFile(
     @field:NotBlank(message = "内容类型不能为空")
     val contentType: String,
     
-    @field:NotBlank(message = "临时文件引用不能为空")
-    val temporaryFileReference: String,
+    @field:NotNull(message = "文件内容不能为空")
+    val fileContent: ByteArray,
     
     val checksum: String? = null,
     
@@ -52,7 +52,7 @@ data class UploadFile(
         if (uploaderId != other.uploaderId) return false
         if (fileSize != other.fileSize) return false
         if (contentType != other.contentType) return false
-        if (temporaryFileReference != other.temporaryFileReference) return false
+        if (!fileContent.contentEquals(other.fileContent)) return false
         if (checksum != other.checksum) return false
         if (isPublic != other.isPublic) return false
         if (tags != other.tags) return false
@@ -68,7 +68,7 @@ data class UploadFile(
         result = 31 * result + uploaderId.hashCode()
         result = 31 * result + fileSize.hashCode()
         result = 31 * result + contentType.hashCode()
-        result = 31 * result + temporaryFileReference.hashCode()
+        result = 31 * result + fileContent.contentHashCode()
         result = 31 * result + (checksum?.hashCode() ?: 0)
         result = 31 * result + isPublic.hashCode()
         result = 31 * result + tags.hashCode()
@@ -84,7 +84,7 @@ data class UploadFile(
                 "uploaderId='$uploaderId', " +
                 "fileSize=$fileSize, " +
                 "contentType='$contentType', " +
-                "temporaryFileReference='$temporaryFileReference', " +
+                "fileContent=[ByteArray(size=${fileContent.size})], " +
                 "checksum=$checksum, " +
                 "isPublic=$isPublic, " +
                 "tags=$tags, " +
