@@ -37,7 +37,7 @@ class FileStorageEventHandler(
     fun onFileUploaded(event: FileUploaded): Mono<Void> {
         logger.info { "处理文件上传事件: ${event.fileName} -> ${event.storagePath}" }
         
-        return try {
+        return Mono.fromCallable {
             // 获取默认的本地存储配置
             val storageConfig = getDefaultLocalStorageConfig()
             
@@ -49,10 +49,15 @@ class FileStorageEventHandler(
             
             if (fileContent == null) {
                 logger.error { "临时文件内容不存在: ${event.tempFileId} for ${event.fileName}" }
-                return@fromCallable
+                throw IllegalStateException("临时文件内容不存在: ${event.tempFileId}")
             }
             
-            val inputStream = ByteArrayInputStream(fileContent)
+            ByteArrayInputStream(fileContent)
+        }
+        .flatMap { inputStream ->
+            // 获取存储配置和策略
+            val storageConfig = getDefaultLocalStorageConfig()
+            val strategy = FileStorageStrategyFactory.createStrategy(StorageProvider.LOCAL, storageConfig)
             
             // 执行实际的文件存储
             localFileStorageService.uploadFile(
@@ -62,21 +67,21 @@ class FileStorageEventHandler(
                 contentType = event.contentType,
                 fileSize = event.fileSize
             )
-            .doOnSuccess { storageInfo ->
-                logger.info { "文件物理存储成功: ${event.fileName} (存储路径: ${event.storagePath})" }
-                // 清理临时文件内容
-                FileContentRegistry.removeTempFileContent(event.tempFileId)
-                tempFileStorageService.deleteTempFile(event.tempFileId)
-                logger.debug { "临时文件已清理: ${event.tempFileId}" }
-            }
-            .doOnError { error ->
-                logger.error(error) { "文件物理存储失败: ${event.fileName}" }
-                // 保留临时文件以便重试或调试
-                logger.warn { "临时文件保留用于重试: ${event.tempFileId}" }
-            }
-            .then()
-            
-        } catch (e: Exception) {
+        }
+        .doOnSuccess { storageInfo ->
+            logger.info { "文件物理存储成功: ${event.fileName} (存储路径: ${event.storagePath})" }
+            // 清理临时文件内容
+            FileContentRegistry.removeTempFileContent(event.tempFileId)
+            tempFileStorageService.deleteTempFile(event.tempFileId)
+            logger.debug { "临时文件已清理: ${event.tempFileId}" }
+        }
+        .doOnError { error ->
+            logger.error(error) { "文件物理存储失败: ${event.fileName}" }
+            // 保留临时文件以便重试或调试
+            logger.warn { "临时文件保留用于重试: ${event.tempFileId}" }
+        }
+        .then()
+        .onErrorResume { e ->
             logger.error(e) { "处理文件上传事件失败: ${event.fileName}" }
             Mono.empty()
         }
@@ -146,8 +151,18 @@ class FileStorageEventHandler(
      * TODO: 这里应该从配置服务或存储配置聚合中获取
      */
     private fun getDefaultLocalStorageConfig(): Map<String, Any> {
+        // 检查是否在测试环境
+        val isTestEnvironment = System.getProperty("spring.profiles.active")?.contains("test") == true ||
+                                System.getenv("SPRING_PROFILES_ACTIVE")?.contains("test") == true
+        
+        val baseDirectory = if (isTestEnvironment) {
+            "/tmp/natty-files-test"
+        } else {
+            "/tmp/natty-files" // 临时目录，实际应该配置到正式的存储目录
+        }
+        
         return mapOf(
-            "baseDirectory" to "/tmp/natty-files", // 临时目录，实际应该配置到正式的存储目录
+            "baseDirectory" to baseDirectory,
             "maxFileSize" to (100 * 1024 * 1024L), // 100MB
             "allowedContentTypes" to emptyList<String>(),
             "enableChecksumValidation" to true,

@@ -42,7 +42,11 @@ class FileUploadApplicationService(
             logger.debug { "文件内容已存储到临时存储: $tempFileId for ${request.fileName}" }
             
             // 2. 将临时文件ID存储到全局映射中，供事件处理器使用
-            FileContentRegistry.storeTempFileMapping(tempFileId, request.fileContent)
+            FileContentRegistry.storeTempFileContent(
+                tempFileId = tempFileId,
+                content = request.fileContent,
+                fileName = request.fileName
+            )
             
             tempFileId
         }
@@ -63,9 +67,9 @@ class FileUploadApplicationService(
                 customMetadata = request.customMetadata,
                 replaceIfExists = request.replaceIfExists
             )
-            
+
             commandGateway.send(uploadCommand.toCommandMessage(aggregateId = fileId))
-                .map { fileId }
+                .then(Mono.fromCallable { fileId })
         }
         .doOnSuccess { fileId ->
             logger.info { "文件上传命令发送成功: ${request.fileName} -> $fileId" }
@@ -129,27 +133,4 @@ data class FileUploadRequest(
     }
 }
 
-/**
- * 文件内容注册表
- * 临时解决方案：用于在命令处理和事件处理之间传递文件内容
- * 生产环境应该使用 Redis 或其他分布式缓存
- */
-object FileContentRegistry {
-    private val tempFileContentMap = mutableMapOf<String, ByteArray>()
-    
-    fun storeTempFileMapping(tempFileId: String, content: ByteArray) {
-        tempFileContentMap[tempFileId] = content
-        logger.debug { "存储临时文件内容映射: $tempFileId" }
-    }
-    
-    fun getTempFileContent(tempFileId: String): ByteArray? {
-        return tempFileContentMap[tempFileId]
-    }
-    
-    fun removeTempFileContent(tempFileId: String) {
-        tempFileContentMap.remove(tempFileId)
-        logger.debug { "移除临时文件内容映射: $tempFileId" }
-    }
-    
-    private val logger = KotlinLogging.logger {}
-} 
+ 
