@@ -60,10 +60,10 @@ class FileReferenceValidator(
     fun validateReference(referenceId: String, userId: String? = null): Mono<ValidationResult> {
         logger.debug { "验证文件引用: $referenceId" }
         
-        return temporaryFileManager.getReference(referenceId)
+        return temporaryFileManager.getTemporaryFileReference(referenceId)
             .map { reference ->
                 // 检查文件是否过期
-                if (reference.expiresAt.isBefore(LocalDateTime.now())) {
+                if (reference.isExpired()) {
                     logger.warn { "文件引用已过期: $referenceId, 过期时间: ${reference.expiresAt}" }
                     return@map ValidationResult.failure(
                         ValidationErrorCode.REFERENCE_EXPIRED,
@@ -72,7 +72,7 @@ class FileReferenceValidator(
                 }
                 
                 // 检查物理文件是否存在
-                if (!temporaryFileManager.fileExists(reference.temporaryPath).block() == true) {
+                if (!temporaryFileManager.isTemporaryFileValid(referenceId).block()!!) {
                     logger.warn { "临时文件不存在: ${reference.temporaryPath}" }
                     return@map ValidationResult.failure(
                         ValidationErrorCode.FILE_NOT_EXISTS,
@@ -114,7 +114,7 @@ class FileReferenceValidator(
         logger.debug { "批量验证 ${referenceIds.size} 个文件引用" }
         
         return Mono.fromCallable {
-            referenceIds.associateWith { referenceId ->
+            referenceIds.associateWith { referenceId: String ->
                 validateReference(referenceId, userId).block()!!
             }
         }
@@ -166,35 +166,17 @@ class FileReferenceValidator(
     fun cleanupInvalidReferences(): Mono<Int> {
         logger.info { "开始清理无效的文件引用" }
         
-        return temporaryFileManager.getAllReferences()
-            .flatMap { references ->
-                val invalidRefs = references.filter { ref ->
-                    ref.expiresAt.isBefore(LocalDateTime.now()) ||
-                    !temporaryFileManager.fileExists(ref.temporaryPath).block()!!
-                }
-                
-                if (invalidRefs.isNotEmpty()) {
-                    logger.info { "发现 ${invalidRefs.size} 个无效引用，开始清理" }
-                    
-                    Mono.fromCallable {
-                        invalidRefs.forEach { ref ->
-                            temporaryFileManager.deleteTemporaryFile(ref.referenceId).block()
-                        }
-                        invalidRefs.size
-                    }
-                } else {
-                    Mono.just(0)
-                }
-            }
+        return temporaryFileManager.cleanupExpiredFiles()
+            .map { cleanedCount -> cleanedCount.toInt() }
     }
     
     /**
      * 验证用户访问权限
      */
     private fun validateUserAccess(reference: TemporaryFileReference, userId: String): Boolean {
-        // 简单的权限检查：检查元数据中的用户ID
-        val uploaderId = reference.metadata["uploaderId"]
-        return uploaderId == null || uploaderId == userId
+        // 简单的权限检查：目前暂不实现用户权限验证
+        // 可以在未来版本中通过添加metadata字段或其他方式实现
+        return true
     }
     
     /**

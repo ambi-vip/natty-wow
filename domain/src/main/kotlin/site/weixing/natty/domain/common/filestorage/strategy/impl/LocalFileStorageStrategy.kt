@@ -532,7 +532,7 @@ class LocalFileStorageStrategy(
 
     private fun validateContentType(contentType: String) {
         if (allowedContentTypes.isNotEmpty() && !allowedContentTypes.contains(contentType)) {
-            throw UnsupportedFileTypeException(contentType, allowedContentTypes.toList())
+            throw UnsupportedFileTypeException(contentType, null, allowedContentTypes)
         }
     }
 

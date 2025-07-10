@@ -3,10 +3,14 @@ package site.weixing.natty.domain.common.filestorage.temp
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.PostConstruct
 import jakarta.annotation.PreDestroy
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
-import site.weixing.natty.domain.common.filestorage.exception.*
+import site.weixing.natty.domain.common.filestorage.exception.TemporaryFileNotFoundException
+import site.weixing.natty.domain.common.filestorage.exception.TemporaryFileExpiredException
+import site.weixing.natty.domain.common.filestorage.exception.TemporaryFileCreationException
+import site.weixing.natty.domain.common.filestorage.exception.TemporaryFileAccessException
+import site.weixing.natty.domain.common.filestorage.exception.TemporaryFileSizeExceededException
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
@@ -33,7 +37,6 @@ import java.util.concurrent.TimeUnit
  * 3. 异常安全 - 完整的错误处理和恢复机制
  * 4. 性能优化 - 异步I/O和响应式编程模型
  */
-@Service
 class LocalTemporaryFileManager(
     private val tempDirectory: String = "${System.getProperty("user.dir")}/storage/temp",
     private val defaultExpirationHours: Long = 1L,
@@ -157,7 +160,7 @@ class LocalTemporaryFileManager(
                     throw TemporaryFileNotFoundException(referenceId)
                 }
                 
-                FileInputStream(path.toFile())
+                FileInputStream(path.toFile()) as InputStream
             } catch (e: NoSuchFileException) {
                 logger.error { "临时文件不存在: $referenceId, 路径=${reference.temporaryPath}" }
                 activeReferences.remove(referenceId)

@@ -11,34 +11,11 @@ abstract class FileProcessingException(
 /**
  * 文件引用相关异常
  */
-class FileReferenceException(
+open class FileReferenceException(
     message: String,
-    val referenceId: String? = null,
+    open val referenceId: String? = null,
     cause: Throwable? = null
 ) : FileProcessingException(message, cause)
-
-/**
- * 文件引用不存在异常
- */
-class FileReferenceNotFoundException(
-    val referenceId: String
-) : FileReferenceException("文件引用不存在: $referenceId", referenceId)
-
-/**
- * 文件引用已过期异常
- */
-class FileReferenceExpiredException(
-    val referenceId: String,
-    val expirationTime: String
-) : FileReferenceException("文件引用已过期: $referenceId, 过期时间: $expirationTime", referenceId)
-
-/**
- * 文件引用访问权限异常
- */
-class FileReferenceAccessDeniedException(
-    val referenceId: String,
-    val userId: String
-) : FileReferenceException("用户 $userId 无权访问文件引用: $referenceId", referenceId)
 
 /**
  * 文件处理操作异常
@@ -57,7 +34,8 @@ class FileSizeLimitExceededException(
     val maxAllowedSize: Long,
     val fileName: String? = null
 ) : FileProcessingException(
-    "文件大小超限${fileName?.let { " [$it]" } ?: ""}: ${actualSize}字节 > ${maxAllowedSize}字节"
+    "文件大小超限${fileName?.let { " [$it]" } ?: ""}: ${actualSize}字节 > ${maxAllowedSize}字节",
+    null
 )
 
 /**
@@ -68,8 +46,15 @@ class UnsupportedFileTypeException(
     val fileName: String? = null,
     val allowedTypes: Set<String> = emptySet()
 ) : FileProcessingException(
-    "文件类型不支持${fileName?.let { " [$it]" } ?: ""}: $contentType" +
-    if (allowedTypes.isNotEmpty()) ", 支持的类型: ${allowedTypes.joinToString()}" else ""
+    buildString {
+        append("文件类型不支持")
+        fileName?.let { append(" [").append(it).append("]") }
+        append(": ").append(contentType)
+        if (allowedTypes.isNotEmpty()) {
+            append(", 支持的类型: ").append(allowedTypes.joinToString())
+        }
+    },
+    null
 )
 
 /**
@@ -80,7 +65,12 @@ class FileContentCorruptedException(
     val checksum: String? = null,
     message: String = "文件内容损坏"
 ) : FileProcessingException(
-    "$message${fileName?.let { " [$it]" } ?: ""}${checksum?.let { ", 校验和: $it" } ?: ""}"
+    buildString {
+        append(message)
+        fileName?.let { append(" [").append(it).append("]") }
+        checksum?.let { append(", 校验和: ").append(it) }
+    },
+    null
 )
 
 /**
@@ -133,8 +123,14 @@ class FileValidationException(
     val validationErrors: List<String> = emptyList(),
     message: String = "文件验证失败"
 ) : FileProcessingException(
-    "$message${fileName?.let { " [$it]" } ?: ""}" +
-    if (validationErrors.isNotEmpty()) ": ${validationErrors.joinToString("; ")}" else ""
+    buildString {
+        append(message)
+        fileName?.let { append(" [").append(it).append("]") }
+        if (validationErrors.isNotEmpty()) {
+            append(": ").append(validationErrors.joinToString("; "))
+        }
+    },
+    null
 )
 
 /**
@@ -168,4 +164,90 @@ class BatchProcessingException(
      * 是否全部成功
      */
     fun isFullSuccess(): Boolean = failureCount == 0
-} 
+}
+
+/**
+ * 存储配置异常
+ */
+class StorageConfigurationException(
+    val configKey: String? = null,
+    message: String,
+    cause: Throwable? = null
+) : FileProcessingException(
+    "存储配置错误${configKey?.let { " [$it]" } ?: ""}: $message", cause
+)
+
+/**
+ * 存储提供商不可用异常
+ */
+class StorageProviderUnavailableException(
+    val provider: String? = null,
+    val reason: String? = null,
+    providerName: String = provider ?: "Unknown",
+    message: String = reason ?: "存储提供商不可用",
+    cause: Throwable? = null
+) : FileProcessingException("$message: $providerName", cause) {
+    
+    // 兼容旧的构造函数
+    constructor(
+        providerName: String,
+        message: String = "存储提供商不可用",
+        cause: Throwable? = null
+    ) : this(
+        provider = providerName,
+        reason = message,
+        providerName = providerName,
+        message = message,
+        cause = cause
+    )
+}
+
+/**
+ * 文件未找到异常(自定义)
+ */
+class FileNotFoundException(
+    val filePath: String,
+    message: String = "文件未找到",
+    cause: Throwable? = null
+) : FileProcessingException("$message: $filePath", cause)
+
+/**
+ * 自定义文件未找到异常(别名)
+ */
+typealias CustomFileNotFoundException = FileNotFoundException
+
+/**
+ * 文件已存在异常
+ */
+class FileAlreadyExistsException(
+    val filePath: String,
+    message: String = "文件已存在",
+    cause: Throwable? = null
+) : FileProcessingException("$message: $filePath", cause)
+
+/**
+ * 文件大小超限异常(别名)
+ */
+typealias FileSizeExceededException = FileSizeLimitExceededException
+
+/**
+ * 存储连接异常
+ */
+class StorageConnectionException(
+    val endpoint: String? = null,
+    message: String = "存储连接失败",
+    cause: Throwable? = null
+) : FileProcessingException(
+    "$message${endpoint?.let { " [$it]" } ?: ""}", cause
+)
+
+/**
+ * 无效文件路径异常
+ */
+class InvalidFilePathException(
+    val path: String,
+    val reason: String? = null,
+    cause: Throwable? = null
+) : FileProcessingException(
+    "无效文件路径: $path${reason?.let { " ($it)" } ?: ""}", cause
+) 

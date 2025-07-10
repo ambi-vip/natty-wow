@@ -137,7 +137,7 @@ class TemporaryFileTransaction(
      * @param businessOperation 业务操作（接收临时文件引用作为参数）
      * @return 操作结果的 Mono 包装，包含临时文件引用和业务操作结果
      */
-    fun <T> createAndExecute(
+    fun <T : Any> createAndExecute(
         createFileOperation: () -> Mono<TemporaryFileReference>,
         businessOperation: (String) -> Mono<T>
     ): Mono<Tuple2<TemporaryFileReference, T>> {
@@ -148,8 +148,8 @@ class TemporaryFileTransaction(
                 logger.debug { "临时文件创建成功: ${reference.referenceId}" }
             }
             .flatMap { reference ->
-                val businessMono = businessOperation(reference.referenceId)
-                    .map { result -> Tuples.of(reference, result) }
+                val businessMono: Mono<Tuple2<TemporaryFileReference, T>> = businessOperation(reference.referenceId)
+                    .map { result -> Tuples.of<TemporaryFileReference, T>(reference, result) }
                 
                 // 使用单文件事务包装业务操作
                 executeWithCleanup(reference.referenceId) { businessMono }
@@ -173,26 +173,26 @@ class TemporaryFileTransaction(
         logger.debug { "开始自定义清理事务性操作" }
         
         return operation()
-            .doOnSuccess { result ->
+            .doOnSuccess { result: T ->
                 logger.debug { "自定义清理操作成功完成" }
             }
-            .doOnError { error ->
+            .doOnError { error: Throwable ->
                 logger.warn(error) { "自定义清理操作失败: ${error.message}" }
             }
             .doFinally { signalType ->
                 logger.debug { "开始执行自定义清理逻辑: 信号类型=$signalType" }
                 
                 customCleanup()
-                    .doOnSuccess {
+                    .doOnSuccess { _: Void? ->
                         logger.debug { "自定义清理逻辑执行成功" }
                     }
-                    .doOnError { cleanupError ->
+                    .doOnError { cleanupError: Throwable ->
                         logger.error(cleanupError) { "自定义清理逻辑执行失败" }
                     }
-                    .onErrorResume { cleanupError ->
+                    .onErrorResume { cleanupError: Throwable ->
                         // 清理失败不应该影响原始操作的结果
                         logger.warn(cleanupError) { "忽略自定义清理错误，避免影响原始操作" }
-                        Mono.empty()
+                        Mono.empty<Void>()
                     }
                     .subscribe()
             }
