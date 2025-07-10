@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RequestPart
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.scheduler.Schedulers
+import reactor.kotlin.core.publisher.toMono
 import java.nio.file.Files
 
 /**
@@ -58,48 +59,52 @@ class FileUploadController(
         @RequestParam(value = "tags", required = false) tags: List<String> = emptyList(),
         @RequestParam(value = "replaceIfExists", required = false) replaceIfExists: Boolean = false
     ): Mono<ResponseEntity<FileUploadResponse>> {
-        logger.info { "收到 FilePart 上传请求: ${file.filename()}" }
-        val tempFile = Files.createTempFile("upload_", "_" + file.filename())
-        return DataBufferUtils.write(file.content(), tempFile)
-            .then(Mono.fromCallable {
-                val inputStream = Files.newInputStream(tempFile)
-                val uploadRequest = FileUploadRequest(
-                    fileName = file.filename(),
-                    folderId = folderId,
-                    uploaderId = uploaderId,
-                    fileSize = Files.size(tempFile),
-                    contentType = "application/octet-stream",
-                    fileContent = ByteArray(0),
-                    checksum = null,
-                    isPublic = isPublic,
-                    tags = tags,
-                    customMetadata = mapOf(
-                        "originalFilename" to file.filename(),
-                        "uploadVia" to "filepart"
-                    ),
-                    replaceIfExists = replaceIfExists,
-                    inputStream = inputStream
+        // 首先尝试从 headers 获取大小
+        val sizeFromHeaders = file.headers().contentLength
+//
+//        val fileSizeMono = if (sizeFromHeaders > 0) {
+//            Mono.just(sizeFromHeaders)
+//        } else {
+//            // 如果 headers 中没有，则计算实际大小
+//            file.content()
+//                .map { dataBuffer ->
+//                    val size = dataBuffer.readableByteCount()
+//                    DataBufferUtils.release(dataBuffer)
+//                    size
+//                }
+//                .reduce(0L, Long::plus)
+//        }.block()
+
+
+        logger.info { "收到 FilePart 上传请求: ${file.filename()} " }
+
+        val uploadRequest = FileUploadRequest(
+            fileName = file.filename(),
+            folderId = folderId,
+            uploaderId = uploaderId,
+            fileSize = 1L, // 可选：如需准确大小可先统计
+            contentType = "application/octet-stream",
+            dataBufferFlux = file.content(), // 直接传递 Flux<DataBuffer>
+            checksum = null,
+            isPublic = isPublic,
+            tags = tags,
+            customMetadata = mapOf(
+                "originalFilename" to file.filename(),
+                "uploadVia" to "filepart"
+            ),
+            replaceIfExists = replaceIfExists
+        )
+        return fileUploadApplicationService.uploadFile(uploadRequest)
+            .map { fileId ->
+                ResponseEntity.ok(
+                    FileUploadResponse(
+                        fileId = fileId,
+                        fileName = file.filename(),
+                        fileSize = -1L, // 可选：如需准确大小可后续查询
+                        uploadMethod = "filepart",
+                        message = "FilePart 上传成功"
+                    )
                 )
-                uploadRequest
-            })
-            .flatMap { uploadRequest ->
-                fileUploadApplicationService.uploadFileOptimized(uploadRequest)
-                    .publishOn(Schedulers.boundedElastic())
-                    .map { fileId ->
-                        ResponseEntity.ok(
-                            FileUploadResponse(
-                                fileId = fileId,
-                                fileName = file.filename(),
-                                fileSize = Files.size(tempFile),
-                                uploadMethod = "filepart",
-                                message = "FilePart 上传成功"
-                            )
-                        )
-                    }
-            }
-            .publishOn(Schedulers.boundedElastic())
-            .doFinally {
-                Files.deleteIfExists(tempFile)
             }
             .onErrorReturn(
                 ResponseEntity.badRequest().body(
@@ -112,6 +117,55 @@ class FileUploadController(
                     )
                 )
             )
+    }
+    
+    /**
+     * 流式文件上传接口（端到端非阻塞）
+     * 
+     * 兼容 Postman、Web 前端的 multipart/form-data 文件上传
+     * 文件将直接流式写入本地磁盘，无中间临时文件
+     */
+    @PostMapping("/upload/stream", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    fun uploadStream(
+        @RequestPart("file") file: FilePart,
+        @RequestParam("folderId") folderId: String,
+        @RequestParam("uploaderId") uploaderId: String,
+        @RequestParam(value = "isPublic", required = false) isPublic: Boolean = false,
+        @RequestParam(value = "tags", required = false) tags: List<String> = emptyList(),
+        @RequestParam(value = "replaceIfExists", required = false) replaceIfExists: Boolean = false
+    ): Mono<ResponseEntity<FileUploadResponse>> {
+        logger.info { "收到流式上传请求: ${file.filename()}" }
+        val baseDir = System.getProperty("user.dir") + "/storage/files/stream/" + folderId
+        val targetPath = java.nio.file.Paths.get(baseDir, file.filename())
+        return Mono.fromCallable {
+            Files.createDirectories(targetPath.parent)
+            targetPath
+        }.flatMap { path ->
+            DataBufferUtils.write(file.content(), path)
+                .then(Mono.fromCallable {
+                    val fileSize = Files.size(path)
+                    // 这里只保存元数据，实际业务可扩展
+                    ResponseEntity.ok(
+                        FileUploadResponse(
+                            fileId = path.fileName.toString(),
+                            fileName = file.filename(),
+                            fileSize = fileSize,
+                            uploadMethod = "stream",
+                            message = "流式上传成功"
+                        )
+                    )
+                })
+        }.onErrorReturn(
+            ResponseEntity.badRequest().body(
+                FileUploadResponse(
+                    fileId = null,
+                    fileName = file.filename(),
+                    fileSize = -1L,
+                    uploadMethod = "stream",
+                    message = "流式上传失败"
+                )
+            )
+        )
     }
     
     /**

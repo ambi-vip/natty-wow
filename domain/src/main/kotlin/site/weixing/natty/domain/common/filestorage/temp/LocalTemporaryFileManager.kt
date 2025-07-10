@@ -26,6 +26,9 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
+import org.springframework.core.io.buffer.DataBuffer
+import reactor.core.publisher.Flux
+import org.springframework.core.io.buffer.DataBufferUtils
 
 /**
  * 本地临时文件管理器实现
@@ -82,59 +85,37 @@ class LocalTemporaryFileManager(
         originalFileName: String,
         fileSize: Long,
         contentType: String,
-        inputStream: InputStream
+        dataBufferFlux: Flux<DataBuffer>
     ): Mono<TemporaryFileReference> {
         return Mono.fromCallable {
-            // 参数验证
             require(originalFileName.isNotBlank()) { "文件名不能为空" }
             require(fileSize > 0) { "文件大小必须大于0" }
             require(fileSize <= maxFileSize) { "文件大小超过限制: $fileSize > $maxFileSize" }
             require(contentType.isNotBlank()) { "内容类型不能为空" }
-            
+
             val referenceId = UUID.randomUUID().toString()
-            val now = Instant.now()
-            val expiresAt = now.plus(defaultExpirationHours, ChronoUnit.HOURS)
-            
-            // 创建临时文件路径
-            val tempPath = Paths.get(tempDirectory, "${referenceId}_${originalFileName}")
-            
-            logger.debug { "开始创建临时文件: $referenceId, 文件名=$originalFileName, 大小=${fileSize}字节" }
-            
-            try {
-                // 写入文件内容并计算校验和
-                val checksum = writeFileWithChecksum(inputStream, tempPath, fileSize)
-                
-                // 创建文件引用
-                val reference = TemporaryFileReference(
-                    referenceId = referenceId,
-                    originalFileName = originalFileName,
-                    fileSize = fileSize,
-                    contentType = contentType,
-                    temporaryPath = tempPath.toString(),
-                    createdAt = now,
-                    expiresAt = expiresAt,
-                    checksum = checksum
-                )
-                
-                // 注册引用
-                activeReferences[referenceId] = reference
-                
-                logger.info { "临时文件创建成功: $referenceId, 路径=${tempPath}, 校验和=$checksum" }
-                reference
-                
-            } catch (e: Exception) {
-                // 清理可能创建的临时文件
-                try {
-                    Files.deleteIfExists(tempPath)
-                } catch (cleanupException: Exception) {
-                    logger.warn(cleanupException) { "清理失败的临时文件时出错: $tempPath" }
-                }
-                
-                logger.error(e) { "创建临时文件失败: $referenceId" }
-                throw TemporaryFileCreationException("创建临时文件失败: ${e.message}", e)
-            }
-        }
-        .subscribeOn(Schedulers.boundedElastic())
+            val tempPath = Paths.get(tempDirectory, "${referenceId}_$originalFileName")
+            tempPath
+        }.flatMap { tempPath ->
+            DataBufferUtils.write(dataBufferFlux, tempPath)
+                .then(Mono.fromCallable {
+                    val checksum = calculateChecksum(tempPath)
+                    val fileSizeActual = Files.size(tempPath)
+                    val reference = TemporaryFileReference(
+                        referenceId = tempPath.fileName.toString().substringBefore('_'),
+                        originalFileName = originalFileName,
+                        fileSize = fileSizeActual,
+                        contentType = contentType,
+                        temporaryPath = tempPath.toString(),
+                        createdAt = Instant.now(),
+                        expiresAt = Instant.now().plus(defaultExpirationHours, ChronoUnit.HOURS),
+                        checksum = checksum
+                    )
+                    activeReferences[reference.referenceId] = reference
+                    logger.info { "临时文件创建成功: ${reference.referenceId}, 路径=${tempPath}, 校验和=$checksum" }
+                    reference
+                })
+        }.subscribeOn(Schedulers.boundedElastic())
     }
     
     override fun getFileStream(referenceId: String): Mono<InputStream> {
@@ -269,31 +250,15 @@ class LocalTemporaryFileManager(
         }
     }
     
-    private fun writeFileWithChecksum(inputStream: InputStream, outputPath: Path, expectedSize: Long): String {
+    private fun calculateChecksum(path: Path): String {
         val digest = MessageDigest.getInstance("SHA-256")
-        var totalBytes = 0L
-        
-        Files.newOutputStream(outputPath).use { outputStream ->
+        Files.newInputStream(path).use { inputStream ->
             val buffer = ByteArray(8192)
             var bytesRead: Int
-            
             while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                outputStream.write(buffer, 0, bytesRead)
                 digest.update(buffer, 0, bytesRead)
-                totalBytes += bytesRead
-                
-                // 检查文件大小是否超过预期
-                if (totalBytes > expectedSize) {
-                    throw TemporaryFileSizeExceededException(totalBytes, expectedSize)
-                }
             }
         }
-        
-        // 验证最终大小
-        if (totalBytes != expectedSize) {
-            logger.warn { "文件大小不匹配: 期望=${expectedSize}字节, 实际=${totalBytes}字节" }
-        }
-        
         return digest.digest().joinToString("") { "%02x".format(it) }
     }
     

@@ -2,6 +2,8 @@ package site.weixing.natty.domain.common.filestorage.temp
 
 import reactor.core.publisher.Mono
 import java.io.InputStream
+import org.springframework.core.io.buffer.DataBuffer
+import reactor.core.publisher.Flux
 
 /**
  * 临时文件管理器接口
@@ -20,13 +22,13 @@ interface TemporaryFileManager {
     /**
      * 创建临时文件
      * 
-     * 将输入流的内容保存到临时文件中，并返回文件引用。
+     * 将数据流的内容保存到临时文件中，并返回文件引用。
      * 临时文件会在指定时间后自动过期，系统会定期清理过期文件。
      * 
      * @param originalFileName 原始文件名
      * @param fileSize 文件大小（字节）
      * @param contentType 文件内容类型
-     * @param inputStream 文件内容输入流
+     * @param dataBufferFlux 文件内容数据流（响应式）
      * @return 临时文件引用的 Mono 包装
      * @throws TemporaryFileCreationException 文件创建失败时抛出
      * @throws IllegalArgumentException 参数无效时抛出
@@ -35,7 +37,7 @@ interface TemporaryFileManager {
         originalFileName: String,
         fileSize: Long,
         contentType: String,
-        inputStream: InputStream
+        dataBufferFlux: Flux<DataBuffer>
     ): Mono<TemporaryFileReference>
     
     /**

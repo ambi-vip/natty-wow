@@ -61,13 +61,13 @@ class FileUploadPipeline(
                             // 收集处理结果
                             .collectList()
                             .map { buffers ->
-                                logger.info("收集到 ${buffers.size} 个缓冲区")
+                                logger.debug("收集到 ${buffers.size} 个缓冲区")
                                 // 在ByteBuffer被消费之前计算总大小
                                 val totalBytes = buffers.sumOf { buffer ->
                                     // 使用duplicate()避免影响原始ByteBuffer的position
                                     buffer.duplicate().remaining().toLong()
                                 }
-                                logger.info("计算总字节数: $totalBytes")
+                                logger.debug("计算总字节数: $totalBytes")
                                 
                                 PipelineResult(
                                     processedData = buffers,
