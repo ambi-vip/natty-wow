@@ -20,16 +20,16 @@ import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * 本地文件存储服务
- * 提供高级的文件存储操作和管理功能
+ * 统一文件存储服务
+ * 提供高级的多后端文件存储操作和管理功能
  */
 @Service
-class LocalFileStorageService(
+class FileStorageService(
     private val fileStorageStrategyFactory: FileStorageStrategyFactory
 ) {
 
     companion object {
-        private val logger = LoggerFactory.getLogger(LocalFileStorageService::class.java)
+        private val logger = LoggerFactory.getLogger(FileStorageService::class.java)
     }
 
     // 存储策略缓存

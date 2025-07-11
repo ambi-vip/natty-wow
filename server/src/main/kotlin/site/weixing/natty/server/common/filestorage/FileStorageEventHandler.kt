@@ -9,8 +9,8 @@ import site.weixing.natty.api.common.filestorage.file.FileUploaded
 import site.weixing.natty.api.common.filestorage.file.FileDeleted
 import site.weixing.natty.api.common.filestorage.file.FileMoved
 import site.weixing.natty.api.common.filestorage.storage.StorageProvider
+import site.weixing.natty.domain.common.filestorage.service.FileStorageService
 import site.weixing.natty.domain.common.filestorage.strategy.FileStorageStrategyFactory
-import site.weixing.natty.domain.common.filestorage.service.LocalFileStorageService
 
 /**
  * 文件存储事件处理器
@@ -19,7 +19,7 @@ import site.weixing.natty.domain.common.filestorage.service.LocalFileStorageServ
  */
 @Component
 class FileStorageEventHandler(
-    private val localFileStorageService: LocalFileStorageService,
+    private val fileStorageService: FileStorageService,
     private val commandGateway: CommandGateway,
     private val strategyFactory: FileStorageStrategyFactory
 ) {
@@ -51,8 +51,8 @@ class FileStorageEventHandler(
         return try {
             val storageConfig = getDefaultLocalStorageConfig()
             val strategy = strategyFactory.createStrategy(StorageProvider.LOCAL, storageConfig)
-            
-            localFileStorageService.deleteFile(strategy, event.storagePath)
+
+            fileStorageService.deleteFile(strategy, event.storagePath)
                 .doOnSuccess { deleted ->
                     if (deleted) {
                         logger.info { "文件物理删除成功: ${event.fileName}" }

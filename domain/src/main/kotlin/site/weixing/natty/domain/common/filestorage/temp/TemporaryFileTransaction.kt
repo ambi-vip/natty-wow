@@ -3,6 +3,7 @@ package site.weixing.natty.domain.common.filestorage.temp
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
 import reactor.util.function.Tuple2
 import reactor.util.function.Tuples
 
@@ -50,6 +51,7 @@ class TemporaryFileTransaction(
             .doOnError { error ->
                 logger.warn(error) { "操作失败: 临时文件引用=$temporaryRef, 错误=${error.message}" }
             }
+            .publishOn(Schedulers.boundedElastic())
             .doFinally { signalType ->
                 // 无论成功失败都清理临时文件
                 logger.debug { "开始清理临时文件: 引用=$temporaryRef, 信号类型=$signalType" }

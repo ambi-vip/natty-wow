@@ -5,6 +5,7 @@ import me.ahoo.wow.api.annotation.CommandRoute
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Min
+import me.ahoo.wow.api.command.validation.CommandValidator
 
 @CreateAggregate
 @CommandRoute(
@@ -40,4 +41,28 @@ data class UploadFile(
     val customMetadata: Map<String, String> = emptyMap(),
     
     val replaceIfExists: Boolean = false
-)
+) : CommandValidator {
+    override fun validate() {
+        validateFileName(fileName)
+    }
+
+
+    /**
+     * 验证文件名是否合法
+     */
+    private fun validateFileName(fileName: String) {
+        // 文件名不能包含特殊字符
+        val invalidChars = setOf('/', '\\', ':', '*', '?', '"', '<', '>', '|')
+        require(fileName.none { it in invalidChars }) {
+            "文件名包含非法字符: ${invalidChars.joinToString("")}"
+        }
+
+        // 文件名长度限制
+        require(fileName.length <= 255) { "文件名长度不能超过255个字符" }
+
+        // 文件名不能以点开头或结尾
+        require(!fileName.startsWith(".") && !fileName.endsWith(".")) {
+            "文件名不能以点开头或结尾"
+        }
+    }
+}

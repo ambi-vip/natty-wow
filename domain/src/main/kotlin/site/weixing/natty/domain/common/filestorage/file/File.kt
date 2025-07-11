@@ -3,6 +3,7 @@ package site.weixing.natty.domain.common.filestorage.file
 import me.ahoo.wow.api.annotation.AggregateRoot
 import me.ahoo.wow.api.annotation.OnCommand
 import me.ahoo.wow.api.annotation.StaticTenantId
+import me.ahoo.wow.api.command.CommandResultAccessor
 import reactor.core.publisher.Mono
 import site.weixing.natty.api.common.filestorage.file.FileUploaded
 import site.weixing.natty.api.common.filestorage.file.UploadFile
@@ -40,142 +41,29 @@ class File(
         command: UploadFile,
         intelligentStorageRouter: IntelligentStorageRouter,
         temporaryFileManager: TemporaryFileManager,
-        temporaryFileTransaction: TemporaryFileTransaction
+        temporaryFileTransaction: TemporaryFileTransaction,
+        commandResultAccessor: CommandResultAccessor
     ): Mono<FileUploaded> {
-        // 使用事务性处理确保临时文件的正确清理
         return temporaryFileTransaction.executeWithCleanup(command.temporaryFileReference) {
-            Mono.fromCallable {
-                // 业务规则校验
-                validateFileName(command.fileName)
-                
-                // 创建文件上传上下文
-                createUploadContext(command)
-            }
-            .flatMap { uploadContext ->
-                // 获取临时文件引用信息
-                temporaryFileManager.getTemporaryFileReference(command.temporaryFileReference)
-                    .flatMap { tempFileRef ->
-                        // 验证文件大小一致性
-                        require(tempFileRef.fileSize == command.fileSize) {
-                            "临时文件大小与命令声明不匹配: ${tempFileRef.fileSize} != ${command.fileSize}"
-                        }
-                        
-                        // 获取或验证校验和
-                        val checksum = command.checksum ?: tempFileRef.checksum ?: run {
-                            // 如果都没有校验和，需要计算
-                            temporaryFileManager.getFileStream(command.temporaryFileReference)
-                                .map { stream -> stream.use { calculateChecksum(it.readBytes()) } }
-                                .block() ?: throw IllegalStateException("无法计算文件校验和")
-                        }
-                        
-                        // 验证校验和一致性（如果临时文件有校验和）
-                        tempFileRef.checksum?.let { tempChecksum ->
-                            command.checksum?.let { commandChecksum ->
-                                require(tempChecksum == commandChecksum) {
-                                    "文件校验和不匹配，文件可能已损坏: 临时文件=$tempChecksum, 命令=$commandChecksum"
-                                }
-                            }
-                        }
-                        
-                        Mono.just(Triple(uploadContext, tempFileRef, checksum))
-                    }
-            }
-            .flatMap { (uploadContext, tempFileRef, checksum) ->
-                // 使用智能路由器选择最优存储策略
-                intelligentStorageRouter.selectOptimalStrategy(uploadContext)
-                    .flatMap { strategy ->
-                        // 生成存储路径
-                        val storagePath = generateStoragePath(command.folderId, command.fileName)
-                        
-                        // 创建流式处理上下文
-                        val processingContext = createProcessingContext(command)
-                        
-                        // 获取临时文件流并处理
-                        temporaryFileManager.getFileStream(command.temporaryFileReference)
-                            .flatMap { inputStream ->
-                                // 通过流式处理管道处理文件
-                                uploadPipeline.processUpload(
-                                    inputStream = inputStream,
-                                    storageStrategy = strategy,
-                                    context = processingContext
-                                ).flatMap { pipelineResult ->
-                                    if (pipelineResult.success) {
-                                        // 使用处理后的数据执行存储
-                                        strategy.uploadFile(
-                                            filePath = storagePath,
-                                            inputStream = pipelineResult.toInputStream(),
-                                            contentType = command.contentType,
-                                            fileSize = pipelineResult.getTotalBytes(),
-                                            metadata = buildEnhancedStorageMetadata(command, checksum, pipelineResult, tempFileRef)
-                                        ).map { storageInfo ->
-                                            // 返回文件上传完成事件
-                                            FileUploaded(
-                                                fileName = command.fileName,
-                                                folderId = command.folderId,
-                                                uploaderId = command.uploaderId,
-                                                fileSize = command.fileSize,
-                                                contentType = command.contentType,
-                                                storagePath = storagePath,
-                                                actualStoragePath = storageInfo.storagePath,
-                                                checksum = pipelineResult.context.getMetadata<String>("checksum") ?: checksum,
-                                                isPublic = command.isPublic,
-                                                tags = command.tags,
-                                                customMetadata = command.customMetadata + extractPipelineMetadata(pipelineResult) + mapOf(
-                                                    "pipelineProcessed" to "true",
-                                                    "temporaryFileReference" to command.temporaryFileReference,
-                                                    "originalChecksum" to (tempFileRef.checksum ?: "unknown")
-                                                ),
-                                                storageProvider = storageInfo.provider.name,
-                                                uploadTimestamp = System.currentTimeMillis()
-                                            )
-                                        }
-                                    } else {
-                                        // 处理管道失败，获取新的流进行原始数据存储
-                                        temporaryFileManager.getFileStream(command.temporaryFileReference)
-                                            .flatMap { fallbackStream ->
-                                                strategy.uploadFile(
-                                                    filePath = storagePath,
-                                                    inputStream = fallbackStream,
-                                                    contentType = command.contentType,
-                                                    fileSize = command.fileSize,
-                                                    metadata = buildStorageMetadata(command, checksum, tempFileRef) + mapOf(
-                                                        "pipelineError" to (pipelineResult.error ?: "未知错误")
-                                                    )
-                                                ).map { storageInfo ->
-                                                    FileUploaded(
-                                                        fileName = command.fileName,
-                                                        folderId = command.folderId,
-                                                        uploaderId = command.uploaderId,
-                                                        fileSize = command.fileSize,
-                                                        contentType = command.contentType,
-                                                        storagePath = storagePath,
-                                                        actualStoragePath = storageInfo.storagePath,
-                                                        checksum = checksum,
-                                                        isPublic = command.isPublic,
-                                                        tags = command.tags,
-                                                        customMetadata = command.customMetadata + mapOf(
-                                                            "pipelineProcessed" to "false",
-                                                            "temporaryFileReference" to command.temporaryFileReference,
-                                                            "pipelineError" to (pipelineResult.error ?: "未知错误")
-                                                        ),
-                                                        storageProvider = storageInfo.provider.name,
-                                                        uploadTimestamp = System.currentTimeMillis()
-                                                    )
-                                                }
-                                            }
-                                    }
-                                }
-                            }
-                    }
-            }
-            .onErrorMap { error ->
-                // 将技术错误转换为业务异常
-                when (error) {
-                    is IllegalArgumentException -> error
-                    is SecurityException -> IllegalArgumentException("文件安全检查失败: ${error.message}", error)
-                    else -> IllegalStateException("文件上传失败: ${error.message}", error)
+            buildContext(command)
+                .flatMap { uploadContext ->
+                    fetchAndValidateTempFile(command, temporaryFileManager)
+                        .map { tempFileRef -> uploadContext to tempFileRef }
                 }
-            }
+                .flatMap { (uploadContext, tempFileRef) ->
+                    processPipelineAndStore(
+                        uploadContext, tempFileRef, command, intelligentStorageRouter, temporaryFileManager
+                    )
+                }
+                .map { (storageInfo, checksum) ->
+                    buildFileUploadedEvent(command, storageInfo, checksum)
+                }
+                .doOnNext { event ->
+                    // 通过 commandResultAccessor 返回关键业务信息给客户端
+                    commandResultAccessor.setCommandResult("actualStoragePath", event.actualStoragePath)
+                    commandResultAccessor.setCommandResult("folderId", event.folderId)
+                    commandResultAccessor.setCommandResult("checksum", event.checksum)
+                }
         }
     }
 
@@ -193,6 +81,85 @@ class File(
         temporaryFileManager.getFileStream(referenceId).block()?.use { inputStream ->
             operation(inputStream)
         } ?: throw IllegalStateException("无法获取临时文件流: $referenceId")
+    }
+
+    // 拆分的私有方法实现
+    private fun buildContext(command: UploadFile): Mono<FileUploadContext> {
+        return Mono.fromCallable {
+            createUploadContext(command)
+        }
+    }
+
+    private fun fetchAndValidateTempFile(
+        command: UploadFile,
+        temporaryFileManager: TemporaryFileManager
+    ): Mono<site.weixing.natty.domain.common.filestorage.temp.TemporaryFileReference> {
+        return temporaryFileManager.getTemporaryFileReference(command.temporaryFileReference)
+            .flatMap { tempFileRef ->
+                require(tempFileRef.fileSize == command.fileSize) {
+                    "临时文件大小与命令声明不匹配: ${tempFileRef.fileSize} != ${command.fileSize}"
+                }
+                Mono.just(tempFileRef)
+            }
+    }
+
+    private fun processPipelineAndStore(
+        uploadContext: FileUploadContext,
+        tempFileRef: site.weixing.natty.domain.common.filestorage.temp.TemporaryFileReference,
+        command: UploadFile,
+        intelligentStorageRouter: IntelligentStorageRouter,
+        temporaryFileManager: TemporaryFileManager
+    ): Mono<Pair<StorageInfo, String>> {
+        return intelligentStorageRouter.selectOptimalStrategy(uploadContext)
+            .flatMap { strategy ->
+                val storagePath = generateStoragePath(command.folderId, command.fileName)
+                val processingContext = createProcessingContext(command)
+                temporaryFileManager.getFileStream(command.temporaryFileReference)
+                    .flatMap { inputStream ->
+                        uploadPipeline.processUpload(
+                            inputStream = inputStream,
+                            storageStrategy = strategy,
+                            context = processingContext
+                        ).flatMap { pipelineResult ->
+                            if (pipelineResult.success) {
+                                strategy.uploadFile(
+                                    filePath = storagePath,
+                                    inputStream = pipelineResult.toInputStream(),
+                                    contentType = command.contentType,
+                                    fileSize = pipelineResult.getTotalBytes(),
+                                    metadata = buildEnhancedStorageMetadata(command, pipelineResult.context.getMetadata("checksum") ?: "", pipelineResult, tempFileRef)
+                                ).map { storageInfo ->
+                                    storageInfo to (pipelineResult.context.getMetadata("checksum") ?: "")
+                                }
+                            } else {
+                                // 处理管道失败，直接抛出异常
+                                Mono.error(IllegalStateException("文件处理管道失败: ${pipelineResult.error ?: "未知错误"}"))
+                            }
+                        }
+                    }
+            }
+    }
+
+    private fun buildFileUploadedEvent(
+        command: UploadFile,
+        storageInfo: StorageInfo,
+        checksum: String
+    ): FileUploaded {
+        return FileUploaded(
+            fileName = command.fileName,
+            folderId = command.folderId,
+            uploaderId = command.uploaderId,
+            fileSize = command.fileSize,
+            contentType = command.contentType,
+            storagePath = storageInfo.storagePath,
+            actualStoragePath = storageInfo.storagePath,
+            checksum = checksum,
+            isPublic = command.isPublic,
+            tags = command.tags,
+            customMetadata = command.customMetadata,
+            storageProvider = storageInfo.provider.name,
+            uploadTimestamp = System.currentTimeMillis()
+        )
     }
 
     /**
@@ -284,24 +251,7 @@ class File(
         }
     }
 
-    /**
-     * 验证文件名是否合法
-     */
-    private fun validateFileName(fileName: String) {
-        // 文件名不能包含特殊字符
-        val invalidChars = setOf('/', '\\', ':', '*', '?', '"', '<', '>', '|')
-        require(fileName.none { it in invalidChars }) {
-            "文件名包含非法字符: ${invalidChars.joinToString("")}"
-        }
 
-        // 文件名长度限制
-        require(fileName.length <= 255) { "文件名长度不能超过255个字符" }
-
-        // 文件名不能以点开头或结尾
-        require(!fileName.startsWith(".") && !fileName.endsWith(".")) {
-            "文件名不能以点开头或结尾"
-        }
-    }
 
     /**
      * 计算文件SHA-256校验和（从字节数组）

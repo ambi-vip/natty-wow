@@ -12,7 +12,7 @@ import me.ahoo.wow.query.dsl.listQuery
 import me.ahoo.wow.query.snapshot.SnapshotQueryService
 import me.ahoo.wow.query.snapshot.nestedState
 import me.ahoo.wow.query.snapshot.query
-import site.weixing.natty.domain.common.filestorage.service.LocalFileStorageService
+import site.weixing.natty.domain.common.filestorage.service.FileStorageService
 import site.weixing.natty.domain.common.filestorage.storage.StorageConfigState
 import java.time.LocalDateTime
 
@@ -36,8 +36,7 @@ import java.time.LocalDateTime
  */
 @Component
 class IntelligentStorageRouterImpl(
-    private val localFileStorageService: LocalFileStorageService,
-    private val strategyFactory: FileStorageStrategyFactory,
+    private val fileStorageService: FileStorageService,
     private val storageConfigQueryService: SnapshotQueryService<StorageConfigState>,
     private val configuration: IntelligentStorageRouterConfiguration = IntelligentStorageRouterConfiguration()
 ) : IntelligentStorageRouter {
@@ -324,7 +323,7 @@ class IntelligentStorageRouterImpl(
             require(configState.config.isNotEmpty()) { "存储配置参数不能为空" }
             
             val provider = configState.provider!!
-            val strategy = localFileStorageService.getOrCreateStrategy(provider, configState.config)
+            val strategy = fileStorageService.getOrCreateStrategy(provider, configState.config)
             
             logger.debug("成功创建存储策略: {} (配置: {})", provider, configState.name)
             provider to strategy
@@ -366,7 +365,7 @@ class IntelligentStorageRouterImpl(
      */
     private fun createDefaultLocalStrategy(): Mono<Map<StorageProvider, FileStorageStrategy>> {
         return Mono.fromCallable {
-            val strategy = localFileStorageService.defaultStrategy()
+            val strategy = fileStorageService.defaultStrategy()
             mapOf(StorageProvider.LOCAL to strategy)
         }
         .onErrorMap { error ->
