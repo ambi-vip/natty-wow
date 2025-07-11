@@ -26,8 +26,6 @@ import org.springframework.core.io.buffer.DataBufferUtils
 @Service
 class FileUploadApplicationService(
     private val commandGateway: CommandGateway,
-    private val storageRouter: IntelligentStorageRouter,
-    private val localFileStorageService: LocalFileStorageService,
     private val temporaryFileManager: TemporaryFileManager
 ) {
     
@@ -36,7 +34,7 @@ class FileUploadApplicationService(
     }
     
     /**
-     * 处理文件上传请求（字节数组方式，兼容老接口）
+     * 处理文件上传请求
      * @param request 文件上传请求
      * @return 文件ID
      */
@@ -65,7 +63,7 @@ class FileUploadApplicationService(
                     fileSize = tempFileRef.fileSize,
                     contentType = request.contentType,
                     temporaryFileReference = tempFileRef.referenceId,
-                    checksum = request.checksum,
+                    checksum = tempFileRef.checksum,
                     isPublic = request.isPublic,
                     tags = request.tags,
                     customMetadata = request.customMetadata + mapOf(
@@ -82,7 +80,7 @@ class FileUploadApplicationService(
                         // 如果命令处理失败，手动清理临时文件
                         logger.warn(error) { "命令处理失败，清理临时文件: ${tempFileRef.referenceId}" }
                         temporaryFileManager.deleteTemporaryFile(tempFileRef.referenceId)
-                            .then(Mono.error<String>(error))
+                            .then(Mono.error(error))
                     }
             }
         }
@@ -250,7 +248,6 @@ data class FileUploadRequest(
     val fileSize: Long,
     val contentType: String,
     val dataBufferFlux: Flux<DataBuffer>,
-    val checksum: String? = null,
     val isPublic: Boolean = false,
     val tags: List<String> = emptyList(),
     val customMetadata: Map<String, String> = emptyMap(),

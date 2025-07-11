@@ -18,8 +18,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RequestPart
 import org.springframework.web.bind.annotation.RestController
-import reactor.core.scheduler.Schedulers
-import reactor.kotlin.core.publisher.toMono
 import java.nio.file.Files
 
 /**
@@ -85,7 +83,6 @@ class FileUploadController(
             fileSize = 1L, // 可选：如需准确大小可先统计
             contentType = "application/octet-stream",
             dataBufferFlux = file.content(), // 直接传递 Flux<DataBuffer>
-            checksum = null,
             isPublic = isPublic,
             tags = tags,
             customMetadata = mapOf(
@@ -120,7 +117,7 @@ class FileUploadController(
     }
     
     /**
-     * 流式文件上传接口（端到端非阻塞）
+     * 流式文件上传接口（端到端非阻塞）// 需要做权限校验
      * 
      * 兼容 Postman、Web 前端的 multipart/form-data 文件上传
      * 文件将直接流式写入本地磁盘，无中间临时文件

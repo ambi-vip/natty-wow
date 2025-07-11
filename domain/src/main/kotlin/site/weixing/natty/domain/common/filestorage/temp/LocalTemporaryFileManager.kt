@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit
 import org.springframework.core.io.buffer.DataBuffer
 import reactor.core.publisher.Flux
 import org.springframework.core.io.buffer.DataBufferUtils
+import org.springframework.util.FileSystemUtils
 
 /**
  * 本地临时文件管理器实现
@@ -58,11 +59,18 @@ class LocalTemporaryFileManager(
         try {
             // 创建临时文件目录
             val tempPath = Paths.get(tempDirectory)
-            if (!Files.exists(tempPath)) {
-                Files.createDirectories(tempPath)
-                logger.info { "创建临时文件目录: $tempDirectory" }
+            if (Files.exists(tempPath)) {
+                // 启动时递归删除所有历史文件（最快清理）
+                val deleted = FileSystemUtils.deleteRecursively(tempPath)
+                if (deleted) {
+                    logger.info { "启动时已递归清理临时目录: $tempDirectory" }
+                } else {
+                    logger.warn { "启动时递归清理临时目录失败: $tempDirectory" }
+                }
             }
-            
+            Files.createDirectories(tempPath)
+            logger.info { "创建临时文件目录: $tempDirectory" }
+
             // 启动定期清理任务
             cleanupScheduler.scheduleAtFixedRate(
                 { runCleanupTask() },
@@ -70,7 +78,7 @@ class LocalTemporaryFileManager(
                 cleanupIntervalMinutes,
                 TimeUnit.MINUTES
             )
-            
+
             logger.info { "临时文件管理器初始化完成: 目录=$tempDirectory, 过期时间=${defaultExpirationHours}小时, 最大文件大小=${maxFileSize}字节" }
         } catch (e: Exception) {
             logger.error(e) { "临时文件管理器初始化失败" }
@@ -240,7 +248,7 @@ class LocalTemporaryFileManager(
             if (!cleanupScheduler.awaitTermination(5, TimeUnit.SECONDS)) {
                 cleanupScheduler.shutdownNow()
             }
-        } catch (e: InterruptedException) {
+        } catch (_: InterruptedException) {
             cleanupScheduler.shutdownNow()
             Thread.currentThread().interrupt()
         }
