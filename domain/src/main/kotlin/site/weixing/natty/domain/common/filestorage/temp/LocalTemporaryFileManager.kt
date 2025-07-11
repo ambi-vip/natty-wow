@@ -3,16 +3,13 @@ package site.weixing.natty.domain.common.filestorage.temp
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.PostConstruct
 import jakarta.annotation.PreDestroy
-import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 import site.weixing.natty.domain.common.filestorage.exception.TemporaryFileNotFoundException
 import site.weixing.natty.domain.common.filestorage.exception.TemporaryFileExpiredException
 import site.weixing.natty.domain.common.filestorage.exception.TemporaryFileCreationException
 import site.weixing.natty.domain.common.filestorage.exception.TemporaryFileAccessException
-import site.weixing.natty.domain.common.filestorage.exception.TemporaryFileSizeExceededException
 import java.io.FileInputStream
-import java.io.FileOutputStream
 import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.NoSuchFileException
@@ -41,10 +38,10 @@ import org.springframework.core.io.buffer.DataBufferUtils
  * 4. 性能优化 - 异步I/O和响应式编程模型
  */
 class LocalTemporaryFileManager(
-    private val tempDirectory: String = "${System.getProperty("user.dir")}/storage/temp",
-    private val defaultExpirationHours: Long = 1L,
-    private val maxFileSize: Long = 5L * 1024 * 1024 * 1024, // 5GB
-    private val cleanupIntervalMinutes: Long = 30L
+    private val tempDirectory: String,
+    private val defaultExpirationHours: Long,
+    private val maxFileSize: Long,
+    private val cleanupIntervalMinutes: Long
 ) : TemporaryFileManager {
     
     companion object {
@@ -187,8 +184,7 @@ class LocalTemporaryFileManager(
     override fun cleanupExpiredFiles(): Mono<Long> {
         return Mono.fromCallable {
             logger.debug { "开始清理过期临时文件" }
-            
-            val now = Instant.now()
+
             var cleanedCount = 0L
             
             val expiredReferences = activeReferences.filterValues { it.isExpired() }
