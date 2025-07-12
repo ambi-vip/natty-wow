@@ -49,12 +49,13 @@ class FileUploadPipeline(
                             }
                         }
                     )
+                    .publishOn(Schedulers.boundedElastic())
                     .doFinally {
                         cleanupProcessors(activeProcessors, context).subscribe()
                     }
             }
             .doOnComplete {
-                logger.info("文件流式处理完成: ${context.fileName}")
+                logger.debug("文件流式处理完成: ${context.fileName}")
             }
             .doOnError { error ->
                 logger.error("文件流式处理失败: ${context.fileName}", error)

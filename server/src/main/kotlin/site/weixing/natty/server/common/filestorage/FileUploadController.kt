@@ -58,25 +58,9 @@ class FileUploadController(
         @RequestParam(value = "tags", required = false) tags: List<String> = emptyList(),
         @RequestParam(value = "replaceIfExists", required = false) replaceIfExists: Boolean = false
     ): Mono<ResponseEntity<FileUploadResponse>> {
-        // 首先尝试从 headers 获取大小
-        val sizeFromHeaders = file.headers().contentLength
-//
-//        val fileSizeMono = if (sizeFromHeaders > 0) {
-//            Mono.just(sizeFromHeaders)
-//        } else {
-//            // 如果 headers 中没有，则计算实际大小
-//            file.content()
-//                .map { dataBuffer ->
-//                    val size = dataBuffer.readableByteCount()
-//                    DataBufferUtils.release(dataBuffer)
-//                    size
-//                }
-//                .reduce(0L, Long::plus)
-//        }.block()
-
-
+        val start = System.currentTimeMillis()
         logger.info { "收到 FilePart 上传请求: ${file.filename()} " }
-
+        
         val uploadRequest = FileUploadRequest(
             fileName = file.filename(),
             folderId = folderId,
@@ -92,8 +76,12 @@ class FileUploadController(
             ),
             replaceIfExists = replaceIfExists
         )
+        val beforeService = System.currentTimeMillis()
+        logger.info { "[uploadMultipartFile] 构造请求耗时: ${beforeService - start} ms" }
         return fileUploadApplicationService.uploadFile(uploadRequest)
             .map { fileId ->
+                val afterService = System.currentTimeMillis()
+                logger.info { "[uploadMultipartFile] Service处理耗时: ${afterService - beforeService} ms" }
                 ResponseEntity.ok(
                     FileUploadResponse(
                         fileId = fileId,
@@ -103,6 +91,10 @@ class FileUploadController(
                         message = "FilePart 上传成功"
                     )
                 )
+            }
+            .doOnNext {
+                val end = System.currentTimeMillis()
+                logger.info { "[uploadMultipartFile] 总耗时: ${end - start} ms" }
             }
             .onErrorReturn(
                 ResponseEntity.badRequest().body(

@@ -1,31 +1,33 @@
 package site.weixing.natty.domain.common.filestorage.file
 
+import io.github.oshai.kotlinlogging.KotlinLogging.logger
 import me.ahoo.wow.api.annotation.AggregateRoot
 import me.ahoo.wow.api.annotation.OnCommand
 import me.ahoo.wow.api.annotation.StaticTenantId
 import me.ahoo.wow.api.command.CommandResultAccessor
+import me.ahoo.wow.id.GlobalIdGenerator
 import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
 import site.weixing.natty.api.common.filestorage.file.FileUploaded
 import site.weixing.natty.api.common.filestorage.file.UploadFile
 import site.weixing.natty.domain.common.filestorage.pipeline.FileUploadPipeline
 import site.weixing.natty.domain.common.filestorage.pipeline.ProcessingContext
 import site.weixing.natty.domain.common.filestorage.pipeline.ProcessingOptions
 import site.weixing.natty.domain.common.filestorage.pipeline.StreamProcessor
-import site.weixing.natty.domain.common.filestorage.pipeline.processors.*
+import site.weixing.natty.domain.common.filestorage.pipeline.processors.ChecksumProcessor
+import site.weixing.natty.domain.common.filestorage.pipeline.processors.CompressionProcessor
+import site.weixing.natty.domain.common.filestorage.pipeline.processors.EncryptionProcessor
+import site.weixing.natty.domain.common.filestorage.pipeline.processors.ThumbnailProcessor
+import site.weixing.natty.domain.common.filestorage.pipeline.processors.VirusScanProcessor
 import site.weixing.natty.domain.common.filestorage.router.AccessPattern
 import site.weixing.natty.domain.common.filestorage.router.FileUploadContext
 import site.weixing.natty.domain.common.filestorage.router.IntelligentStorageRouter
 import site.weixing.natty.domain.common.filestorage.router.Priority
 import site.weixing.natty.domain.common.filestorage.temp.TemporaryFileManager
+import site.weixing.natty.domain.common.filestorage.temp.TemporaryFileReference
 import site.weixing.natty.domain.common.filestorage.temp.TemporaryFileTransaction
-import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.security.MessageDigest
-import reactor.core.scheduler.Schedulers
-import org.springframework.core.io.buffer.DataBuffer
-import reactor.core.publisher.Flux
-import site.weixing.natty.domain.common.filestorage.strategy.impl.LocalFileStorageStrategy
-import site.weixing.natty.domain.common.filestorage.temp.TemporaryFileReference
 
 /**
  * 文件聚合根
@@ -38,6 +40,24 @@ class File(
     private val state: FileState
 ) {
 
+    companion object {
+        private val logger = logger {}
+        /**
+         * 创建默认的流式处理管道
+         */
+        fun createDefaultPipeline(): FileUploadPipeline {
+            val processors: List<StreamProcessor> = listOf(
+                VirusScanProcessor(),
+                ChecksumProcessor(),
+                CompressionProcessor(),
+                EncryptionProcessor(),
+                ThumbnailProcessor()
+            )
+
+            return FileUploadPipeline(processors)
+        }
+    }
+
     // 使用默认实现，后续可通过配置注入
     private val uploadPipeline: FileUploadPipeline = createDefaultPipeline()
 
@@ -49,6 +69,7 @@ class File(
         temporaryFileTransaction: TemporaryFileTransaction,
         commandResultAccessor: CommandResultAccessor
     ): Mono<FileUploaded> {
+        val start = System.currentTimeMillis()
         return temporaryFileTransaction.executeWithCleanup(command.temporaryFileReference) {
             buildContext(command)
                 .publishOn(Schedulers.boundedElastic())
@@ -58,12 +79,14 @@ class File(
                         .map { tempFileRef -> uploadContext to tempFileRef }
                 }
                 .flatMap { (uploadContext, tempFileRef) ->
-                    // 全链路流式处理：临时文件流 → Pipeline → StorageStrategy
+                    val beforePipeline = System.currentTimeMillis()
                     val dataBufferFlux = temporaryFileManager.getFileStreamAsFlux(command.temporaryFileReference)
                     intelligentStorageRouter.selectOptimalStrategy(uploadContext)
                         .flatMap { strategy ->
                             val processingContext = createProcessingContext(command)
                             val processedFlux = uploadPipeline.processUpload(dataBufferFlux, processingContext)
+                            val afterPipeline = System.currentTimeMillis()
+                            logger.info { "[File.onUpload] Pipeline处理耗时: ${afterPipeline - beforePipeline} ms" }
                             strategy
                                 .uploadFile(
                                     filePath = generateStoragePath(command.folderId, command.fileName),
@@ -71,6 +94,7 @@ class File(
                                     contentType = command.contentType,
                                     metadata = buildStorageMetadata(command, "", tempFileRef)
                                 )
+                                .doOnSuccess { logger.info { "[File.onUpload] 存储策略写入耗时: ${System.currentTimeMillis() - afterPipeline} ms" } }
                         }
                 }
                 .map { storageInfo: StorageInfo ->
@@ -80,6 +104,10 @@ class File(
                     commandResultAccessor.setCommandResult("actualStoragePath", event.actualStoragePath)
                     commandResultAccessor.setCommandResult("folderId", event.folderId)
                     commandResultAccessor.setCommandResult("checksum", event.checksum)
+                }
+                .doOnSuccess {
+                    val end = System.currentTimeMillis()
+                    logger.info { "[File.onUpload] 总耗时: ${end - start} ms" }
                 }
         }
     }
@@ -272,7 +300,7 @@ class File(
      * 生成存储路径
      */
     private fun generateStoragePath(folderId: String, fileName: String): String {
-        val timestamp = System.currentTimeMillis()
+        val timestamp = GlobalIdGenerator.generateAsString()
         val fileExtension = fileName.substringAfterLast('.', "")
         val baseFileName = fileName.substringBeforeLast('.')
 
@@ -338,7 +366,7 @@ class File(
             enableCompression = command.tags.contains("compress") || shouldCompress(command),
             enableEncryption = !command.isPublic || command.tags.contains("encrypt"),
             enableThumbnail = command.contentType.startsWith("image/"),
-            enableChecksumValidation = true
+            enableChecksumValidation = false
         )
     }
 
@@ -410,22 +438,5 @@ class File(
         metadata["processedSize"] = pipelineResult.getTotalBytes().toString()
 
         return metadata
-    }
-
-    companion object {
-        /**
-         * 创建默认的流式处理管道
-         */
-        fun createDefaultPipeline(): FileUploadPipeline {
-            val processors: List<StreamProcessor> = listOf(
-                VirusScanProcessor(),
-                ChecksumProcessor(),
-                CompressionProcessor(),
-                EncryptionProcessor(),
-                ThumbnailProcessor()
-            )
-
-            return FileUploadPipeline(processors)
-        }
     }
 } 

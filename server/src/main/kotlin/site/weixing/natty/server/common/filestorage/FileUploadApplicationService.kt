@@ -33,23 +33,24 @@ class FileUploadApplicationService(
      * @return 文件ID
      */
     fun uploadFile(request: FileUploadRequest): Mono<String> {
+        val start = System.currentTimeMillis()
         logger.info { "开始处理文件上传: ${request.fileName} (大小: ${request.fileSize} bytes)" }
         
         return Mono.fromCallable {
-            // 基本验证
             require(request.fileName.isNotBlank()) { "文件名不能为空" }
-            // 生成文件ID
             UUID.randomUUID().toString()
         }
         .flatMap { fileId ->
-            // 将字节数组转换为输入流，创建临时文件
+            val beforeTemp = System.currentTimeMillis()
+            logger.info { "[uploadFile] 生成文件ID耗时: ${beforeTemp - start} ms" }
             temporaryFileManager.createTemporaryFile(
                 originalFileName = request.fileName,
                 fileSize = request.fileSize,
                 contentType = request.contentType,
                 dataBufferFlux = request.dataBufferFlux
             ).flatMap { tempFileRef ->
-                // 创建上传命令使用临时文件引用
+                val afterTemp = System.currentTimeMillis()
+                logger.info { "[uploadFile] 创建临时文件耗时: ${afterTemp - beforeTemp} ms" }
                 val uploadCommand = UploadFile(
                     fileName = request.fileName,
                     folderId = request.folderId,
@@ -66,12 +67,12 @@ class FileUploadApplicationService(
                     ),
                     replaceIfExists = request.replaceIfExists
                 )
-
-                // 发送命令到File聚合根，聚合根将处理存储和临时文件清理
+                val beforeCmd = System.currentTimeMillis()
+                logger.info { "[uploadFile] 构造命令耗时: ${beforeCmd - afterTemp} ms" }
                 commandGateway.sendAndWaitForSnapshot(uploadCommand.toCommandMessage(aggregateId = fileId))
+                    .doOnSuccess { logger.info { "[uploadFile] 命令处理耗时: ${System.currentTimeMillis() - beforeCmd} ms" } }
                     .then(Mono.just(fileId))
                     .onErrorResume { error ->
-                        // 如果命令处理失败，手动清理临时文件
                         logger.warn(error) { "命令处理失败，清理临时文件: ${tempFileRef.referenceId}" }
                         temporaryFileManager.deleteTemporaryFile(tempFileRef.referenceId)
                             .then(Mono.error(error))
@@ -79,7 +80,8 @@ class FileUploadApplicationService(
             }
         }
         .doOnSuccess { fileId ->
-            logger.info { "文件上传命令发送成功: ${request.fileName} -> $fileId" }
+            val end = System.currentTimeMillis()
+            logger.info { "[uploadFile] 总耗时: ${end - start} ms, fileId=$fileId" }
         }
         .doOnError { error ->
             logger.error(error) { "文件上传处理失败: ${request.fileName}" }

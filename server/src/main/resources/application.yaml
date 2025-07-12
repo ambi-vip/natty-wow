@@ -64,7 +64,8 @@ spring:
 
 logging:
   level:
-    me.ahoo.wow: debug
+    me.ahoo.wow: info
+
 cosid:
   machine:
     enabled: true

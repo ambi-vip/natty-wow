@@ -63,15 +63,23 @@ class LocalFileStorageStrategy(
         metadata: Map<String, String>
     ): Mono<StorageInfo> {
         return Mono.defer {
+            val start = System.currentTimeMillis()
             val targetPath = resolveFilePath(filePath)
             Files.createDirectories(targetPath.parent)
-            DataBufferUtils.write(dataBufferFlux, targetPath)
-                .then(Mono.fromCallable {
-                    StorageInfo.local(
-                        storagePath = filePath,
-                        etag = null // 可选：如需校验和可异步计算
-                    )
-                })
+            logger.info("[LocalFileStorageStrategy] uploadFile入口: $filePath, 目标: $targetPath")
+            
+            val writeOperation: Mono<Void> = DataBufferUtils.write(dataBufferFlux, targetPath)
+                .doOnSubscribe { logger.info("[LocalFileStorageStrategy] DataBufferUtils.write 开始: $filePath") }
+                .doFinally { _ -> logger.info("[LocalFileStorageStrategy] DataBufferUtils.write 完成: $filePath, 耗时: ${System.currentTimeMillis() - start} ms") }
+            
+            writeOperation.then(Mono.fromCallable {
+                val end = System.currentTimeMillis()
+                logger.info("[LocalFileStorageStrategy] uploadFile 总耗时: ${end - start} ms, $filePath")
+                StorageInfo.local(
+                    storagePath = filePath,
+                    etag = null // 可选：如需校验和可异步计算
+                )
+            })
         }
     }
 
