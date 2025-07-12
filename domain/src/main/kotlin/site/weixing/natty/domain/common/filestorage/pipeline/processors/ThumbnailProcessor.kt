@@ -12,6 +12,8 @@ import javax.imageio.ImageIO
 import java.awt.Image
 import java.awt.image.BufferedImage
 import java.awt.RenderingHints
+import org.springframework.core.io.buffer.DataBuffer
+import org.springframework.core.io.buffer.DefaultDataBufferFactory
 
 /**
  * 缩略图生成流处理器
@@ -47,21 +49,20 @@ class ThumbnailProcessor(
         }
     }
     
-    override fun process(input: Flux<ByteBuffer>, context: ProcessingContext): Flux<ByteBuffer> {
+    override fun process(input: Flux<DataBuffer>, context: ProcessingContext): Flux<DataBuffer> {
         return input
             .collectList() // 收集所有数据进行缩略图生成
             .flatMapMany { buffers ->
                 // 合并所有buffer，使用duplicate()避免修改原始buffer
-                val totalSize = buffers.sumOf { it.remaining() }
+                val totalSize = buffers.sumOf { it.readableByteCount() }
                 val inputBytes = ByteArray(totalSize)
                 var offset = 0
                 
                 buffers.forEach { buffer ->
                     // 使用duplicate()创建副本，避免修改原始ByteBuffer的position
-                    val duplicate = buffer.duplicate()
-                    val remaining = duplicate.remaining()
-                    duplicate.get(inputBytes, offset, remaining)
-                    offset += remaining
+                    val len = buffer.readableByteCount()
+                    buffer.read(inputBytes, offset, len)
+                    offset += len
                 }
                 
                 processedBytes = inputBytes.size.toLong()

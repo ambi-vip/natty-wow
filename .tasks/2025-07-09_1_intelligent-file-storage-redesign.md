@@ -874,7 +874,7 @@ data class TemporaryFileConfig(
 - 状态：成功
 
 [2025-01-14 22:47:45]
-- 已修改：LocalFileStorageService.kt, FileStorageEventHandler.kt - 更新默认存储目录配置
+- 已修改：FileStorageService.kt, FileStorageEventHandler.kt - 更新默认存储目录配置
 - 更改：将默认存储目录从/tmp改为项目根目录/storage/files
 - 原因：用户要求将文件存储在当前项目根目录下，便于管理和访问
 - 阻碍因素：无

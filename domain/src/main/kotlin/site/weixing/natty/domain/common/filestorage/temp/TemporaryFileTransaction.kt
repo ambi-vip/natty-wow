@@ -53,26 +53,25 @@ class TemporaryFileTransaction(
             }
             .publishOn(Schedulers.boundedElastic())
             .doFinally { signalType ->
-                // 无论成功失败都清理临时文件
-                logger.debug { "开始清理临时文件: 引用=$temporaryRef, 信号类型=$signalType" }
-                
-                temporaryFileManager.deleteTemporaryFile(temporaryRef)
-                    .doOnSuccess { deleted ->
-                        if (deleted) {
-                            logger.debug { "临时文件清理成功: $temporaryRef" }
-                        } else {
-                            logger.warn { "临时文件不存在或已被清理: $temporaryRef" }
+                // 无论成功失败都清理临时文件（彻底异步，不影响主链路）
+                Mono.defer {
+                    temporaryFileManager.deleteTemporaryFile(temporaryRef)
+                        .doOnSuccess { deleted ->
+                            if (deleted) {
+                                logger.debug { "临时文件清理成功: $temporaryRef" }
+                            } else {
+                                logger.warn { "临时文件不存在或已被清理: $temporaryRef" }
+                            }
                         }
-                    }
-                    .doOnError { cleanupError ->
-                        logger.error(cleanupError) { "临时文件清理失败: $temporaryRef" }
-                    }
-                    .onErrorResume { cleanupError ->
-                        // 清理失败不应该影响原始操作的结果
-                        logger.warn(cleanupError) { "忽略清理错误，避免影响原始操作: $temporaryRef" }
-                        Mono.just(false)
-                    }
-                    .subscribe()
+                        .doOnError { cleanupError ->
+                            logger.error(cleanupError) { "临时文件清理失败: $temporaryRef" }
+                        }
+                        .onErrorResume { cleanupError ->
+                            logger.warn(cleanupError) { "忽略清理错误，避免影响原始操作: $temporaryRef" }
+                            Mono.just(false)
+                        }
+                        .subscribeOn(Schedulers.boundedElastic())
+                }.subscribe() // 异步执行，不关心结果
             }
     }
     

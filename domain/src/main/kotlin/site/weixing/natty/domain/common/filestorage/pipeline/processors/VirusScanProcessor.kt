@@ -7,6 +7,7 @@ import site.weixing.natty.domain.common.filestorage.pipeline.ProcessingContext
 import site.weixing.natty.domain.common.filestorage.pipeline.ProcessorStatistics
 import java.nio.ByteBuffer
 import java.security.MessageDigest
+import org.springframework.core.io.buffer.DataBuffer
 
 /**
  * 病毒扫描流处理器
@@ -40,28 +41,18 @@ class VirusScanProcessor(
         }
     }
     
-    override fun process(input: Flux<ByteBuffer>, context: ProcessingContext): Flux<ByteBuffer> {
-        return input.map { buffer ->
-            // 复制buffer用于扫描，避免修改原始buffer
-            val duplicate = buffer.duplicate()
-            
-            // 模拟病毒扫描过程
-            val bytes = ByteArray(duplicate.remaining())
-            duplicate.get(bytes)
+    override fun process(input: Flux<DataBuffer>, context: ProcessingContext): Flux<DataBuffer> {
+        return input.map { dataBuffer ->
+            val bytes = ByteArray(dataBuffer.readableByteCount())
+            dataBuffer.read(bytes)
             processedBytes += bytes.size
-            
-            // 模拟扫描逻辑（检查已知病毒签名）
             scanForThreats(bytes, context)
-            
-            // 返回原始buffer，不修改流内容
-            buffer
+            dataBuffer
         }
         .doOnComplete {
-            // 扫描完成，记录结果
             context.addMetadata("virusScanResult", scanResult.name)
             context.addMetadata("virusScanEngine", configuration.engineName)
             context.addMetadata("scanTimeMs", System.currentTimeMillis() - startTime)
-            
             if (configuration.logScanActivity) {
                 println("病毒扫描完成：${context.fileName}，结果：${scanResult.displayName}")
             }

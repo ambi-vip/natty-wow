@@ -9,6 +9,8 @@ import java.nio.ByteBuffer
 import java.io.ByteArrayOutputStream
 import java.util.zip.GZIPOutputStream
 import java.util.zip.Deflater
+import org.springframework.core.io.buffer.DataBuffer
+import org.springframework.core.io.buffer.DefaultDataBufferFactory
 
 /**
  * 压缩流处理器
@@ -44,44 +46,34 @@ class CompressionProcessor(
         }
     }
     
-    override fun process(input: Flux<ByteBuffer>, context: ProcessingContext): Flux<ByteBuffer> {
+    override fun process(input: Flux<DataBuffer>, context: ProcessingContext): Flux<DataBuffer> {
         return if (!shouldCompress) {
-            // 如果不需要压缩，直接返回原始流
-            input.map { buffer ->
-                originalSize += buffer.remaining()
-                compressedSize = originalSize // 未压缩情况下大小相等
-                buffer
+            input.map { dataBuffer ->
+                originalSize += dataBuffer.readableByteCount()
+                compressedSize = originalSize
+                dataBuffer
             }.doOnComplete {
-                // 即使未压缩也要记录结果
                 recordCompressionResult(context, shouldCompress)
             }
         } else {
             input
-                .collectList() // 收集所有数据块进行压缩
+                .collectList()
                 .flatMapMany { buffers ->
-                    // 计算原始大小
-                    originalSize = buffers.sumOf { it.remaining().toLong() }
-                    
-                    // 合并所有buffer到字节数组
-                    val totalSize = buffers.sumOf { it.remaining() }
+                    originalSize = buffers.sumOf { it.readableByteCount().toLong() }
+                    val totalSize = buffers.sumOf { it.readableByteCount() }
                     val inputBytes = ByteArray(totalSize)
                     var offset = 0
-                    
                     buffers.forEach { buffer ->
-                        val remaining = buffer.remaining()
-                        buffer.get(inputBytes, offset, remaining)
-                        offset += remaining
+                        val len = buffer.readableByteCount()
+                        buffer.read(inputBytes, offset, len)
+                        offset += len
                     }
-                    
-                    // 执行压缩
                     val compressedBytes = compressBytes(inputBytes, context)
                     compressedSize = compressedBytes.size.toLong()
-                    
-                    // 返回压缩后的数据
-                    Flux.just(ByteBuffer.wrap(compressedBytes))
+                    val factory = DefaultDataBufferFactory()
+                    Flux.fromIterable(listOf(factory.wrap(compressedBytes))) as Flux<DataBuffer>
                 }
                 .doOnComplete {
-                    // 记录压缩结果
                     recordCompressionResult(context, shouldCompress)
                 }
         }

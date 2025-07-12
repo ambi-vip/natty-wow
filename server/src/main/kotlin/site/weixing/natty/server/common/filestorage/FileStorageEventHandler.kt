@@ -52,7 +52,7 @@ class FileStorageEventHandler(
             val storageConfig = getDefaultLocalStorageConfig()
             val strategy = strategyFactory.createStrategy(StorageProvider.LOCAL, storageConfig)
 
-            fileStorageService.deleteFile(strategy, event.storagePath)
+            fileStorageService.deleteFile(event.storagePath)
                 .doOnSuccess { deleted ->
                     if (deleted) {
                         logger.info { "文件物理删除成功: ${event.fileName}" }
@@ -82,7 +82,7 @@ class FileStorageEventHandler(
             val strategy = strategyFactory.createStrategy(StorageProvider.LOCAL, storageConfig)
             
             // 使用存储策略的moveFile方法
-            strategy.moveFile(event.oldStoragePath, event.newStoragePath)
+            fileStorageService.moveFile(event.oldStoragePath, event.newStoragePath)
                 .doOnSuccess { moved ->
                     if (moved) {
                         logger.info { "文件物理移动成功: ${event.fileName}" }

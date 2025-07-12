@@ -1,7 +1,6 @@
 package site.weixing.natty.domain.common.filestorage.temp
 
 import reactor.core.publisher.Mono
-import java.io.InputStream
 import org.springframework.core.io.buffer.DataBuffer
 import reactor.core.publisher.Flux
 
@@ -20,18 +19,13 @@ import reactor.core.publisher.Flux
 interface TemporaryFileManager {
     
     /**
-     * 创建临时文件
-     * 
-     * 将数据流的内容保存到临时文件中，并返回文件引用。
-     * 临时文件会在指定时间后自动过期，系统会定期清理过期文件。
+     * 创建临时文件（流式）
      * 
      * @param originalFileName 原始文件名
      * @param fileSize 文件大小（字节）
      * @param contentType 文件内容类型
      * @param dataBufferFlux 文件内容数据流（响应式）
      * @return 临时文件引用的 Mono 包装
-     * @throws TemporaryFileCreationException 文件创建失败时抛出
-     * @throws IllegalArgumentException 参数无效时抛出
      */
     fun createTemporaryFile(
         originalFileName: String,
@@ -39,20 +33,14 @@ interface TemporaryFileManager {
         contentType: String,
         dataBufferFlux: Flux<DataBuffer>
     ): Mono<TemporaryFileReference>
-    
+
     /**
-     * 获取临时文件的输入流
-     * 
-     * 根据引用ID获取对应临时文件的输入流，用于读取文件内容。
-     * 如果文件已过期或不存在，将返回错误。
+     * 获取临时文件的 DataBuffer 流（流式读取）
      * 
      * @param referenceId 临时文件引用ID
-     * @return 文件输入流的 Mono 包装
-     * @throws TemporaryFileNotFoundException 文件不存在时抛出
-     * @throws TemporaryFileExpiredException 文件已过期时抛出
-     * @throws TemporaryFileAccessException 文件访问失败时抛出
+     * @return 文件内容的 Flux<DataBuffer>
      */
-    fun getFileStream(referenceId: String): Mono<InputStream>
+    fun getFileStreamAsFlux(referenceId: String): Flux<DataBuffer>
     
     /**
      * 删除临时文件

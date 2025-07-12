@@ -1,6 +1,7 @@
 package site.weixing.natty.server.common.filestorage
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import me.ahoo.wow.opentelemetry.Tracing.tracing
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import reactor.core.publisher.Mono

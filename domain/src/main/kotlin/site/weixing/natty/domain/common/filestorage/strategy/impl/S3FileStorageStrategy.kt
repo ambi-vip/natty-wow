@@ -8,6 +8,8 @@ import site.weixing.natty.domain.common.filestorage.strategy.FileStorageStrategy
 import site.weixing.natty.domain.common.filestorage.strategy.StorageUsage
 import site.weixing.natty.domain.common.filestorage.exception.StorageProviderUnavailableException
 import java.io.InputStream
+import org.springframework.core.io.buffer.DataBuffer
+import reactor.core.publisher.Flux
 
 /**
  * S3存储策略空实现
@@ -25,9 +27,8 @@ class S3FileStorageStrategy(
 
     override fun uploadFile(
         filePath: String,
-        inputStream: InputStream,
+        dataBufferFlux: Flux<DataBuffer>,
         contentType: String,
-        fileSize: Long,
         metadata: Map<String, String>
     ): Mono<StorageInfo> {
         return Mono.error(StorageProviderUnavailableException(
@@ -36,8 +37,8 @@ class S3FileStorageStrategy(
         ))
     }
 
-    override fun downloadFile(filePath: String): Mono<InputStream> {
-        return Mono.error(StorageProviderUnavailableException(
+    override fun downloadFile(filePath: String): Flux<DataBuffer> {
+        return Flux.error(StorageProviderUnavailableException(
             provider = "S3",
             reason = "S3存储策略尚未实现"
         ))

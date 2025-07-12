@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit
 import org.springframework.core.io.buffer.DataBuffer
 import reactor.core.publisher.Flux
 import org.springframework.core.io.buffer.DataBufferUtils
+import org.springframework.core.io.buffer.DefaultDataBufferFactory
 import org.springframework.util.FileSystemUtils
 
 /**
@@ -104,7 +105,6 @@ class LocalTemporaryFileManager(
         }.flatMap { tempPath ->
             DataBufferUtils.write(dataBufferFlux, tempPath)
                 .then(Mono.fromCallable {
-                    val checksum = calculateChecksum(tempPath)
                     val fileSizeActual = Files.size(tempPath)
                     val reference = TemporaryFileReference(
                         referenceId = tempPath.fileName.toString().substringBefore('_'),
@@ -114,49 +114,26 @@ class LocalTemporaryFileManager(
                         temporaryPath = tempPath.toString(),
                         createdAt = Instant.now(),
                         expiresAt = Instant.now().plus(defaultExpirationHours, ChronoUnit.HOURS),
-                        checksum = checksum
+                        checksum = null // 可选：如需校验和可异步计算
                     )
                     activeReferences[reference.referenceId] = reference
-                    logger.info { "临时文件创建成功: ${reference.referenceId}, 路径=${tempPath}, 校验和=$checksum" }
+                    logger.info { "临时文件创建成功: ${reference.referenceId}, 路径=${tempPath}" }
                     reference
                 })
         }.subscribeOn(Schedulers.boundedElastic())
     }
     
-    override fun getFileStream(referenceId: String): Mono<InputStream> {
-        return Mono.fromCallable {
-            logger.debug { "获取临时文件流: $referenceId" }
-            
-            val reference = activeReferences[referenceId]
-                ?: throw TemporaryFileNotFoundException(referenceId)
-            
-            // 检查是否过期
-            if (reference.isExpired()) {
-                logger.warn { "临时文件已过期: $referenceId, 过期时间=${reference.expiresAt}" }
-                // 清理过期文件
-                cleanupExpiredReference(referenceId, reference)
-                throw TemporaryFileExpiredException(referenceId)
-            }
-            
-            try {
-                val path = Paths.get(reference.temporaryPath)
-                if (!Files.exists(path)) {
-                    logger.error { "临时文件物理文件不存在: $referenceId, 路径=${reference.temporaryPath}" }
-                    activeReferences.remove(referenceId)
-                    throw TemporaryFileNotFoundException(referenceId)
-                }
-                
-                FileInputStream(path.toFile()) as InputStream
-            } catch (e: NoSuchFileException) {
-                logger.error { "临时文件不存在: $referenceId, 路径=${reference.temporaryPath}" }
-                activeReferences.remove(referenceId)
-                throw TemporaryFileNotFoundException(referenceId)
-            } catch (e: Exception) {
-                logger.error(e) { "访问临时文件失败: $referenceId" }
-                throw TemporaryFileAccessException(referenceId, cause = e)
-            }
+    override fun getFileStreamAsFlux(referenceId: String): Flux<DataBuffer> {
+        val reference = activeReferences[referenceId]
+            ?: throw TemporaryFileNotFoundException(referenceId)
+        if (reference.isExpired()) {
+            cleanupExpiredReference(referenceId, reference)
+            throw TemporaryFileExpiredException(referenceId)
         }
-        .subscribeOn(Schedulers.boundedElastic())
+        val tempPath = Paths.get(reference.temporaryPath)
+        val bufferFactory = DefaultDataBufferFactory()
+        val bufferSize = 8192
+        return DataBufferUtils.read(tempPath, bufferFactory, bufferSize)
     }
     
     override fun deleteTemporaryFile(referenceId: String): Mono<Boolean> {

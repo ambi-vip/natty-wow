@@ -5,7 +5,6 @@ import reactor.core.publisher.Mono
 import site.weixing.natty.domain.common.filestorage.pipeline.StreamProcessor
 import site.weixing.natty.domain.common.filestorage.pipeline.ProcessingContext
 import site.weixing.natty.domain.common.filestorage.pipeline.ProcessorStatistics
-import java.nio.ByteBuffer
 import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -13,6 +12,8 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 import java.util.Base64
+import org.springframework.core.io.buffer.DataBuffer
+import org.springframework.core.io.buffer.DefaultDataBufferFactory
 
 /**
  * 加密流处理器
@@ -52,36 +53,28 @@ class EncryptionProcessor(
         }
     }
     
-    override fun process(input: Flux<ByteBuffer>, context: ProcessingContext): Flux<ByteBuffer> {
+    override fun process(input: Flux<DataBuffer>, context: ProcessingContext): Flux<DataBuffer> {
         return input
-            .collectList() // 收集所有数据进行加密
-            .flatMapMany { buffers ->
-                // 合并所有buffer
-                val totalSize = buffers.sumOf { it.remaining() }
+            .collectList()
+            .flatMapMany { buffers: List<DataBuffer> ->
+                val totalSize = buffers.sumOf { it.readableByteCount() }
                 val inputBytes = ByteArray(totalSize)
                 var offset = 0
-                
                 buffers.forEach { buffer ->
-                    val remaining = buffer.remaining()
-                    buffer.get(inputBytes, offset, remaining)
-                    offset += remaining
+                    val len = buffer.readableByteCount()
+                    buffer.read(inputBytes, offset, len)
+                    offset += len
                 }
-                
                 processedBytes = inputBytes.size.toLong()
-                
-                // 执行加密
                 val encryptedData = encryptBytes(inputBytes, context)
-                
-                // 返回加密后的数据（包含IV前缀）
-                Flux.just(ByteBuffer.wrap(encryptedData))
+                val factory = DefaultDataBufferFactory()
+                Flux.fromIterable(listOf(factory.wrap(encryptedData))) as Flux<DataBuffer>
             }
             .doOnComplete {
-                // 记录加密信息到上下文
                 context.addMetadata("encryptionAlgorithm", configuration.algorithm)
                 context.addMetadata("encryptionKeyId", getKeyId(encryptionKey))
-                context.addMetadata("ivBase64", Base64.getEncoder().encodeToString(iv ?: byteArrayOf()))
+                context.addMetadata("ivBase64", java.util.Base64.getEncoder().encodeToString(iv ?: byteArrayOf()))
                 context.addMetadata("encryptedSize", processedBytes)
-                
                 if (configuration.logActivity) {
                     println("加密完成：${context.fileName}，大小：${formatBytes(processedBytes)}")
                 }

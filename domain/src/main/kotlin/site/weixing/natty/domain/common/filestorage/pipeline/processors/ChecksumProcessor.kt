@@ -7,6 +7,7 @@ import site.weixing.natty.domain.common.filestorage.pipeline.ProcessingContext
 import site.weixing.natty.domain.common.filestorage.pipeline.ProcessorStatistics
 import java.nio.ByteBuffer
 import java.security.MessageDigest
+import org.springframework.core.io.buffer.DataBuffer
 
 /**
  * 校验和计算流处理器
@@ -35,21 +36,13 @@ class ChecksumProcessor(
         }
     }
     
-    override fun process(input: Flux<ByteBuffer>, context: ProcessingContext): Flux<ByteBuffer> {
-        return input.map { buffer ->
-            // 复制buffer用于校验和计算，避免修改原始buffer
-            val duplicate = buffer.duplicate()
-            
-            // 计算校验和
-            digest?.let { digest ->
-                val bytes = ByteArray(duplicate.remaining())
-                duplicate.get(bytes)
-                digest.update(bytes)
-                processedBytes += bytes.size
-            }
-            
-            // 返回原始buffer，不修改流内容
-            buffer
+    override fun process(input: Flux<DataBuffer>, context: ProcessingContext): Flux<DataBuffer> {
+        return input.map { dataBuffer ->
+            val bytes = ByteArray(dataBuffer.readableByteCount())
+            dataBuffer.read(bytes)
+            digest?.update(bytes)
+            processedBytes += bytes.size
+            dataBuffer
         }
     }
     

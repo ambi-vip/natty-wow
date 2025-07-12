@@ -4,6 +4,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.io.InputStream
 import java.nio.ByteBuffer
+import org.springframework.core.io.buffer.DataBuffer
 
 /**
  * 流处理器接口
@@ -32,7 +33,7 @@ interface StreamProcessor {
      * @param context 处理上下文
      * @return 输出字节流
      */
-    fun process(input: Flux<ByteBuffer>, context: ProcessingContext): Flux<ByteBuffer>
+    fun process(input: Flux<DataBuffer>, context: ProcessingContext): Flux<DataBuffer>
     
     /**
      * 检查是否适用于给定上下文
@@ -105,11 +106,11 @@ data class ProcessingContext(
  * 处理选项
  */
 data class ProcessingOptions(
-    val enableVirusScan: Boolean = true,
+    val enableVirusScan: Boolean = false,
     val enableCompression: Boolean = false,
     val enableEncryption: Boolean = false,
     val enableThumbnail: Boolean = true,
-    val enableChecksumValidation: Boolean = true,
+    val enableChecksumValidation: Boolean = false,
     val compressionLevel: Int = 6, // 1-9
     val encryptionAlgorithm: String = "AES-256-GCM",
     val thumbnailSize: Int = 256,

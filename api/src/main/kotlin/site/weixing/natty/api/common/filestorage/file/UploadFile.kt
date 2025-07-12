@@ -16,32 +16,33 @@ import me.ahoo.wow.api.command.validation.CommandValidator
 data class UploadFile(
     @field:NotBlank(message = "文件名不能为空")
     val fileName: String,
-    
+
     @field:NotBlank(message = "文件夹ID不能为空")
     val folderId: String,
-    
+
     @field:NotBlank(message = "上传者ID不能为空")
     val uploaderId: String,
-    
+
     @field:Min(value = 1, message = "文件大小必须大于0")
     val fileSize: Long,
-    
+
     @field:NotBlank(message = "内容类型不能为空")
     val contentType: String,
-    
+
     @field:NotBlank(message = "临时文件引用不能为空")
     val temporaryFileReference: String,
-    
+
     val checksum: String? = null,
-    
+
     val isPublic: Boolean = false,
-    
+
     val tags: List<String> = emptyList(),
-    
+
     val customMetadata: Map<String, String> = emptyMap(),
-    
+
     val replaceIfExists: Boolean = false
 ) : CommandValidator {
+
     override fun validate() {
         validateFileName(fileName)
     }

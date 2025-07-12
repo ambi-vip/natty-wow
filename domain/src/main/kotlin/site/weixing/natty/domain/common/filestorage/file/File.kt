@@ -21,6 +21,11 @@ import site.weixing.natty.domain.common.filestorage.temp.TemporaryFileTransactio
 import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.security.MessageDigest
+import reactor.core.scheduler.Schedulers
+import org.springframework.core.io.buffer.DataBuffer
+import reactor.core.publisher.Flux
+import site.weixing.natty.domain.common.filestorage.strategy.impl.LocalFileStorageStrategy
+import site.weixing.natty.domain.common.filestorage.temp.TemporaryFileReference
 
 /**
  * 文件聚合根
@@ -46,20 +51,32 @@ class File(
     ): Mono<FileUploaded> {
         return temporaryFileTransaction.executeWithCleanup(command.temporaryFileReference) {
             buildContext(command)
+                .publishOn(Schedulers.boundedElastic())
                 .flatMap { uploadContext ->
                     fetchAndValidateTempFile(command, temporaryFileManager)
+                        .publishOn(Schedulers.boundedElastic())
                         .map { tempFileRef -> uploadContext to tempFileRef }
                 }
                 .flatMap { (uploadContext, tempFileRef) ->
-                    processPipelineAndStore(
-                        uploadContext, tempFileRef, command, intelligentStorageRouter, temporaryFileManager
-                    )
+                    // 全链路流式处理：临时文件流 → Pipeline → StorageStrategy
+                    val dataBufferFlux = temporaryFileManager.getFileStreamAsFlux(command.temporaryFileReference)
+                    intelligentStorageRouter.selectOptimalStrategy(uploadContext)
+                        .flatMap { strategy ->
+                            val processingContext = createProcessingContext(command)
+                            val processedFlux = uploadPipeline.processUpload(dataBufferFlux, processingContext)
+                            strategy
+                                .uploadFile(
+                                    filePath = generateStoragePath(command.folderId, command.fileName),
+                                    dataBufferFlux = processedFlux,
+                                    contentType = command.contentType,
+                                    metadata = buildStorageMetadata(command, "", tempFileRef)
+                                )
+                        }
                 }
-                .map { (storageInfo, checksum) ->
-                    buildFileUploadedEvent(command, storageInfo, checksum)
+                .map { storageInfo: StorageInfo ->
+                    buildFileUploadedEvent(command, storageInfo, "")
                 }
                 .doOnNext { event ->
-                    // 通过 commandResultAccessor 返回关键业务信息给客户端
                     commandResultAccessor.setCommandResult("actualStoragePath", event.actualStoragePath)
                     commandResultAccessor.setCommandResult("folderId", event.folderId)
                     commandResultAccessor.setCommandResult("checksum", event.checksum)
@@ -67,21 +84,6 @@ class File(
         }
     }
 
-    /**
-     * 通过临时文件引用处理文件（可用于命令/事件等场景）
-     */
-    fun processWithTemporaryFile(
-        referenceId: String,
-        temporaryFileManager: TemporaryFileManager,
-        operation: (InputStream) -> Unit
-    ) {
-        val tempRef = temporaryFileManager.getTemporaryFileReference(referenceId).block()
-            ?: throw IllegalArgumentException("临时文件引用不存在: $referenceId")
-        require(!tempRef.isExpired()) { "临时文件已过期: $referenceId" }
-        temporaryFileManager.getFileStream(referenceId).block()?.use { inputStream ->
-            operation(inputStream)
-        } ?: throw IllegalStateException("无法获取临时文件流: $referenceId")
-    }
 
     // 拆分的私有方法实现
     private fun buildContext(command: UploadFile): Mono<FileUploadContext> {
@@ -93,7 +95,7 @@ class File(
     private fun fetchAndValidateTempFile(
         command: UploadFile,
         temporaryFileManager: TemporaryFileManager
-    ): Mono<site.weixing.natty.domain.common.filestorage.temp.TemporaryFileReference> {
+    ): Mono<TemporaryFileReference> {
         return temporaryFileManager.getTemporaryFileReference(command.temporaryFileReference)
             .flatMap { tempFileRef ->
                 require(tempFileRef.fileSize == command.fileSize) {
@@ -103,40 +105,26 @@ class File(
             }
     }
 
+    // 新版：全链路流式处理，无同步IO
     private fun processPipelineAndStore(
         uploadContext: FileUploadContext,
-        tempFileRef: site.weixing.natty.domain.common.filestorage.temp.TemporaryFileReference,
+        tempFileRef: TemporaryFileReference,
         command: UploadFile,
         intelligentStorageRouter: IntelligentStorageRouter,
         temporaryFileManager: TemporaryFileManager
-    ): Mono<Pair<StorageInfo, String>> {
+    ): Mono<StorageInfo> {
+        val dataBufferFlux = temporaryFileManager.getFileStreamAsFlux(command.temporaryFileReference)
         return intelligentStorageRouter.selectOptimalStrategy(uploadContext)
             .flatMap { strategy ->
-                val storagePath = generateStoragePath(command.folderId, command.fileName)
                 val processingContext = createProcessingContext(command)
-                temporaryFileManager.getFileStream(command.temporaryFileReference)
-                    .flatMap { inputStream ->
-                        uploadPipeline.processUpload(
-                            inputStream = inputStream,
-                            storageStrategy = strategy,
-                            context = processingContext
-                        ).flatMap { pipelineResult ->
-                            if (pipelineResult.success) {
-                                strategy.uploadFile(
-                                    filePath = storagePath,
-                                    inputStream = pipelineResult.toInputStream(),
-                                    contentType = command.contentType,
-                                    fileSize = pipelineResult.getTotalBytes(),
-                                    metadata = buildEnhancedStorageMetadata(command, pipelineResult.context.getMetadata("checksum") ?: "", pipelineResult, tempFileRef)
-                                ).map { storageInfo ->
-                                    storageInfo to (pipelineResult.context.getMetadata("checksum") ?: "")
-                                }
-                            } else {
-                                // 处理管道失败，直接抛出异常
-                                Mono.error(IllegalStateException("文件处理管道失败: ${pipelineResult.error ?: "未知错误"}"))
-                            }
-                        }
-                    }
+                val processedFlux = uploadPipeline.processUpload(dataBufferFlux, processingContext)
+                strategy
+                    .uploadFile(
+                        filePath = generateStoragePath(command.folderId, command.fileName),
+                        dataBufferFlux = processedFlux,
+                        contentType = command.contentType,
+                        metadata = buildStorageMetadata(command, "", tempFileRef)
+                    )
             }
     }
 

@@ -1,11 +1,11 @@
 package site.weixing.natty.domain.common.filestorage.pipeline
 
 import org.slf4j.LoggerFactory
+import org.springframework.core.io.buffer.DataBuffer
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 import site.weixing.natty.domain.common.filestorage.strategy.FileStorageStrategy
-import java.io.InputStream
 import java.nio.ByteBuffer
 import java.time.Duration
 
@@ -23,84 +23,42 @@ class FileUploadPipeline(
     }
     
     /**
-     * 处理文件上传流
-     * @param inputStream 输入流
-     * @param storageStrategy 存储策略
+     * 处理文件上传流（全链路 DataBuffer 流式处理）
+     * @param dataBufferFlux 上传文件的 DataBuffer 流
      * @param context 处理上下文
-     * @return 处理结果
+     * @return 处理后的 DataBuffer 流
      */
     fun processUpload(
-        inputStream: InputStream,
-        storageStrategy: FileStorageStrategy,
+        dataBufferFlux: Flux<DataBuffer>,
         context: ProcessingContext
-    ): Mono<PipelineResult> {
-        
+    ): Flux<DataBuffer> {
         logger.info("开始流式处理文件: ${context.fileName} (${context.fileSize} bytes)")
-        
         return createProcessorChain(context)
-            .flatMap { activeProcessors ->
+            .flatMapMany { activeProcessors ->
                 logger.info("激活的处理器数量: ${activeProcessors.size}, 处理器: ${activeProcessors.map { it.name }}")
-                
                 // 初始化所有处理器
                 initializeProcessors(activeProcessors, context)
-                    .then(
-                        // 创建输入字节流
-                        createInputByteStream(inputStream, context)
-                            .let { inputStream ->
-                                // 如果没有激活的处理器，直接处理输入流
-                                if (activeProcessors.isEmpty()) {
-                                    logger.info("没有激活的处理器，直接处理输入流")
-                                    inputStream
-                                } else {
-                                    // 依次通过所有处理器
-                                    activeProcessors.fold(inputStream) { stream, processor ->
-                                        processWithProcessor(stream, processor, context)
-                                    }
-                                }
+                    .thenMany(
+                        if (activeProcessors.isEmpty()) {
+                            logger.info("没有激活的处理器，直接处理输入流")
+                            dataBufferFlux
+                        } else {
+                            // 依次通过所有处理器
+                            activeProcessors.fold(dataBufferFlux) { stream, processor ->
+                                processWithProcessor(stream, processor, context)
                             }
-                            // 收集处理结果
-                            .collectList()
-                            .map { buffers ->
-                                logger.debug("收集到 ${buffers.size} 个缓冲区")
-                                // 在ByteBuffer被消费之前计算总大小
-                                val totalBytes = buffers.sumOf { buffer ->
-                                    // 使用duplicate()避免影响原始ByteBuffer的position
-                                    buffer.duplicate().remaining().toLong()
-                                }
-                                logger.debug("计算总字节数: $totalBytes")
-                                
-                                PipelineResult(
-                                    processedData = buffers,
-                                    context = context,
-                                    statistics = collectStatistics(activeProcessors),
-                                    success = true,
-                                    _totalBytes = totalBytes
-                                )
-                            }
+                        }
                     )
-                    .publishOn(Schedulers.boundedElastic())
-                    .doFinally { 
-                        // 清理所有处理器
+                    .doFinally {
                         cleanupProcessors(activeProcessors, context).subscribe()
                     }
             }
-            .timeout(Duration.ofMillis(context.processingOptions.maxProcessingTime))
-            .doOnSuccess { result ->
-                logger.info("文件流式处理完成: ${context.fileName} (耗时: ${context.getProcessingDuration()}ms), 总字节数: ${result.getTotalBytes()}")
+            .doOnComplete {
+                logger.info("文件流式处理完成: ${context.fileName}")
             }
             .doOnError { error ->
                 logger.error("文件流式处理失败: ${context.fileName}", error)
             }
-            .onErrorReturn(
-                PipelineResult(
-                    processedData = emptyList(),
-                    context = context,
-                    statistics = emptyMap(),
-                    success = false,
-                    error = "处理失败",
-                    _totalBytes = 0L
-                )
-            )
     }
     
     /**
@@ -154,49 +112,18 @@ class FileUploadPipeline(
     }
     
     /**
-     * 创建输入字节流
-     */
-    private fun createInputByteStream(
-        inputStream: InputStream, 
-        context: ProcessingContext
-    ): Flux<ByteBuffer> {
-        return Flux.generate<ByteBuffer> { sink ->
-            try {
-                val buffer = ByteArray(context.processingOptions.bufferSize)
-                val bytesRead = inputStream.read(buffer)
-                
-                if (bytesRead == -1) {
-                    sink.complete()
-                } else {
-                    sink.next(ByteBuffer.wrap(buffer, 0, bytesRead))
-                }
-            } catch (e: Exception) {
-                sink.error(e)
-            }
-        }
-        .doFinally { 
-            try {
-                inputStream.close()
-            } catch (e: Exception) {
-                logger.warn("关闭输入流失败", e)
-            }
-        }
-    }
-    
-    /**
-     * 使用处理器处理流
+     * 处理器链路全部为 Flux<DataBuffer>
      */
     private fun processWithProcessor(
-        input: Flux<ByteBuffer>,
+        input: Flux<DataBuffer>,
         processor: StreamProcessor,
         context: ProcessingContext
-    ): Flux<ByteBuffer> {
+    ): Flux<DataBuffer> {
         return processor.process(input, context)
             .doOnError { error ->
                 logger.error("处理器执行失败: ${processor.name}", error)
             }
             .onErrorResume { error ->
-                // 处理器失败时，返回原始流
                 logger.warn("处理器 ${processor.name} 失败，跳过处理: ${error.message}")
                 input
             }
@@ -279,7 +206,7 @@ data class PipelineResult(
     /**
      * 转换为输入流
      */
-    fun toInputStream(): InputStream {
+    fun toInputStream(): java.io.InputStream {
         return toByteArray().inputStream()
     }
 } 
