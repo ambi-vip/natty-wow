@@ -9,18 +9,16 @@ import site.weixing.natty.domain.common.filestorage.strategy.FileStorageStrategy
 import site.weixing.natty.domain.common.filestorage.strategy.StorageUsage
 import site.weixing.natty.domain.common.filestorage.exception.*
 import org.slf4j.LoggerFactory
-import java.nio.file.*
-import java.nio.file.attribute.BasicFileAttributes
-import java.security.MessageDigest
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.util.concurrent.locks.ReentrantReadWriteLock
-import kotlin.concurrent.read
-import kotlin.concurrent.write
 import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.core.io.buffer.DataBufferUtils
 import org.springframework.core.io.buffer.DefaultDataBufferFactory
+import reactor.core.scheduler.Schedulers
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
+import java.nio.file.attribute.BasicFileAttributes
+import kotlin.jvm.java
 
 /**
  * 本地文件存储策略实现（全流式）
@@ -41,7 +39,6 @@ class LocalFileStorageStrategy(
 
     override val provider: StorageProvider = StorageProvider.LOCAL
     private val basePath: Path = Paths.get(baseDirectory).toAbsolutePath()
-    private val readWriteLock = ReentrantReadWriteLock()
 
     init {
         try {
@@ -91,17 +88,165 @@ class LocalFileStorageStrategy(
     }
 
     // 其余元数据/管理接口保持不变
-    override fun deleteFile(filePath: String): Mono<Boolean> = Mono.error(NotImplementedError("deleteFile 未实现"))
-    override fun existsFile(filePath: String): Mono<Boolean> = Mono.error(NotImplementedError("existsFile 未实现"))
-    override fun getFileSize(filePath: String): Mono<Long> = Mono.error(NotImplementedError("getFileSize 未实现"))
-    override fun getFileUrl(filePath: String, expirationTimeInSeconds: Long?): Mono<String> = Mono.error(NotImplementedError("getFileUrl 未实现"))
-    override fun copyFile(sourcePath: String, destPath: String): Mono<Boolean> = Mono.error(NotImplementedError("copyFile 未实现"))
-    override fun moveFile(sourcePath: String, destPath: String): Mono<Boolean> = Mono.error(NotImplementedError("moveFile 未实现"))
-    override fun listFiles(directoryPath: String, recursive: Boolean): Mono<List<FileInfo>> = Mono.error(NotImplementedError("listFiles 未实现"))
-    override fun createDirectory(directoryPath: String): Mono<Boolean> = Mono.error(NotImplementedError("createDirectory 未实现"))
-    override fun deleteDirectory(directoryPath: String, recursive: Boolean): Mono<Boolean> = Mono.error(NotImplementedError("deleteDirectory 未实现"))
-    override fun getStorageUsage(): Mono<StorageUsage> = Mono.error(NotImplementedError("getStorageUsage 未实现"))
-    override fun validateConfig(config: Map<String, Any>): Mono<Boolean> = Mono.error(NotImplementedError("validateConfig 未实现"))
-    override fun getFileChecksum(filePath: String): Mono<String> = Mono.error(NotImplementedError("getFileChecksum 未实现"))
-    override fun cleanup(olderThanDays: Int): Mono<Long> = Mono.error(NotImplementedError("cleanup 未实现"))
+    override fun deleteFile(filePath: String): Mono<Boolean> = Mono.fromCallable {
+        val targetPath = resolveFilePath(filePath)
+        try {
+            Files.deleteIfExists(targetPath)
+        } catch (e: Exception) {
+            logger.warn("[LocalFileStorageStrategy] 删除文件失败: $filePath", e)
+            return@fromCallable false
+        }
+        true
+    }.subscribeOn(Schedulers.boundedElastic())
+
+    override fun existsFile(filePath: String): Mono<Boolean> = Mono.fromCallable {
+        Files.exists(resolveFilePath(filePath))
+    }.subscribeOn(Schedulers.boundedElastic())
+
+    override fun getFileSize(filePath: String): Mono<Long> = Mono.fromCallable {
+        Files.size(resolveFilePath(filePath))
+    }.subscribeOn(Schedulers.boundedElastic())
+
+    override fun getFileUrl(filePath: String, expirationTimeInSeconds: Long?): Mono<String> = Mono.fromCallable {
+        val path = resolveFilePath(filePath)
+        path.toUri().toString()
+    }.subscribeOn(Schedulers.boundedElastic())
+
+    override fun copyFile(sourcePath: String, destPath: String): Mono<Boolean> = Mono.fromCallable {
+        val src = resolveFilePath(sourcePath)
+        val dst = resolveFilePath(destPath)
+        try {
+            Files.copy(src, dst, StandardCopyOption.REPLACE_EXISTING)
+        } catch (e: Exception) {
+            logger.warn("[LocalFileStorageStrategy] 复制文件失败: $sourcePath -> $destPath", e)
+            return@fromCallable false
+        }
+        true
+    }.subscribeOn(Schedulers.boundedElastic())
+
+    override fun moveFile(sourcePath: String, destPath: String): Mono<Boolean> = Mono.fromCallable {
+        val src = resolveFilePath(sourcePath)
+        val dst = resolveFilePath(destPath)
+        try {
+            Files.move(src, dst, StandardCopyOption.REPLACE_EXISTING)
+        } catch (e: Exception) {
+            logger.warn("[LocalFileStorageStrategy] 移动文件失败: $sourcePath -> $destPath", e)
+            return@fromCallable false
+        }
+        true
+    }.subscribeOn(Schedulers.boundedElastic())
+
+    override fun listFiles(directoryPath: String, recursive: Boolean): Mono<List<FileInfo>> = Mono.fromCallable {
+        val dir = resolveFilePath(directoryPath)
+        if (!Files.exists(dir) || !Files.isDirectory(dir)) return@fromCallable emptyList<FileInfo>()
+        val result = mutableListOf<FileInfo>()
+        val maxDepth = if (recursive) Integer.MAX_VALUE else 1
+        Files.walk(dir, maxDepth).use { stream ->
+            stream.forEach { path ->
+                val attrs = Files.readAttributes(path, BasicFileAttributes::class.java)
+                result.add(
+                    FileInfo(
+                        path = basePath.relativize(path).toString(),
+                        name = path.fileName.toString(),
+                        size = attrs.size(),
+                        lastModified = attrs.lastModifiedTime().toMillis(),
+                        isDirectory = attrs.isDirectory,
+                        contentType = null,
+                        etag = null
+                    )
+                )
+            }
+        }
+        result
+    }.subscribeOn(Schedulers.boundedElastic())
+
+    override fun createDirectory(directoryPath: String): Mono<Boolean> = Mono.fromCallable {
+        val dir = resolveFilePath(directoryPath)
+        try {
+            Files.createDirectories(dir)
+        } catch (e: Exception) {
+            logger.warn("[LocalFileStorageStrategy] 创建目录失败: $directoryPath", e)
+            return@fromCallable false
+        }
+        true
+    }.subscribeOn(Schedulers.boundedElastic())
+
+    override fun deleteDirectory(directoryPath: String, recursive: Boolean): Mono<Boolean> = Mono.fromCallable {
+        val dir = resolveFilePath(directoryPath)
+        if (!Files.exists(dir)) return@fromCallable false
+        try {
+            if (recursive) {
+                Files.walk(dir)
+                    .sorted(Comparator.reverseOrder())
+                    .forEach { Files.deleteIfExists(it) }
+            } else {
+                Files.deleteIfExists(dir)
+            }
+        } catch (e: Exception) {
+            logger.warn("[LocalFileStorageStrategy] 删除目录失败: $directoryPath", e)
+            return@fromCallable false
+        }
+        true
+    }.subscribeOn(Schedulers.boundedElastic())
+
+    override fun getStorageUsage(): Mono<StorageUsage> = Mono.fromCallable {
+        var totalSize = 0L
+        var fileCount = 0L
+        Files.walk(basePath).use { stream ->
+            stream.filter { Files.isRegularFile(it) }.forEach { path ->
+                totalSize += Files.size(path)
+                fileCount++
+            }
+        }
+        val fileStore = Files.getFileStore(basePath)
+        StorageUsage(
+            totalSpace = fileStore.totalSpace,
+            usedSpace = fileStore.totalSpace - fileStore.unallocatedSpace,
+            freeSpace = fileStore.unallocatedSpace,
+            fileCount = fileCount
+        )
+    }.subscribeOn(Schedulers.boundedElastic())
+
+    override fun validateConfig(config: Map<String, Any>): Mono<Boolean> = Mono.fromCallable {
+        try {
+            Files.createDirectories(basePath)
+            Files.isWritable(basePath)
+        } catch (e: Exception) {
+            logger.warn("[LocalFileStorageStrategy] 配置校验失败", e)
+            return@fromCallable false
+        }
+        true
+    }.subscribeOn(Schedulers.boundedElastic())
+
+    override fun getFileChecksum(filePath: String): Mono<String> = Mono.fromCallable {
+        val path = resolveFilePath(filePath)
+        val digest = java.security.MessageDigest.getInstance("SHA-256")
+        Files.newInputStream(path).use { input ->
+            val buffer = ByteArray(8192)
+            var bytesRead: Int
+            while (input.read(buffer).also { bytesRead = it } != -1) {
+                digest.update(buffer, 0, bytesRead)
+            }
+        }
+        digest.digest().joinToString("") { "%02x".format(it) }
+    }.subscribeOn(Schedulers.boundedElastic())
+
+    override fun cleanup(olderThanDays: Int): Mono<Long> = Mono.fromCallable {
+        val cutoff = java.time.Instant.now().minusSeconds(olderThanDays * 24L * 3600L)
+        var deleted = 0L
+        Files.walk(basePath).use { stream ->
+            stream.filter { Files.isRegularFile(it) }.forEach { path ->
+                val attrs = Files.readAttributes(path, BasicFileAttributes::class.java)
+                if (attrs.lastModifiedTime().toInstant().isBefore(cutoff)) {
+                    try {
+                        Files.deleteIfExists(path)
+                        deleted++
+                    } catch (e: Exception) {
+                        logger.warn("[LocalFileStorageStrategy] 清理文件失败: ${'$'}path", e)
+                    }
+                }
+            }
+        }
+        deleted
+    }.subscribeOn(Schedulers.boundedElastic())
 } 

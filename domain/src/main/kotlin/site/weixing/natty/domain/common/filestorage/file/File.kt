@@ -388,7 +388,7 @@ class File(
         command: UploadFile,
         checksum: String,
         pipelineResult: site.weixing.natty.domain.common.filestorage.pipeline.PipelineResult,
-        tempFileRef: site.weixing.natty.domain.common.filestorage.temp.TemporaryFileReference
+        tempFileRef: TemporaryFileReference
     ): Map<String, String> {
         val baseMetadata = buildStorageMetadata(command, checksum, tempFileRef)
         val pipelineMetadata = extractPipelineMetadata(pipelineResult)
