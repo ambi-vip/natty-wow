@@ -23,6 +23,7 @@ import site.weixing.natty.domain.common.filestorage.router.AccessPattern
 import site.weixing.natty.domain.common.filestorage.router.FileUploadContext
 import site.weixing.natty.domain.common.filestorage.router.IntelligentStorageRouter
 import site.weixing.natty.domain.common.filestorage.router.Priority
+import site.weixing.natty.domain.common.filestorage.service.FileStorageService
 import site.weixing.natty.domain.common.filestorage.temp.TemporaryFileManager
 import site.weixing.natty.domain.common.filestorage.temp.TemporaryFileReference
 import site.weixing.natty.domain.common.filestorage.temp.TemporaryFileTransaction
@@ -64,7 +65,7 @@ class File(
     @OnCommand
     fun onUpload(
         command: UploadFile,
-        intelligentStorageRouter: IntelligentStorageRouter,
+        fileStorageService: FileStorageService,
         temporaryFileManager: TemporaryFileManager,
         temporaryFileTransaction: TemporaryFileTransaction,
         commandResultAccessor: CommandResultAccessor
@@ -81,21 +82,19 @@ class File(
                 .flatMap { (uploadContext, tempFileRef) ->
                     val beforePipeline = System.currentTimeMillis()
                     val dataBufferFlux = temporaryFileManager.getFileStreamAsFlux(command.temporaryFileReference)
-                    intelligentStorageRouter.selectOptimalStrategy(uploadContext)
-                        .flatMap { strategy ->
-                            val processingContext = createProcessingContext(command)
-                            val processedFlux = uploadPipeline.processUpload(dataBufferFlux, processingContext)
-                            val afterPipeline = System.currentTimeMillis()
-                            logger.info { "[File.onUpload] Pipeline处理耗时: ${afterPipeline - beforePipeline} ms" }
-                            strategy
-                                .uploadFile(
-                                    filePath = generateStoragePath(command.folderId, command.fileName),
-                                    dataBufferFlux = processedFlux,
-                                    contentType = command.contentType,
-                                    metadata = buildStorageMetadata(command, "", tempFileRef)
-                                )
-                                .doOnSuccess { logger.info { "[File.onUpload] 存储策略写入耗时: ${System.currentTimeMillis() - afterPipeline} ms" } }
-                        }
+
+                    val processingContext = createProcessingContext(command)
+                    val processedFlux = uploadPipeline.processUpload(dataBufferFlux, processingContext)
+                    val afterPipeline = System.currentTimeMillis()
+                    logger.debug { "[File.onUpload] Pipeline处理耗时: ${afterPipeline - beforePipeline} ms" }
+
+                    fileStorageService.uploadFile(
+                        filePath = generateStoragePath(command.folderId, command.fileName),
+                        dataBufferFlux = processedFlux,
+                        contentType = command.contentType,
+                        metadata = buildStorageMetadata(command, "", tempFileRef)
+                    ).doOnSuccess { logger.debug { "[File.onUpload] 存储策略写入耗时: ${System.currentTimeMillis() - afterPipeline} ms" } }
+
                 }
                 .map { storageInfo: StorageInfo ->
                     buildFileUploadedEvent(command, storageInfo, "")
@@ -107,7 +106,7 @@ class File(
                 }
                 .doOnSuccess {
                     val end = System.currentTimeMillis()
-                    logger.info { "[File.onUpload] 总耗时: ${end - start} ms" }
+                    logger.debug { "[File.onUpload] 总耗时: ${end - start} ms" }
                 }
         }
     }

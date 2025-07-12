@@ -8,8 +8,11 @@ import org.springframework.core.io.buffer.DataBufferUtils
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toMono
 import site.weixing.natty.api.common.filestorage.file.UploadFile
 import site.weixing.natty.domain.common.filestorage.temp.TemporaryFileManager
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.security.MessageDigest
 import java.util.*
 
@@ -32,7 +35,7 @@ class FileUploadApplicationService(
      * @param request 文件上传请求
      * @return 文件ID
      */
-    fun uploadFile(request: FileUploadRequest): Mono<String> {
+    fun uploadFile(request: FileUploadRequest): Mono<FileUploadResponse> {
         val start = System.currentTimeMillis()
         logger.info { "开始处理文件上传: ${request.fileName} (大小: ${request.fileSize} bytes)" }
         
@@ -63,7 +66,7 @@ class FileUploadApplicationService(
                     tags = request.tags,
                     customMetadata = request.customMetadata + mapOf(
                         "uploadMethod" to "byteArray",
-                        "originalFileSize" to ""
+                        "originalFileSize" to tempFileRef.fileSize.toString()
                     ),
                     replaceIfExists = request.replaceIfExists
                 )
@@ -71,7 +74,13 @@ class FileUploadApplicationService(
                 logger.info { "[uploadFile] 构造命令耗时: ${beforeCmd - afterTemp} ms" }
                 commandGateway.sendAndWaitForSnapshot(uploadCommand.toCommandMessage(aggregateId = fileId))
                     .doOnSuccess { logger.info { "[uploadFile] 命令处理耗时: ${System.currentTimeMillis() - beforeCmd} ms" } }
-                    .then(Mono.just(fileId))
+                    .flatMap { b -> FileUploadResponse(
+                        b.aggregateId,
+                        fileName = b.result["actualStoragePath"].toString(),
+                        fileSize = 1,
+                        uploadMethod = "",
+                        message = ""
+                    ).toMono() }
                     .onErrorResume { error ->
                         logger.warn(error) { "命令处理失败，清理临时文件: ${tempFileRef.referenceId}" }
                         temporaryFileManager.deleteTemporaryFile(tempFileRef.referenceId)
@@ -79,9 +88,9 @@ class FileUploadApplicationService(
                     }
             }
         }
-        .doOnSuccess { fileId ->
+        .doOnSuccess { data ->
             val end = System.currentTimeMillis()
-            logger.info { "[uploadFile] 总耗时: ${end - start} ms, fileId=$fileId" }
+            logger.info { "[uploadFile] 总耗时: ${end - start} ms, fileId=${data.fileId}" }
         }
         .doOnError { error ->
             logger.error(error) { "文件上传处理失败: ${request.fileName}" }
@@ -97,14 +106,14 @@ class FileUploadApplicationService(
         logger.info { "开始处理响应式文件上传: ${request.fileName} (大小: ${request.fileSize} bytes)" }
         // 生成目标路径（示例：本地磁盘）
         val baseDir = System.getProperty("user.dir") + "/storage/files/stream/" + request.folderId
-        val targetPath = java.nio.file.Paths.get(baseDir, request.fileName)
+        val targetPath = Paths.get(baseDir, request.fileName)
         return Mono.fromCallable {
-            java.nio.file.Files.createDirectories(targetPath.parent)
+            Files.createDirectories(targetPath.parent)
             targetPath
         }.flatMap { path ->
             DataBufferUtils.write(request.dataBufferFlux, path)
                 .then(Mono.fromCallable {
-                    val fileSize = java.nio.file.Files.size(path)
+                    val fileSize = Files.size(path)
                     // 这里只保存元数据，实际业务可扩展
                     // 生成文件ID
                     val fileId = UUID.randomUUID().toString()

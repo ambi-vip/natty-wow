@@ -320,10 +320,9 @@ class IntelligentStorageRouterImpl(
      */
     private fun buildStrategyFromConfig(configState: StorageConfigState): Mono<Pair<StorageProvider, FileStorageStrategy>> {
         return Mono.fromCallable {
-            require(configState.provider != null) { "存储配置提供商不能为空" }
             require(configState.config.isNotEmpty()) { "存储配置参数不能为空" }
             
-            val provider = configState.provider!!
+            val provider = configState.provider
             val strategy = fileStorageStrategyFactory.createStrategy(provider, configState.config)
             
             logger.debug("成功创建存储策略: {} (配置: {})", provider, configState.name)
@@ -366,7 +365,7 @@ class IntelligentStorageRouterImpl(
      */
     private fun createDefaultLocalStrategy(): Mono<Map<StorageProvider, FileStorageStrategy>> {
         return Mono.fromCallable {
-            val strategy = fileStorageService.defaultStrategy()
+            val strategy = fileStorageService.defaultStrategy().block()!!
             mapOf(StorageProvider.LOCAL to strategy)
         }
         .onErrorMap { error ->

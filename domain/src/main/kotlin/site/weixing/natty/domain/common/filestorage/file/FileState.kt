@@ -54,10 +54,10 @@ class FileState(override val id: String) : Identifier {
     var customMetadata: Map<String, String> = emptyMap()
         private set
     
-    var createdAt: LocalDateTime? = null
+    var createdAt: Long = System.currentTimeMillis()
         private set
     
-    var updatedAt: LocalDateTime? = null
+    var updatedAt: Long = System.currentTimeMillis()
         private set
 
     @OnSourcing
@@ -72,8 +72,8 @@ class FileState(override val id: String) : Identifier {
         this.tags = event.tags
         this.customMetadata = event.customMetadata
         this.status = FileStatus.ACTIVE
-        this.createdAt = LocalDateTime.now()
-        this.updatedAt = LocalDateTime.now()
+        this.createdAt = System.currentTimeMillis()
+        this.updatedAt = System.currentTimeMillis()
         
         // 创建初始版本
         event.checksum?.let { checksum ->
@@ -95,32 +95,32 @@ class FileState(override val id: String) : Identifier {
         event.isPublic?.let { this.isPublic = it }
         event.tags?.let { this.tags = it }
         event.customMetadata?.let { this.customMetadata = it }
-        this.updatedAt = LocalDateTime.now()
+        this.updatedAt = System.currentTimeMillis()
     }
 
     @OnSourcing
     fun onFileDeleted(event: FileDeleted) {
         this.status = FileStatus.DELETED
-        this.updatedAt = LocalDateTime.now()
+        this.updatedAt = System.currentTimeMillis()
     }
 
     @OnSourcing
     fun onFileMoved(event: FileMoved) {
         this.folderId = event.newFolderId
         this.storageInfo = this.storageInfo?.copy(storagePath = event.newStoragePath)
-        this.updatedAt = LocalDateTime.now()
+        this.updatedAt = System.currentTimeMillis()
     }
 
     @OnSourcing
     fun onFileCopied(event: FileCopied) {
         // 文件复制事件处理逻辑（如果需要在原文件状态中记录）
-        this.updatedAt = LocalDateTime.now()
+        this.updatedAt = System.currentTimeMillis()
     }
 
     @OnSourcing
     fun onFileStatusChanged(event: FileStatusChanged) {
         this.status = event.newStatus
-        this.updatedAt = LocalDateTime.now()
+        this.updatedAt = System.currentTimeMillis()
     }
     
     /**

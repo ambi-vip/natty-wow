@@ -19,7 +19,7 @@ class StorageConfigState(override val id: String) : Identifier {
     var name: String? = null
         private set
     
-    var provider: StorageProvider? = null
+    var provider: StorageProvider = StorageProvider.LOCAL
         private set
     
     var config: Map<String, Any> = emptyMap()
@@ -34,10 +34,10 @@ class StorageConfigState(override val id: String) : Identifier {
     var description: String? = null
         private set
     
-    var createdAt: LocalDateTime? = null
+    var createdAt: Long = System.currentTimeMillis()
         private set
     
-    var updatedAt: LocalDateTime? = null
+    var updatedAt: Long = System.currentTimeMillis()
         private set
     
     var isDeleted: Boolean = false
@@ -51,8 +51,8 @@ class StorageConfigState(override val id: String) : Identifier {
         this.isDefault = event.isDefault
         this.isEnabled = event.isEnabled
         this.description = event.description
-        this.createdAt = LocalDateTime.now()
-        this.updatedAt = LocalDateTime.now()
+        this.createdAt =System.currentTimeMillis()
+        this.updatedAt =System.currentTimeMillis()
     }
 
     @OnSourcing
@@ -61,27 +61,27 @@ class StorageConfigState(override val id: String) : Identifier {
         event.config?.let { this.config = it }
         event.isEnabled?.let { this.isEnabled = it }
         event.description?.let { this.description = it }
-        this.updatedAt = LocalDateTime.now()
+        this.updatedAt =System.currentTimeMillis()
     }
 
     @OnSourcing
     fun onStorageProviderSwitched(event: StorageProviderSwitched) {
         this.provider = event.newProvider
         this.config = event.newConfig
-        this.updatedAt = LocalDateTime.now()
+        this.updatedAt =System.currentTimeMillis()
     }
 
     @OnSourcing
     fun onStorageConfigDeleted(event: StorageConfigDeleted) {
         this.isDeleted = true
         this.isEnabled = false
-        this.updatedAt = LocalDateTime.now()
+        this.updatedAt =System.currentTimeMillis()
     }
 
     @OnSourcing
     fun onDefaultStorageConfigChanged(event: DefaultStorageConfigChanged) {
         this.isDefault = (event.newConfigId == this.id)
-        this.updatedAt = LocalDateTime.now()
+        this.updatedAt =System.currentTimeMillis()
     }
     
     /**

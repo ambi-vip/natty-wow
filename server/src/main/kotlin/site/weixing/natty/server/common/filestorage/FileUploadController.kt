@@ -82,15 +82,7 @@ class FileUploadController(
             .map { fileId ->
                 val afterService = System.currentTimeMillis()
                 logger.info { "[uploadMultipartFile] Service处理耗时: ${afterService - beforeService} ms" }
-                ResponseEntity.ok(
-                    FileUploadResponse(
-                        fileId = fileId,
-                        fileName = file.filename(),
-                        fileSize = -1L, // 可选：如需准确大小可后续查询
-                        uploadMethod = "filepart",
-                        message = "FilePart 上传成功"
-                    )
-                )
+                ResponseEntity.ok(fileId)
             }
             .doOnNext {
                 val end = System.currentTimeMillis()

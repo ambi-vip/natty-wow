@@ -19,8 +19,8 @@ data class StorageInfo(
     val compressionType: String? = null,
     val encryptionKey: String? = null,
     val storageClass: String? = null,
-    val createdAt: LocalDateTime = LocalDateTime.now(),
-    val lastModifiedAt: LocalDateTime = LocalDateTime.now()
+    val createdAt: Long = System.currentTimeMillis(),
+    val lastModifiedAt: Long = System.currentTimeMillis(),
 ) {
     companion object {
         /**
