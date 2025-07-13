@@ -15,6 +15,7 @@ data class FileUploaded(
     val isPublic: Boolean,
     val tags: List<String>,
     val customMetadata: Map<String, String>,
+    val storageProviderId: String, // 使用的存储提供商配置id
     val storageProvider: String, // 使用的存储提供商
     val uploadTimestamp: Long // 上传时间戳
 )

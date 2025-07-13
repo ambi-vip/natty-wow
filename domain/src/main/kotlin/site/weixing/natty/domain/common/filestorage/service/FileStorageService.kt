@@ -48,7 +48,7 @@ class FileStorageService(
             .toState()
             .flatMap { snapshot ->
                 logger.debug("使用配置 ${snapshot.name} 进行存储")
-                fileStorageStrategyFactory.createStrategy(snapshot.provider, snapshot.config).toMono()
+                fileStorageStrategyFactory.createStrategy(snapshot.provider,snapshot.id, snapshot.config).toMono()
             }
             .switchIfEmpty {
                 logger.warn("所有配置的存储策略创建失败，回退到默认本地存储")
@@ -67,7 +67,7 @@ class FileStorageService(
                 "maxFileSize" to (100 * 1024 * 1024L),
                 "enableChecksumValidation" to true
             )
-            fileStorageStrategyFactory.createStrategy(StorageProvider.LOCAL, defaultConfig)
+            fileStorageStrategyFactory.createStrategy(StorageProvider.LOCAL,"1", defaultConfig)
         }.onErrorMap { error ->
                 RuntimeException("创建默认本地存储策略失败", error)
             }

@@ -33,6 +33,13 @@ class FileUploadPipeline(
         context: ProcessingContext
     ): Flux<DataBuffer> {
         logger.info("开始流式处理文件: ${context.fileName} (${context.fileSize} bytes)")
+        
+        // 检查是否启用并行处理
+        if (!configuration.enableParallelProcessing) {
+            logger.debug("并行处理未启用，直接返回原始数据流")
+            return dataBufferFlux
+        }
+        
         return createProcessorChain(context)
             .flatMapMany { activeProcessors ->
                 logger.info("激活的处理器数量: ${activeProcessors.size}, 处理器: ${activeProcessors.map { it.name }}")

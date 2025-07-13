@@ -10,7 +10,6 @@ import site.weixing.natty.api.common.filestorage.file.FileDeleted
 import site.weixing.natty.api.common.filestorage.file.FileMoved
 import site.weixing.natty.api.common.filestorage.file.FileCopied
 import site.weixing.natty.api.common.filestorage.file.FileStatusChanged
-import java.time.LocalDateTime
 
 /**
  * 文件状态类
@@ -41,10 +40,7 @@ class FileState(override val id: String) : Identifier {
     
     var status: FileStatus = FileStatus.UPLOADING
         private set
-    
-    var versions: MutableList<FileVersion> = mutableListOf()
-        private set
-    
+
     var tags: List<String> = emptyList()
         private set
     
@@ -67,26 +63,14 @@ class FileState(override val id: String) : Identifier {
         this.uploaderId = event.uploaderId
         this.size = event.fileSize
         this.contentType = event.contentType
-        this.storageInfo = StorageInfo.local(event.storagePath, event.checksum)
+        this.storageInfo = StorageInfo.local(event.storageProviderId, event.storagePath, event.checksum)
         this.isPublic = event.isPublic
         this.tags = event.tags
         this.customMetadata = event.customMetadata
         this.status = FileStatus.ACTIVE
         this.createdAt = System.currentTimeMillis()
         this.updatedAt = System.currentTimeMillis()
-        
-        // 创建初始版本
-        event.checksum?.let { checksum ->
-            this.storageInfo?.let { storage ->
-                val initialVersion = FileVersion.initial(
-                    storageInfo = storage,
-                    size = event.fileSize,
-                    checksum = checksum,
-                    uploaderId = event.uploaderId
-                )
-                this.versions.add(initialVersion)
-            }
-        }
+
     }
 
     @OnSourcing
@@ -122,43 +106,8 @@ class FileState(override val id: String) : Identifier {
         this.status = event.newStatus
         this.updatedAt = System.currentTimeMillis()
     }
-    
-    /**
-     * 获取当前活跃版本
-     */
-    fun getCurrentVersion(): FileVersion? {
-        return versions.find { it.isActive }
-    }
-    
-    /**
-     * 获取最新版本号
-     */
-    fun getLatestVersionNumber(): Int {
-        return versions.maxOfOrNull { it.version } ?: 0
-    }
-    
-    /**
-     * 添加新版本
-     */
-    fun addVersion(version: FileVersion) {
-        // 停用之前的活跃版本
-        versions.forEach { v ->
-            if (v.isActive) {
-                val index = versions.indexOf(v)
-                versions[index] = v.deactivate()
-            }
-        }
-        // 添加新版本
-        versions.add(version)
-    }
-    
-    /**
-     * 是否支持版本控制
-     */
-    fun isVersioningEnabled(): Boolean {
-        return versions.size > 1
-    }
-    
+
+
     /**
      * 获取文件扩展名
      */

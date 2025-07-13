@@ -48,11 +48,11 @@ class File(
          */
         fun createDefaultPipeline(): FileUploadPipeline {
             val processors: List<StreamProcessor> = listOf(
-                VirusScanProcessor(),
-                ChecksumProcessor(),
-                CompressionProcessor(),
+//                VirusScanProcessor(),
+//                ChecksumProcessor(),
+//                CompressionProcessor(),
                 EncryptionProcessor(),
-                ThumbnailProcessor()
+//                ThumbnailProcessor()
             )
 
             return FileUploadPipeline(processors)
@@ -132,29 +132,6 @@ class File(
             }
     }
 
-    // 新版：全链路流式处理，无同步IO
-    private fun processPipelineAndStore(
-        uploadContext: FileUploadContext,
-        tempFileRef: TemporaryFileReference,
-        command: UploadFile,
-        intelligentStorageRouter: IntelligentStorageRouter,
-        temporaryFileManager: TemporaryFileManager
-    ): Mono<StorageInfo> {
-        val dataBufferFlux = temporaryFileManager.getFileStreamAsFlux(command.temporaryFileReference)
-        return intelligentStorageRouter.selectOptimalStrategy(uploadContext)
-            .flatMap { strategy ->
-                val processingContext = createProcessingContext(command)
-                val processedFlux = uploadPipeline.processUpload(dataBufferFlux, processingContext)
-                strategy
-                    .uploadFile(
-                        filePath = generateStoragePath(command.folderId, command.fileName),
-                        dataBufferFlux = processedFlux,
-                        contentType = command.contentType,
-                        metadata = buildStorageMetadata(command, "", tempFileRef)
-                    )
-            }
-    }
-
     private fun buildFileUploadedEvent(
         command: UploadFile,
         storageInfo: StorageInfo,
@@ -172,6 +149,7 @@ class File(
             isPublic = command.isPublic,
             tags = command.tags,
             customMetadata = command.customMetadata,
+            storageProviderId =  storageInfo.providerId,
             storageProvider = storageInfo.provider.name,
             uploadTimestamp = System.currentTimeMillis()
         )

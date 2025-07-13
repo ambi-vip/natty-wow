@@ -9,6 +9,7 @@ import java.time.LocalDateTime
  */
 data class StorageInfo(
     val provider: StorageProvider,
+    val providerId: String,
     val storagePath: String,
     val etag: String? = null,
     val bucket: String? = null,
@@ -26,8 +27,9 @@ data class StorageInfo(
         /**
          * 创建本地存储信息
          */
-        fun local(storagePath: String, etag: String? = null): StorageInfo {
+        fun local(providerId: String, storagePath: String, etag: String? = null): StorageInfo {
             return StorageInfo(
+                providerId = providerId,
                 provider = StorageProvider.LOCAL,
                 storagePath = storagePath,
                 etag = etag
@@ -38,6 +40,7 @@ data class StorageInfo(
          * 创建S3存储信息
          */
         fun s3(
+            providerId: String,
             storagePath: String,
             bucket: String,
             region: String,
@@ -45,6 +48,7 @@ data class StorageInfo(
             endpoint: String? = null
         ): StorageInfo {
             return StorageInfo(
+                providerId = providerId,
                 provider = StorageProvider.S3,
                 storagePath = storagePath,
                 bucket = bucket,
@@ -57,13 +61,15 @@ data class StorageInfo(
         /**
          * 创建阿里云OSS存储信息
          */
-        fun aliyunOss(
+        fun aLiYunOss(
+            providerId: String,
             storagePath: String,
             bucket: String,
             endpoint: String,
             etag: String? = null
         ): StorageInfo {
             return StorageInfo(
+                providerId = providerId,
                 provider = StorageProvider.ALIYUN_OSS,
                 storagePath = storagePath,
                 bucket = bucket,
@@ -76,7 +82,7 @@ data class StorageInfo(
     /**
      * 获取完整的访问URL
      */
-    fun getFullUrl(): String? {
+    fun fullUrl(): String? {
         return cdnUrl ?: accessUrl
     }
     

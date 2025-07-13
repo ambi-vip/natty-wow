@@ -1,4 +1,4 @@
-package site.weixing.natty.server.common.filestorage
+package site.weixing.natty.server.common.filestorage.controller
 
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
@@ -17,7 +17,7 @@ import site.weixing.natty.domain.common.filestorage.strategy.FileInfo
 import site.weixing.natty.domain.common.filestorage.strategy.StorageUsage
 
 @RestController
-@RequestMapping("/api/files")
+@RequestMapping("/files")
 class FileStorageController(
     private val fileStorageService: FileStorageService
 ) {

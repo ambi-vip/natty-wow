@@ -4,6 +4,7 @@ import me.ahoo.wow.api.annotation.AggregateRoot
 import me.ahoo.wow.api.annotation.StaticTenantId
 import me.ahoo.wow.id.GlobalIdGenerator
 import me.ahoo.wow.models.tree.aggregate.Tree
+import reactor.core.publisher.Mono
 import site.weixing.natty.api.common.filestorage.folder.CreateFileFolder
 import site.weixing.natty.api.common.filestorage.folder.UpdateFileFolder
 import site.weixing.natty.api.common.filestorage.folder.DeleteFileFolder
@@ -26,7 +27,13 @@ class FileFolder(state: FileFolderState) :
     override fun maxLevel(): Int {
         return 20  // 文件夹最大层级深度为20级
     }
-    
+
+    override fun verifyCreate(command: CreateFileFolder): Mono<Void?> {
+        validateFolderName(command.name)
+        validatePermissions(command.permissions)
+        return Mono.empty()
+    }
+
     /**
      * 验证文件夹名称是否符合规范
      */

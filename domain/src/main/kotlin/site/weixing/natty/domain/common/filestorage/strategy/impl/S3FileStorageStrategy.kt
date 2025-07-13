@@ -1,5 +1,6 @@
 package site.weixing.natty.domain.common.filestorage.strategy.impl
 
+import me.ahoo.wow.api.Identifier
 import reactor.core.publisher.Mono
 import site.weixing.natty.api.common.filestorage.storage.StorageProvider
 import site.weixing.natty.domain.common.filestorage.file.StorageInfo
@@ -16,12 +17,13 @@ import reactor.core.publisher.Flux
  * TODO: 实现完整的AWS S3存储功能
  */
 class S3FileStorageStrategy(
+    override val id: String,
     private val accessKeyId: String,
     private val secretAccessKey: String,
     private val region: String,
     private val bucketName: String,
     private val endpointUrl: String? = null
-) : FileStorageStrategy {
+) : FileStorageStrategy, Identifier {
 
     override val provider: StorageProvider = StorageProvider.S3
 

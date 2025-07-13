@@ -27,21 +27,22 @@ class FileStorageStrategyFactory {
      */
     fun createStrategy(
         provider: StorageProvider,
+        id: String,
         config: Map<String, Any>
     ): FileStorageStrategy {
         logger.info("创建存储策略: provider={}, config keys={}", provider, config.keys)
 
         return when (provider) {
-            StorageProvider.LOCAL -> createLocalStrategy(config)
-            StorageProvider.S3 -> createS3Strategy(config)
-            StorageProvider.ALIYUN_OSS -> createAliyunOssStrategy(config)
+            StorageProvider.LOCAL -> createLocalStrategy(id, config)
+            StorageProvider.S3 -> createS3Strategy(id, config)
+            StorageProvider.ALIYUN_OSS -> createALiYunOssStrategy(id, config)
         }
     }
 
     /**
      * 创建本地存储策略
      */
-    private fun createLocalStrategy(config: Map<String, Any>): LocalFileStorageStrategy {
+    private fun createLocalStrategy(id: String, config: Map<String, Any>): LocalFileStorageStrategy {
         try {
             val baseDirectory = getRequiredStringParam(config, "baseDirectory", "本地存储基础目录")
             val maxFileSize = getOptionalLongParam(config, "maxFileSize", 100 * 1024 * 1024L) // 默认100MB
@@ -50,6 +51,7 @@ class FileStorageStrategyFactory {
             val urlPrefix = getOptionalStringParam(config, "urlPrefix", "file://")
 
             return LocalFileStorageStrategy(
+                id = id,
                 baseDirectory = baseDirectory,
                 maxFileSize = maxFileSize,
                 allowedContentTypes = allowedContentTypes.toSet(),
@@ -64,7 +66,7 @@ class FileStorageStrategyFactory {
     /**
      * 创建S3存储策略
      */
-    private fun createS3Strategy(config: Map<String, Any>): S3FileStorageStrategy {
+    private fun createS3Strategy(id : String,config: Map<String, Any>): S3FileStorageStrategy {
         try {
             val accessKeyId = getRequiredStringParam(config, "accessKeyId", "S3访问密钥ID")
             val secretAccessKey = getRequiredStringParam(config, "secretAccessKey", "S3访问密钥")
@@ -73,6 +75,7 @@ class FileStorageStrategyFactory {
             val endpointUrl = getOptionalStringParam(config, "endpointUrl")
 
             return S3FileStorageStrategy(
+                id = id,
                 accessKeyId = accessKeyId,
                 secretAccessKey = secretAccessKey,
                 region = region,
@@ -87,7 +90,7 @@ class FileStorageStrategyFactory {
     /**
      * 创建阿里云OSS存储策略
      */
-    private fun createAliyunOssStrategy(config: Map<String, Any>): AliyunOssFileStorageStrategy {
+    private fun createALiYunOssStrategy(id: String, config: Map<String, Any>): AliyunOssFileStorageStrategy {
         try {
             val accessKeyId = getRequiredStringParam(config, "accessKeyId", "阿里云OSS访问密钥ID")
             val accessKeySecret = getRequiredStringParam(config, "accessKeySecret", "阿里云OSS访问密钥")
@@ -96,6 +99,7 @@ class FileStorageStrategyFactory {
             val region = getOptionalStringParam(config, "region")
 
             return AliyunOssFileStorageStrategy(
+                id = id,
                 accessKeyId = accessKeyId,
                 accessKeySecret = accessKeySecret,
                 endpoint = endpoint,

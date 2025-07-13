@@ -16,11 +16,11 @@ import me.ahoo.wow.models.tree.command.Created
     description = "Id 为租户ID."
 )
 data class CreateFileFolder(
+
     @field:NotBlank(message = "文件夹名称不能为空")
     @field:Size(min = 1, max = 255, message = "文件夹名称长度必须在1-255字符之间")
     override val name: String,
     
-    @field:NotBlank(message = "父文件夹编码不能为空")
     override val parentCode: String,
     
     val description: String? = null,

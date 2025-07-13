@@ -11,6 +11,7 @@ import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toMono
 import site.weixing.natty.api.common.filestorage.file.UploadFile
 import site.weixing.natty.domain.common.filestorage.temp.TemporaryFileManager
+import site.weixing.natty.server.common.filestorage.controller.FileUploadResponse
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.security.MessageDigest

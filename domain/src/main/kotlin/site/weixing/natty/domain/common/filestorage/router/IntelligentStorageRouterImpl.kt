@@ -323,7 +323,7 @@ class IntelligentStorageRouterImpl(
             require(configState.config.isNotEmpty()) { "存储配置参数不能为空" }
             
             val provider = configState.provider
-            val strategy = fileStorageStrategyFactory.createStrategy(provider, configState.config)
+            val strategy = fileStorageStrategyFactory.createStrategy(provider, "1", configState.config)
             
             logger.debug("成功创建存储策略: {} (配置: {})", provider, configState.name)
             provider to strategy

@@ -1,5 +1,6 @@
 package site.weixing.natty.domain.common.filestorage.strategy.impl
 
+import me.ahoo.wow.api.Identifier
 import reactor.core.publisher.Mono
 import reactor.core.publisher.Flux
 import site.weixing.natty.api.common.filestorage.storage.StorageProvider
@@ -7,12 +8,12 @@ import site.weixing.natty.domain.common.filestorage.file.StorageInfo
 import site.weixing.natty.domain.common.filestorage.strategy.FileInfo
 import site.weixing.natty.domain.common.filestorage.strategy.FileStorageStrategy
 import site.weixing.natty.domain.common.filestorage.strategy.StorageUsage
-import site.weixing.natty.domain.common.filestorage.exception.*
 import org.slf4j.LoggerFactory
 import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.core.io.buffer.DataBufferUtils
 import org.springframework.core.io.buffer.DefaultDataBufferFactory
 import reactor.core.scheduler.Schedulers
+import site.weixing.natty.domain.common.filestorage.exception.StorageConfigurationException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -24,12 +25,13 @@ import kotlin.jvm.java
  * 本地文件存储策略实现（全流式）
  */
 class LocalFileStorageStrategy(
+    override val id: String,
     private val baseDirectory: String,
     private val maxFileSize: Long = 100 * 1024 * 1024, // 100MB
     private val allowedContentTypes: Set<String> = emptySet(),
     private val enableChecksumValidation: Boolean = true,
     private val urlPrefix: String = "file://"
-) : FileStorageStrategy {
+) : FileStorageStrategy, Identifier {
 
     companion object {
         private val logger = LoggerFactory.getLogger(LocalFileStorageStrategy::class.java)
@@ -73,6 +75,7 @@ class LocalFileStorageStrategy(
                 val end = System.currentTimeMillis()
                 logger.info("[LocalFileStorageStrategy] uploadFile 总耗时: ${end - start} ms, $filePath")
                 StorageInfo.local(
+                    id,
                     storagePath = filePath,
                     etag = null // 可选：如需校验和可异步计算
                 )

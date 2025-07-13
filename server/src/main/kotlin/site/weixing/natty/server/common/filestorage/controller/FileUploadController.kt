@@ -1,7 +1,7 @@
-package site.weixing.natty.server.common.filestorage
+package site.weixing.natty.server.common.filestorage.controller
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import me.ahoo.wow.opentelemetry.Tracing.tracing
+import org.slf4j.LoggerFactory
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import reactor.core.publisher.Mono
@@ -19,7 +19,11 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RequestPart
 import org.springframework.web.bind.annotation.RestController
+import site.weixing.natty.server.common.filestorage.FileUploadApplicationService
+import site.weixing.natty.server.common.filestorage.FileUploadRequest
 import java.nio.file.Files
+import java.nio.file.Paths
+import java.util.UUID
 
 /**
  * 文件上传控制器
@@ -32,7 +36,7 @@ import java.nio.file.Files
  * 5. 文件引用验证
  */
 @RestController
-@RequestMapping("/api/files")
+@RequestMapping("/files")
 class FileUploadController(
     private val fileUploadApplicationService: FileUploadApplicationService,
     private val temporaryFileManager: TemporaryFileManager,
@@ -40,7 +44,7 @@ class FileUploadController(
 ) {
     
     companion object {
-        private val logger = KotlinLogging.logger {}
+        private val logger = LoggerFactory.getLogger(FileUploadController::class.java)
     }
 
 
@@ -59,7 +63,7 @@ class FileUploadController(
         @RequestParam(value = "replaceIfExists", required = false) replaceIfExists: Boolean = false
     ): Mono<ResponseEntity<FileUploadResponse>> {
         val start = System.currentTimeMillis()
-        logger.info { "收到 FilePart 上传请求: ${file.filename()} " }
+        logger.info("收到 FilePart 上传请求: ${file.filename()} ")
         
         val uploadRequest = FileUploadRequest(
             fileName = file.filename(),
@@ -77,16 +81,16 @@ class FileUploadController(
             replaceIfExists = replaceIfExists
         )
         val beforeService = System.currentTimeMillis()
-        logger.info { "[uploadMultipartFile] 构造请求耗时: ${beforeService - start} ms" }
+        logger.info("[uploadMultipartFile] 构造请求耗时: ${beforeService - start} ms")
         return fileUploadApplicationService.uploadFile(uploadRequest)
             .map { fileId ->
                 val afterService = System.currentTimeMillis()
-                logger.info { "[uploadMultipartFile] Service处理耗时: ${afterService - beforeService} ms" }
+                logger.info("[uploadMultipartFile] Service处理耗时: ${afterService - beforeService} ms")
                 ResponseEntity.ok(fileId)
             }
             .doOnNext {
                 val end = System.currentTimeMillis()
-                logger.info { "[uploadMultipartFile] 总耗时: ${end - start} ms" }
+                logger.info("[uploadMultipartFile] 总耗时: ${end - start} ms")
             }
             .onErrorReturn(
                 ResponseEntity.badRequest().body(
@@ -116,9 +120,9 @@ class FileUploadController(
         @RequestParam(value = "tags", required = false) tags: List<String> = emptyList(),
         @RequestParam(value = "replaceIfExists", required = false) replaceIfExists: Boolean = false
     ): Mono<ResponseEntity<FileUploadResponse>> {
-        logger.info { "收到流式上传请求: ${file.filename()}" }
+        logger.info("收到流式上传请求: ${file.filename()}")
         val baseDir = System.getProperty("user.dir") + "/storage/files/stream/" + folderId
-        val targetPath = java.nio.file.Paths.get(baseDir, file.filename())
+        val targetPath = Paths.get(baseDir, file.filename())
         return Mono.fromCallable {
             Files.createDirectories(targetPath.parent)
             targetPath
@@ -155,11 +159,11 @@ class FileUploadController(
      */
     @PostMapping("/upload/chunked/init")
     fun initChunkedUpload(@RequestBody request: ChunkedUploadInitRequest): Mono<ResponseEntity<ChunkedUploadInitResponse>> {
-        logger.info { "初始化分块上传: ${request.fileName}, 总大小: ${request.totalSize}" }
+        logger.info("初始化分块上传: ${request.fileName}, 总大小: ${request.totalSize}")
         
         return Mono.fromCallable {
             // 生成上传会话ID
-            val sessionId = java.util.UUID.randomUUID().toString()
+            val sessionId = UUID.randomUUID().toString()
             
             ChunkedUploadInitResponse(
                 sessionId = sessionId,
@@ -223,7 +227,7 @@ class FileUploadController(
         @PathVariable referenceId: String,
         @RequestParam(value = "userId", required = false) userId: String?
     ): Mono<ResponseEntity<FileReferenceValidationResponse>> {
-        logger.debug { "验证文件引用: $referenceId" }
+        logger.debug("验证文件引用: $referenceId")
         
         return fileReferenceValidator.validateReference(referenceId, userId)
             .map { result ->
@@ -265,7 +269,7 @@ class FileUploadController(
      */
     @PostMapping("/validate/batch")
     fun validateMultipleFileReferences(@RequestBody request: BatchValidationRequest): Mono<ResponseEntity<BatchValidationResponse>> {
-        logger.debug { "批量验证 ${request.referenceIds.size} 个文件引用" }
+        logger.debug("批量验证 ${request.referenceIds.size} 个文件引用")
         
         return fileReferenceValidator.validateMultipleReferences(request.referenceIds, request.userId)
             .map { results ->
@@ -306,7 +310,7 @@ class FileUploadController(
      */
     @PostMapping("/cleanup/invalid")
     fun cleanupInvalidReferences(): Mono<ResponseEntity<Map<String, Any>>> {
-        logger.info { "手动触发清理无效文件引用" }
+        logger.info("手动触发清理无效文件引用")
         
         return fileReferenceValidator.cleanupInvalidReferences()
             .map { cleanedCount ->
