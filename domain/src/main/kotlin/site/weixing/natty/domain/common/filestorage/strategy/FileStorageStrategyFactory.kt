@@ -59,7 +59,7 @@ class FileStorageStrategyFactory {
                 urlPrefix = urlPrefix
             )
         } catch (e: Exception) {
-            throw StorageConfigurationException("LOCAL", "本地存储配置错误", e)
+            throw StorageConfigurationException("本地存储配置错误", e, configKey = "LOCAL")
         }
     }
 
@@ -83,7 +83,7 @@ class FileStorageStrategyFactory {
                 endpointUrl = endpointUrl
             )
         } catch (e: Exception) {
-            throw StorageConfigurationException("S3", "S3存储配置错误", e)
+            throw StorageConfigurationException("S3存储配置错误", e, configKey = "S3")
         }
     }
 
@@ -107,7 +107,7 @@ class FileStorageStrategyFactory {
                 region = region
             )
         } catch (e: Exception) {
-            throw StorageConfigurationException("ALIYUN_OSS", "阿里云OSS存储配置错误", e)
+            throw StorageConfigurationException("阿里云OSS存储配置错误", e, configKey = "ALIYUN_OSS")
         }
     }
 

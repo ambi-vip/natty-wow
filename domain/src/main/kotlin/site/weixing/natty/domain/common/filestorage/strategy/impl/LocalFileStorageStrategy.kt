@@ -47,7 +47,7 @@ class LocalFileStorageStrategy(
             Files.createDirectories(basePath)
             logger.info("本地存储初始化完成，基础目录: {}", basePath)
         } catch (e: Exception) {
-            throw StorageConfigurationException("baseDirectory", "无法创建基础目录: $baseDirectory", e)
+            throw StorageConfigurationException("无法创建基础目录: $baseDirectory", e, configKey = "baseDirectory")
         }
     }
 

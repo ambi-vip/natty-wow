@@ -34,85 +34,85 @@ class S3FileStorageStrategy(
         metadata: Map<String, String>
     ): Mono<StorageInfo> {
         return Mono.error(StorageProviderUnavailableException(
-            provider = "S3",
-            reason = "S3存储策略尚未实现"
+            "S3存储策略尚未实现",
+            provider = "S3"
         ))
     }
 
     override fun downloadFile(filePath: String): Flux<DataBuffer> {
         return Flux.error(StorageProviderUnavailableException(
-            provider = "S3",
-            reason = "S3存储策略尚未实现"
+            "S3存储策略尚未实现",
+            provider = "S3"
         ))
     }
 
     override fun deleteFile(filePath: String): Mono<Boolean> {
         return Mono.error(StorageProviderUnavailableException(
-            provider = "S3",
-            reason = "S3存储策略尚未实现"
+            "S3存储策略尚未实现",
+            provider = "S3"
         ))
     }
 
     override fun existsFile(filePath: String): Mono<Boolean> {
         return Mono.error(StorageProviderUnavailableException(
-            provider = "S3",
-            reason = "S3存储策略尚未实现"
+            "S3存储策略尚未实现",
+            provider = "S3"
         ))
     }
 
     override fun getFileSize(filePath: String): Mono<Long> {
         return Mono.error(StorageProviderUnavailableException(
-            provider = "S3",
-            reason = "S3存储策略尚未实现"
+            "S3存储策略尚未实现",
+            provider = "S3"
         ))
     }
 
     override fun getFileUrl(filePath: String, expirationTimeInSeconds: Long?): Mono<String> {
         return Mono.error(StorageProviderUnavailableException(
-            provider = "S3",
-            reason = "S3存储策略尚未实现"
+            "S3存储策略尚未实现",
+            provider = "S3"
         ))
     }
 
     override fun copyFile(sourcePath: String, destPath: String): Mono<Boolean> {
         return Mono.error(StorageProviderUnavailableException(
-            provider = "S3",
-            reason = "S3存储策略尚未实现"
+            "S3存储策略尚未实现",
+            provider = "S3"
         ))
     }
 
     override fun moveFile(sourcePath: String, destPath: String): Mono<Boolean> {
         return Mono.error(StorageProviderUnavailableException(
-            provider = "S3",
-            reason = "S3存储策略尚未实现"
+            "S3存储策略尚未实现",
+            provider = "S3"
         ))
     }
 
     override fun listFiles(directoryPath: String, recursive: Boolean): Mono<List<FileInfo>> {
         return Mono.error(StorageProviderUnavailableException(
-            provider = "S3",
-            reason = "S3存储策略尚未实现"
+            "S3存储策略尚未实现",
+            provider = "S3"
         ))
     }
 
     override fun createDirectory(directoryPath: String): Mono<Boolean> {
         return Mono.error(StorageProviderUnavailableException(
-            provider = "S3",
-            reason = "S3存储策略尚未实现"
+            "S3存储策略尚未实现",
+            provider = "S3"
         ))
     }
 
     override fun deleteDirectory(directoryPath: String, recursive: Boolean): Mono<Boolean> {
         return Mono.error(StorageProviderUnavailableException(
-            provider = "S3",
-            reason = "S3存储策略尚未实现"
+            "S3存储策略尚未实现",
+            provider = "S3"
         ))
     }
 
     override fun getStorageUsage(): Mono<StorageUsage> {
         return Mono.error(StorageProviderUnavailableException(
-            provider = "S3",
-            reason = "S3存储策略尚未实现"
+            "S3存储策略尚未实现",
+            provider = "S3"
         ))
     }
 
@@ -122,15 +122,15 @@ class S3FileStorageStrategy(
 
     override fun getFileChecksum(filePath: String): Mono<String> {
         return Mono.error(StorageProviderUnavailableException(
-            provider = "S3",
-            reason = "S3存储策略尚未实现"
+            "S3存储策略尚未实现",
+            provider = "S3"
         ))
     }
 
     override fun cleanup(olderThanDays: Int): Mono<Long> {
         return Mono.error(StorageProviderUnavailableException(
-            provider = "S3",
-            reason = "S3存储策略尚未实现"
+            "S3存储策略尚未实现",
+            provider = "S3"
         ))
     }
 

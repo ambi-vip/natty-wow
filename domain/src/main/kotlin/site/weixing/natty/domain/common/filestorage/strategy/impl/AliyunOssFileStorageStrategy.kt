@@ -34,85 +34,85 @@ class AliyunOssFileStorageStrategy(
         metadata: Map<String, String>
     ): Mono<StorageInfo> {
         return Mono.error(StorageProviderUnavailableException(
-            provider = "ALIYUN_OSS",
-            reason = "阿里云OSS存储策略尚未实现"
+            "阿里云OSS存储策略尚未实现",
+            provider = "ALIYUN_OSS"
         ))
     }
 
     override fun downloadFile(filePath: String): Flux<DataBuffer> {
         return Flux.error(StorageProviderUnavailableException(
-            provider = "ALIYUN_OSS",
-            reason = "阿里云OSS存储策略尚未实现"
+            "阿里云OSS存储策略尚未实现",
+            provider = "ALIYUN_OSS"
         ))
     }
 
     override fun deleteFile(filePath: String): Mono<Boolean> {
         return Mono.error(StorageProviderUnavailableException(
-            provider = "ALIYUN_OSS",
-            reason = "阿里云OSS存储策略尚未实现"
+            "阿里云OSS存储策略尚未实现",
+            provider = "ALIYUN_OSS"
         ))
     }
 
     override fun existsFile(filePath: String): Mono<Boolean> {
         return Mono.error(StorageProviderUnavailableException(
-            provider = "ALIYUN_OSS",
-            reason = "阿里云OSS存储策略尚未实现"
+            "阿里云OSS存储策略尚未实现",
+            provider = "ALIYUN_OSS"
         ))
     }
 
     override fun getFileSize(filePath: String): Mono<Long> {
         return Mono.error(StorageProviderUnavailableException(
-            provider = "ALIYUN_OSS",
-            reason = "阿里云OSS存储策略尚未实现"
+            "阿里云OSS存储策略尚未实现",
+            provider = "ALIYUN_OSS"
         ))
     }
 
     override fun getFileUrl(filePath: String, expirationTimeInSeconds: Long?): Mono<String> {
         return Mono.error(StorageProviderUnavailableException(
-            provider = "ALIYUN_OSS",
-            reason = "阿里云OSS存储策略尚未实现"
+            "阿里云OSS存储策略尚未实现",
+            provider = "ALIYUN_OSS"
         ))
     }
 
     override fun copyFile(sourcePath: String, destPath: String): Mono<Boolean> {
         return Mono.error(StorageProviderUnavailableException(
-            provider = "ALIYUN_OSS",
-            reason = "阿里云OSS存储策略尚未实现"
+            "阿里云OSS存储策略尚未实现",
+            provider = "ALIYUN_OSS"
         ))
     }
 
     override fun moveFile(sourcePath: String, destPath: String): Mono<Boolean> {
         return Mono.error(StorageProviderUnavailableException(
-            provider = "ALIYUN_OSS",
-            reason = "阿里云OSS存储策略尚未实现"
+            "阿里云OSS存储策略尚未实现",
+            provider = "ALIYUN_OSS"
         ))
     }
 
     override fun listFiles(directoryPath: String, recursive: Boolean): Mono<List<FileInfo>> {
         return Mono.error(StorageProviderUnavailableException(
-            provider = "ALIYUN_OSS",
-            reason = "阿里云OSS存储策略尚未实现"
+            "阿里云OSS存储策略尚未实现",
+            provider = "ALIYUN_OSS"
         ))
     }
 
     override fun createDirectory(directoryPath: String): Mono<Boolean> {
         return Mono.error(StorageProviderUnavailableException(
-            provider = "ALIYUN_OSS",
-            reason = "阿里云OSS存储策略尚未实现"
+            "阿里云OSS存储策略尚未实现",
+            provider = "ALIYUN_OSS"
         ))
     }
 
     override fun deleteDirectory(directoryPath: String, recursive: Boolean): Mono<Boolean> {
         return Mono.error(StorageProviderUnavailableException(
-            provider = "ALIYUN_OSS",
-            reason = "阿里云OSS存储策略尚未实现"
+            "阿里云OSS存储策略尚未实现",
+            provider = "ALIYUN_OSS"
         ))
     }
 
     override fun getStorageUsage(): Mono<StorageUsage> {
         return Mono.error(StorageProviderUnavailableException(
-            provider = "ALIYUN_OSS",
-            reason = "阿里云OSS存储策略尚未实现"
+            "阿里云OSS存储策略尚未实现",
+            provider = "ALIYUN_OSS"
         ))
     }
 
@@ -122,15 +122,15 @@ class AliyunOssFileStorageStrategy(
 
     override fun getFileChecksum(filePath: String): Mono<String> {
         return Mono.error(StorageProviderUnavailableException(
-            provider = "ALIYUN_OSS",
-            reason = "阿里云OSS存储策略尚未实现"
+            "阿里云OSS存储策略尚未实现",
+            provider = "ALIYUN_OSS"
         ))
     }
 
     override fun cleanup(olderThanDays: Int): Mono<Long> {
         return Mono.error(StorageProviderUnavailableException(
-            provider = "ALIYUN_OSS",
-            reason = "阿里云OSS存储策略尚未实现"
+            "阿里云OSS存储策略尚未实现",
+            provider = "ALIYUN_OSS"
         ))
     }
 

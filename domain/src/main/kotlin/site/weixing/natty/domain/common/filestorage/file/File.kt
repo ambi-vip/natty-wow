@@ -7,32 +7,14 @@ import me.ahoo.wow.api.annotation.StaticTenantId
 import me.ahoo.wow.api.command.CommandResultAccessor
 import me.ahoo.wow.id.GlobalIdGenerator
 import reactor.core.publisher.Mono
-import reactor.core.scheduler.Schedulers
 import site.weixing.natty.api.common.filestorage.file.FileUploaded
 import site.weixing.natty.api.common.filestorage.file.UploadFile
-import site.weixing.natty.domain.common.filestorage.pipeline.FileUploadPipeline
-import site.weixing.natty.domain.common.filestorage.pipeline.ProcessingContext
-import site.weixing.natty.domain.common.filestorage.pipeline.ProcessingOptions
-import site.weixing.natty.domain.common.filestorage.pipeline.StreamProcessor
-import site.weixing.natty.domain.common.filestorage.pipeline.processors.ChecksumProcessor
-import site.weixing.natty.domain.common.filestorage.pipeline.processors.CompressionProcessor
-import site.weixing.natty.domain.common.filestorage.pipeline.processors.EncryptionProcessor
-import site.weixing.natty.domain.common.filestorage.pipeline.processors.ThumbnailProcessor
-import site.weixing.natty.domain.common.filestorage.pipeline.processors.VirusScanProcessor
-import site.weixing.natty.domain.common.filestorage.router.AccessPattern
-import site.weixing.natty.domain.common.filestorage.router.FileUploadContext
-import site.weixing.natty.domain.common.filestorage.router.IntelligentStorageRouter
-import site.weixing.natty.domain.common.filestorage.router.Priority
 import site.weixing.natty.domain.common.filestorage.service.FileStorageService
-import site.weixing.natty.domain.common.filestorage.temp.TemporaryFileManager
-import site.weixing.natty.domain.common.filestorage.temp.TemporaryFileReference
-import site.weixing.natty.domain.common.filestorage.temp.TemporaryFileTransaction
-import java.io.InputStream
-import java.security.MessageDigest
+import java.time.Duration
 
 /**
  * 文件聚合根
- * 管理文件的完整生命周期
+ * 纯业务逻辑聚合根，专注于文件业务决策和核心逻辑
  */
 @Suppress("unused")
 @AggregateRoot
@@ -43,99 +25,212 @@ class File(
 
     companion object {
         private val logger = logger {}
-        /**
-         * 创建默认的流式处理管道
-         */
-        fun createDefaultPipeline(): FileUploadPipeline {
-            val processors: List<StreamProcessor> = listOf(
-//                VirusScanProcessor(),
-//                ChecksumProcessor(),
-//                CompressionProcessor(),
-                EncryptionProcessor(),
-//                ThumbnailProcessor()
-            )
-
-            return FileUploadPipeline(processors)
-        }
     }
 
-    // 使用默认实现，后续可通过配置注入
-    private val uploadPipeline: FileUploadPipeline = createDefaultPipeline()
-
+    /**
+     * 文件上传命令处理器
+     * 只包含业务逻辑和决策，技术细节委托给领域服务
+     */
     @OnCommand
     fun onUpload(
         command: UploadFile,
         fileStorageService: FileStorageService,
-        temporaryFileManager: TemporaryFileManager,
-        temporaryFileTransaction: TemporaryFileTransaction,
         commandResultAccessor: CommandResultAccessor
     ): Mono<FileUploaded> {
         val start = System.currentTimeMillis()
-        return temporaryFileTransaction.executeWithCleanup(command.temporaryFileReference) {
-            buildContext(command)
-                .publishOn(Schedulers.boundedElastic())
-                .flatMap { uploadContext ->
-                    fetchAndValidateTempFile(command, temporaryFileManager)
-                        .publishOn(Schedulers.boundedElastic())
-                        .map { tempFileRef -> uploadContext to tempFileRef }
-                }
-                .flatMap { (uploadContext, tempFileRef) ->
-                    val beforePipeline = System.currentTimeMillis()
-                    val dataBufferFlux = temporaryFileManager.getFileStreamAsFlux(command.temporaryFileReference)
-
-                    val processingContext = createProcessingContext(command)
-                    val processedFlux = uploadPipeline.processUpload(dataBufferFlux, processingContext)
-                    val afterPipeline = System.currentTimeMillis()
-                    logger.debug { "[File.onUpload] Pipeline处理耗时: ${afterPipeline - beforePipeline} ms" }
-
-                    fileStorageService.uploadFile(
-                        filePath = generateStoragePath(command.folderId, command.fileName),
-                        dataBufferFlux = processedFlux,
-                        contentType = command.contentType,
-                        metadata = buildStorageMetadata(command, "", tempFileRef)
-                    ).doOnSuccess { logger.debug { "[File.onUpload] 存储策略写入耗时: ${System.currentTimeMillis() - afterPipeline} ms" } }
-
-                }
-                .map { storageInfo: StorageInfo ->
-                    buildFileUploadedEvent(command, storageInfo, "")
-                }
-                .doOnNext { event ->
-                    commandResultAccessor.setCommandResult("actualStoragePath", event.actualStoragePath)
-                    commandResultAccessor.setCommandResult("folderId", event.folderId)
-                    commandResultAccessor.setCommandResult("checksum", event.checksum)
-                }
-                .doOnSuccess {
-                    val end = System.currentTimeMillis()
-                    logger.debug { "[File.onUpload] 总耗时: ${end - start} ms" }
-                }
-        }
-    }
-
-
-    // 拆分的私有方法实现
-    private fun buildContext(command: UploadFile): Mono<FileUploadContext> {
+        
         return Mono.fromCallable {
-            createUploadContext(command)
+            // 业务验证
+            validateUploadCommand(command)
+            
+            // 决定处理需求（合并命令中的选项和业务规则）
+            val processingOptions = mergeProcessingOptions(command)
+            
+            // 生成存储路径
+            val storagePath = generateStoragePath(command.folderId, command.fileName)
+            
+            // 构建文件元数据
+            val metadata = buildFileMetadata(command)
+            
+            ProcessingDecision(storagePath, metadata, processingOptions)
+        }
+        .flatMap { decision ->
+            // 委托给领域服务执行存储
+            fileStorageService.storeFile(
+                path = decision.storagePath,
+                content = command.content,
+                metadata = decision.metadata,
+                processingOptions = decision.processingOptions
+            )
+        }
+        .map { storageResult ->
+            // 构建业务事件
+            buildFileUploadedEvent(command, storageResult)
+        }
+        .doOnNext { event ->
+            // 设置命令结果
+            commandResultAccessor.setCommandResult("actualStoragePath", event.actualStoragePath)
+            commandResultAccessor.setCommandResult("folderId", event.folderId)
+            commandResultAccessor.setCommandResult("checksum", event.checksum)
+        }
+        .doOnSuccess {
+            val end = System.currentTimeMillis()
+            logger.debug { "[File.onUpload] 文件上传完成，总耗时: ${end - start} ms" }
+        }
+        .doOnError { error ->
+            logger.error(error) { "[File.onUpload] 文件上传失败: ${command.fileName}" }
         }
     }
 
-    private fun fetchAndValidateTempFile(
-        command: UploadFile,
-        temporaryFileManager: TemporaryFileManager
-    ): Mono<TemporaryFileReference> {
-        return temporaryFileManager.getTemporaryFileReference(command.temporaryFileReference)
-            .flatMap { tempFileRef ->
-                require(tempFileRef.fileSize == command.fileSize) {
-                    "临时文件大小与命令声明不匹配: ${tempFileRef.fileSize} != ${command.fileSize}"
-                }
-                Mono.just(tempFileRef)
-            }
+    /**
+     * 验证上传命令的业务规则
+     */
+    private fun validateUploadCommand(command: UploadFile) {
+        require(command.fileName.isNotBlank()) { "文件名不能为空" }
+        require(command.fileSize > 0) { "文件大小必须大于0" }
+        require(command.contentType.isNotBlank()) { "文件类型不能为空" }
+        require(command.folderId.isNotBlank()) { "文件夹ID不能为空" }
+        require(command.uploaderId.isNotBlank()) { "上传者ID不能为空" }
+        
+        // 文件大小限制（业务规则）
+        val maxFileSize = 500 * 1024 * 1024L // 500MB
+        require(command.fileSize <= maxFileSize) { 
+            "文件大小超过限制: ${formatFileSize(command.fileSize)} > ${formatFileSize(maxFileSize)}" 
+        }
+        
+        // 文件名格式验证
+        val forbiddenChars = setOf('/', '\\', ':', '*', '?', '"', '<', '>', '|')
+        require(!command.fileName.any { it in forbiddenChars }) {
+            "文件名包含非法字符: ${forbiddenChars.joinToString("")}"
+        }
     }
 
+    /**
+     * 合并处理选项（命令参数 + 业务规则）
+     */
+    private fun mergeProcessingOptions(command: UploadFile): site.weixing.natty.domain.common.filestorage.processing.ProcessingOptions {
+        // 从命令中获取用户指定的选项
+        val userOptions = command.processingOptions
+        
+        // 应用业务规则
+        return site.weixing.natty.domain.common.filestorage.processing.ProcessingOptions(
+            requireEncryption = userOptions.requireEncryption || shouldEncrypt(command),
+            enableCompression = userOptions.enableCompression || shouldCompress(command),
+            generateThumbnail = userOptions.generateThumbnail || shouldGenerateThumbnail(command),
+            customProcessors = (userOptions.customProcessors + determineCustomProcessors(command)).distinct(),
+            maxProcessingTime = Duration.ofMinutes(userOptions.maxProcessingTimeMinutes)
+        )
+    }
+
+    /**
+     * 根据业务规则决定处理需求
+     */
+    fun determineProcessingNeeds(command: UploadFile): site.weixing.natty.domain.common.filestorage.processing.ProcessingOptions {
+        return site.weixing.natty.domain.common.filestorage.processing.ProcessingOptions(
+            requireEncryption = shouldEncrypt(command),
+            enableCompression = shouldCompress(command),
+            generateThumbnail = shouldGenerateThumbnail(command),
+            customProcessors = determineCustomProcessors(command),
+            maxProcessingTime = Duration.ofMinutes(5)
+        )
+    }
+
+    /**
+     * 判断是否需要加密
+     */
+    private fun shouldEncrypt(command: UploadFile): Boolean {
+        // 业务规则：私有文件或明确要求加密的文件进行加密
+        return !command.isPublic || 
+               command.tags.contains("encrypt") || 
+               command.tags.contains("secure")
+    }
+
+    /**
+     * 判断是否需要压缩
+     */
+    private fun shouldCompress(command: UploadFile): Boolean {
+        // 用户明确要求压缩
+        if (command.tags.contains("compress")) return true
+        
+        // 大文件的可压缩类型自动压缩
+        val compressibleTypes = setOf(
+            "text/", "application/json", "application/xml", 
+            "application/javascript", "application/css"
+        )
+        
+        return command.fileSize > 1024 * 1024L && // 大于1MB
+               compressibleTypes.any { command.contentType.startsWith(it) }
+    }
+
+    /**
+     * 判断是否需要生成缩略图
+     */
+    private fun shouldGenerateThumbnail(command: UploadFile): Boolean {
+        // 业务规则：图片文件且为公开文件生成缩略图
+        return command.contentType.startsWith("image/") && 
+               command.isPublic &&
+               !command.tags.contains("no-thumbnail")
+    }
+
+    /**
+     * 确定自定义处理器
+     */
+    private fun determineCustomProcessors(command: UploadFile): List<String> {
+        val processors = mutableListOf<String>()
+        
+        // 根据标签决定处理器
+        if (command.tags.contains("virus-scan")) {
+            processors.add("VirusScanProcessor")
+        }
+        
+        if (command.tags.contains("ocr")) {
+            processors.add("OcrProcessor")
+        }
+        
+        if (command.tags.contains("watermark")) {
+            processors.add("WatermarkProcessor")
+        }
+        
+        return processors
+    }
+
+    /**
+     * 生成存储路径（业务规则）
+     */
+    private fun generateStoragePath(folderId: String, fileName: String): String {
+        val timestamp = GlobalIdGenerator.generateAsString()
+        val fileExtension = fileName.substringAfterLast('.', "")
+        val baseFileName = fileName.substringBeforeLast('.')
+        
+        // 清理文件名，移除特殊字符
+        val cleanFileName = baseFileName.replace(Regex("[^a-zA-Z0-9\\u4e00-\\u9fa5_-]"), "_")
+        
+        return "folders/$folderId/${timestamp}_${cleanFileName}.${fileExtension}"
+    }
+
+    /**
+     * 构建文件元数据
+     */
+    private fun buildFileMetadata(command: UploadFile): FileMetadata {
+        return FileMetadata(
+            originalFileName = command.fileName,
+            uploaderId = command.uploaderId,
+            folderId = command.folderId,
+            contentType = command.contentType,
+            fileSize = command.fileSize,
+            isPublic = command.isPublic,
+            tags = command.tags,
+            customMetadata = command.customMetadata,
+            uploadTimestamp = System.currentTimeMillis()
+        )
+    }
+
+    /**
+     * 构建文件上传完成事件
+     */
     private fun buildFileUploadedEvent(
         command: UploadFile,
-        storageInfo: StorageInfo,
-        checksum: String
+        storageResult: StorageResult
     ): FileUploaded {
         return FileUploaded(
             fileName = command.fileName,
@@ -143,163 +238,20 @@ class File(
             uploaderId = command.uploaderId,
             fileSize = command.fileSize,
             contentType = command.contentType,
-            storagePath = storageInfo.storagePath,
-            actualStoragePath = storageInfo.storagePath,
-            checksum = checksum,
+            storagePath = storageResult.storagePath,
+            actualStoragePath = storageResult.actualStoragePath,
+            checksum = storageResult.checksum,
             isPublic = command.isPublic,
             tags = command.tags,
             customMetadata = command.customMetadata,
-            storageProviderId =  storageInfo.providerId,
-            storageProvider = storageInfo.provider.name,
+            storageProviderId = storageResult.providerId,
+            storageProvider = storageResult.providerName,
             uploadTimestamp = System.currentTimeMillis()
         )
     }
 
     /**
-     * 创建文件上传上下文
-     */
-    private fun createUploadContext(command: UploadFile): FileUploadContext {
-        return FileUploadContext(
-            fileName = command.fileName,
-            fileSize = command.fileSize,
-            contentType = command.contentType,
-            uploaderId = command.uploaderId,
-            folderId = command.folderId,
-            isPublic = command.isPublic,
-            expectedAccessPattern = determineAccessPattern(command),
-            priorityLevel = determinePriority(command),
-            tags = command.tags,
-            customMetadata = command.customMetadata,
-            replaceIfExists = command.replaceIfExists
-        )
-    }
-
-    /**
-     * 确定访问模式
-     */
-    private fun determineAccessPattern(command: UploadFile): AccessPattern {
-        return when {
-            // 根据标签判断
-            command.tags.contains("hot") || command.tags.contains("frequent") -> AccessPattern.HOT
-            command.tags.contains("cold") || command.tags.contains("archive") -> AccessPattern.COLD
-
-            // 根据文件类型判断
-            command.contentType.startsWith("image/") && command.isPublic -> AccessPattern.HOT
-            command.contentType.startsWith("video/") -> AccessPattern.WARM
-            command.contentType.contains("archive") || command.contentType.contains("zip") -> AccessPattern.COLD
-
-            // 默认温数据
-            else -> AccessPattern.WARM
-        }
-    }
-
-    /**
-     * 确定优先级
-     */
-    private fun determinePriority(command: UploadFile): Priority {
-        return when {
-            command.tags.contains("urgent") || command.tags.contains("critical") -> Priority.CRITICAL
-            command.tags.contains("high") -> Priority.HIGH
-            command.tags.contains("low") -> Priority.LOW
-            else -> Priority.NORMAL
-        }
-    }
-
-    /**
-     * 构建存储元数据
-     */
-    private fun buildStorageMetadata(
-        command: UploadFile, 
-        checksum: String, 
-        tempFileRef: site.weixing.natty.domain.common.filestorage.temp.TemporaryFileReference? = null
-    ): Map<String, String> {
-        return buildMap {
-            put("originalFileName", command.fileName)
-            put("uploaderId", command.uploaderId)
-            put("folderId", command.folderId)
-            put("contentType", command.contentType)
-            put("fileSize", command.fileSize.toString())
-            put("checksum", checksum)
-            put("isPublic", command.isPublic.toString())
-            put("uploadTimestamp", System.currentTimeMillis().toString())
-
-            // 添加临时文件相关信息
-            put("temporaryFileReference", command.temporaryFileReference)
-            put("streamProcessed", "true")
-            
-            // 添加临时文件的元数据（如果有）
-            tempFileRef?.let { ref ->
-                put("tempFileCreatedAt", ref.createdAt.toString())
-                put("tempFileExpiresAt", ref.expiresAt.toString())
-                put("tempFileOriginalChecksum", ref.checksum ?: "unknown")
-            }
-
-            // 添加自定义元数据
-            putAll(command.customMetadata)
-
-            // 添加标签
-            if (command.tags.isNotEmpty()) {
-                put("tags", command.tags.joinToString(","))
-            }
-        }
-    }
-
-
-
-    /**
-     * 计算文件SHA-256校验和（从字节数组）
-     */
-    private fun calculateChecksum(content: ByteArray): String {
-        val digest = MessageDigest.getInstance("SHA-256")
-        val hashBytes = digest.digest(content)
-        return hashBytes.joinToString("") { "%02x".format(it) }
-    }
-    
-    /**
-     * 计算文件SHA-256校验和（从输入流）
-     */
-    private fun calculateChecksum(inputStream: InputStream): String {
-        val digest = MessageDigest.getInstance("SHA-256")
-        val buffer = ByteArray(8192)
-        
-        inputStream.use { stream ->
-            var bytesRead: Int
-            while (stream.read(buffer).also { bytesRead = it } != -1) {
-                digest.update(buffer, 0, bytesRead)
-            }
-        }
-        
-        val hashBytes = digest.digest()
-        return hashBytes.joinToString("") { "%02x".format(it) }
-    }
-
-    /**
-     * 生成存储路径
-     */
-    private fun generateStoragePath(folderId: String, fileName: String): String {
-        val timestamp = GlobalIdGenerator.generateAsString()
-        val fileExtension = fileName.substringAfterLast('.', "")
-        val baseFileName = fileName.substringBeforeLast('.')
-
-        return "folders/$folderId/${timestamp}_${baseFileName}.${fileExtension}"
-    }
-
-    /**
-     * 验证文件类型是否被允许
-     */
-    private fun validateFileType(contentType: String, allowedTypes: Set<String>): Boolean {
-        if (allowedTypes.isEmpty()) return true // 空集合表示允许所有类型
-
-        return allowedTypes.any { allowedType ->
-            when {
-                allowedType.endsWith("/*") -> contentType.startsWith(allowedType.removeSuffix("/*"))
-                else -> contentType == allowedType
-            }
-        }
-    }
-
-    /**
-     * 获取文件大小的人类可读格式
+     * 格式化文件大小为可读格式
      */
     private fun formatFileSize(bytes: Long): String {
         val units = arrayOf("B", "KB", "MB", "GB", "TB")
@@ -315,105 +267,37 @@ class File(
     }
 
     /**
-     * 创建流式处理上下文
+     * 处理决策数据类
      */
-    private fun createProcessingContext(command: UploadFile): ProcessingContext {
-        val context = ProcessingContext(
-            fileName = command.fileName,
-            contentType = command.contentType,
-            fileSize = command.fileSize,
-            uploaderId = command.uploaderId,
-            processingOptions = createProcessingOptions(command)
-        )
+    private data class ProcessingDecision(
+        val storagePath: String,
+        val metadata: FileMetadata,
+        val processingOptions: site.weixing.natty.domain.common.filestorage.processing.ProcessingOptions
+    )
+}
 
-        // 添加额外的元数据供处理器使用
-        context.addMetadata("isPublic", command.isPublic)
-        context.addMetadata("tags", command.tags)
-        context.addMetadata("folderId", command.folderId)
+/**
+ * 文件元数据值对象
+ */
+data class FileMetadata(
+    val originalFileName: String,
+    val uploaderId: String,
+    val folderId: String,
+    val contentType: String,
+    val fileSize: Long,
+    val isPublic: Boolean,
+    val tags: List<String>,
+    val customMetadata: Map<String, String>,
+    val uploadTimestamp: Long
+)
 
-        return context
-    }
-
-    /**
-     * 创建处理选项
-     */
-    private fun createProcessingOptions(command: UploadFile): ProcessingOptions {
-        return ProcessingOptions(
-            enableVirusScan = !command.tags.contains("skip-scan"),
-            enableCompression = command.tags.contains("compress") || shouldCompress(command),
-            enableEncryption = !command.isPublic || command.tags.contains("encrypt"),
-            enableThumbnail = command.contentType.startsWith("image/"),
-            enableChecksumValidation = false
-        )
-    }
-
-    /**
-     * 判断是否应该压缩文件
-     */
-    private fun shouldCompress(command: UploadFile): Boolean {
-        // 大于1MB的文本文件和文档建议压缩
-        return command.fileSize > 1024 * 1024L &&
-                (command.contentType.startsWith("text/") ||
-                        command.contentType.startsWith("application/json") ||
-                        command.contentType.startsWith("application/xml"))
-    }
-
-    /**
-     * 构建增强的存储元数据（包含管道处理信息）
-     */
-    private fun buildEnhancedStorageMetadata(
-        command: UploadFile,
-        checksum: String,
-        pipelineResult: site.weixing.natty.domain.common.filestorage.pipeline.PipelineResult,
-        tempFileRef: TemporaryFileReference
-    ): Map<String, String> {
-        val baseMetadata = buildStorageMetadata(command, checksum, tempFileRef)
-        val pipelineMetadata = extractPipelineMetadata(pipelineResult)
-
-        return baseMetadata + pipelineMetadata + mapOf(
-            "pipelineProcessed" to "true",
-            "processingTime" to pipelineResult.getProcessingDurationMs().toString(),
-            "processedSize" to pipelineResult.getTotalBytes().toString(),
-            "memoryOptimized" to "true", // 标记使用了内存优化的临时文件机制
-            "streamProcessingEnabled" to "true"
-        )
-    }
-
-    /**
-     * 从管道结果中提取元数据
-     */
-    private fun extractPipelineMetadata(pipelineResult: site.weixing.natty.domain.common.filestorage.pipeline.PipelineResult): Map<String, String> {
-        val metadata = mutableMapOf<String, String>()
-
-        // 提取处理器统计信息
-        pipelineResult.statistics.forEach { (processorName, stats) ->
-            metadata["${processorName}_processed"] = "true"
-            metadata["${processorName}_time"] = stats.lastProcessingTime.toString()
-        }
-
-        // 为所有已知的处理器添加状态，即使它们没有被执行
-        val allProcessorNames = listOf(
-            "VirusScanProcessor",
-            "ChecksumProcessor",
-            "CompressionProcessor",
-            "EncryptionProcessor",
-            "ThumbnailProcessor"
-        )
-        allProcessorNames.forEach { processorName ->
-            if (!metadata.containsKey("${processorName}_processed")) {
-                metadata["${processorName}_processed"] = "false"
-            }
-        }
-
-        // 提取处理上下文中的元数据
-        pipelineResult.context.metadata.forEach { (key, value) ->
-            metadata["pipeline_$key"] = value.toString()
-        }
-
-        // 添加处理时间和处理大小
-        metadata["processingTime"] = pipelineResult.getProcessingDurationMs().toString()
-        metadata["processedSize"] = pipelineResult.getTotalBytes().toString()
-
-        return metadata
-    }
-} 
+/**
+ * 存储结果值对象
+ */
+data class StorageResult(
+    val storagePath: String,
+    val actualStoragePath: String,
+    val checksum: String,
+    val providerId: String,
+    val providerName: String
+)

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.core.io.buffer.DataBufferUtils
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import site.weixing.natty.domain.common.filestorage.service.FileStorageService
@@ -27,11 +28,13 @@ class FileStorageController(
     @GetMapping("/download")
     fun downloadFile(
         @RequestParam filePath: String
-    ): ResponseEntity<Flux<ByteArray>> {
-        val flux = fileStorageService.downloadFile(filePath).map { dataBuffer ->
-            val bytes = ByteArray(dataBuffer.readableByteCount())
-            dataBuffer.read(bytes)
-            bytes
+    ): ResponseEntity<Mono<Flux<ByteArray>>> {
+        val flux = fileStorageService.retrieveFile(filePath).map { dataBufferFlux ->
+            dataBufferFlux.map { dataBuffer ->
+                val bytes = ByteArray(dataBuffer.readableByteCount())
+                dataBuffer.read(bytes)
+                bytes
+            }
         }
         return ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"${filePath.substringAfterLast('/')}\"")

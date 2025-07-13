@@ -54,11 +54,7 @@ class FileStorageEventHandler(
 
             fileStorageService.deleteFile(event.storagePath)
                 .doOnSuccess { deleted ->
-                    if (deleted) {
-                        logger.info { "文件物理删除成功: ${event.fileName}" }
-                    } else {
-                        logger.warn { "文件不存在，删除跳过: ${event.fileName}" }
-                    }
+                    logger.info { "文件物理删除成功: ${event.fileName}" }
                 }
                 .doOnError { error ->
                     logger.error(error) { "文件物理删除失败: ${event.fileName}" }
@@ -84,8 +80,8 @@ class FileStorageEventHandler(
             // 使用存储策略的moveFile方法
             fileStorageService.moveFile(event.oldStoragePath, event.newStoragePath)
                 .doOnSuccess { moved ->
+                    logger.info { "文件物理移动成功: ${event.fileName}" }
                     if (moved) {
-                        logger.info { "文件物理移动成功: ${event.fileName}" }
                     } else {
                         logger.warn { "文件移动失败: ${event.fileName}" }
                     }

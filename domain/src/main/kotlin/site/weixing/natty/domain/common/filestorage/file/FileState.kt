@@ -75,11 +75,10 @@ class FileState(override val id: String) : Identifier {
 
     @OnSourcing
     fun onFileUpdated(event: FileUpdated) {
-        event.fileName?.let { this.fileName = it }
-        event.isPublic?.let { this.isPublic = it }
-        event.tags?.let { this.tags = it }
-        event.customMetadata?.let { this.customMetadata = it }
-        this.updatedAt = System.currentTimeMillis()
+        this.fileName = event.fileName
+        this.size = event.fileSize
+        this.contentType = event.contentType
+        this.updatedAt = event.updateTimestamp
     }
 
     @OnSourcing
