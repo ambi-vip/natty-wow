@@ -12,7 +12,6 @@ import site.weixing.natty.domain.ums.crypto.infra.PasswordEncoder
  */
 interface SaveUserPrepare {
     fun bindPrepare(command: CreateUser, user: UserState): Mono<UsernameIndexValue>
-    fun rollback(command: CreateUser, user: UserState): Mono<Void>
 }
 
 @Component
@@ -90,12 +89,7 @@ class DefaultSaveUserPrepare(
         return IllegalStateException(errorMessage)
     }
 
-    override fun rollback(
-        command: CreateUser,
-        user: UserState
-    ): Mono<Void> {
-        TODO("Not yet implemented")
-    }
+
 
     private fun buildIndexValue(user: UserState): UsernameIndexValue {
         val encodedPassword = passwordEncoder.encode("123123")

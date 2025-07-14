@@ -20,7 +20,6 @@ class UserTest {
             password = "123456",
             encryptionMethod = ""
         ))
-        every { rollback(any(), any()) } returns Mono.empty()
     }
 
     @Test

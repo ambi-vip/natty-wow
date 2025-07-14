@@ -123,7 +123,7 @@ class User(private val state: UserState) {
             encryptionMethod = state.passwordEncryptionMethod
         )
 
-        return if (state.primaryPhone.isNullOrBlank()) {
+        return if (state.primaryEmail.isNullOrBlank()) {
             // 用户没有邮箱，直接准备新邮箱
             usernamePrepare.usingPrepare(
                 key = command.newEmail,
@@ -138,7 +138,7 @@ class User(private val state: UserState) {
         } else {
             // 用户已有邮箱，使用 reprepare 替换
             usernamePrepare.reprepare(
-                oldKey = state.primaryPhone!!,
+                oldKey = state.primaryEmail!!,
                 oldValue = usernameIndexValue,
                 newKey = command.newEmail,
                 newValue = usernameIndexValue

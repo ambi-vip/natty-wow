@@ -29,9 +29,6 @@ data class Address(
 )
 
 data class UserProfileUpdated(
-    val familyName: String? = null,
-    val givenName: String? = null,
-    val middleName: String? = null,
     val nickname: String? = null,
     val preferredUsername: String? = null,
     val profile: String? = null,
