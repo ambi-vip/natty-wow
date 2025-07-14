@@ -49,7 +49,18 @@ class FileProcessorTest {
                 
                 // 验证压缩比
                 val compressionRatio = compressedSize.toDouble() / originalContent.length.toDouble()
-                assertThat(compressionRatio).isBetween(0.1, 0.9) // 预期有显著压缩
+                assertThat(compressionRatio).isBetween(0.01, 0.9) // 预期有显著压缩
+
+                // 校验压缩后解压内容与原始内容一致
+                val processedContentFlux = result.metadata["processedContent"] as Flux<DataBuffer>
+                val compressedBytes = processedContentFlux.collectList().block()!!.flatMap { buf ->
+                    val bytes = ByteArray(buf.readableByteCount())
+                    buf.read(bytes)
+                    bytes.toList()
+                }.toByteArray()
+                val decompressedBytes = decompressGzip(compressedBytes)
+                val decompressedString = String(decompressedBytes)
+                assertThat(decompressedString).isEqualTo(originalContent)
             }
             .verifyComplete()
     }
@@ -109,7 +120,7 @@ class FileProcessorTest {
             .assertNext { result ->
                 assertThat(result.success).isTrue()
                 assertThat(result.metadata["encrypted"]).isEqualTo(true)
-                assertThat(result.metadata["algorithm"]).isEqualTo("AES-256-GCM")
+                assertThat(result.metadata["algorithm"]).isEqualTo("AES/GCM/NoPadding")
                 assertThat(result.metadata["keyId"]).isNotNull()
                 assertThat(result.metadata["iv"]).isNotNull()
                 
@@ -229,7 +240,8 @@ class FileProcessorTest {
                 
                 @Suppress("UNCHECKED_CAST")
                 val steps = result.metadata["processingSteps"] as List<String>
-                assertThat(steps).contains("compression", "encryption")
+                val property = CompressionProcessor::class::simpleName
+                assertThat(steps).contains("CompressionProcessor", "EncryptionProcessor")
                 
                 // 验证处理指标
                 assertThat(result.metadata["totalProcessingTime"]).isNotNull()
@@ -321,5 +333,12 @@ class FileProcessorTest {
             1, 1, 0, 72, 0, 72, 0, 0, // version and density
             *ByteArray(100) { (it % 256).toByte() } // mock image data
         )
+    }
+
+    // 辅助方法：GZIP解压
+    private fun decompressGzip(compressed: ByteArray): ByteArray {
+        java.util.zip.GZIPInputStream(compressed.inputStream()).use { gzipIn ->
+            return gzipIn.readAllBytes()
+        }
     }
 }

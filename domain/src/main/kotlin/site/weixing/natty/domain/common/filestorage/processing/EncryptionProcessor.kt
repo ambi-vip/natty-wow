@@ -21,6 +21,7 @@ import javax.crypto.spec.SecretKeySpec
 class EncryptionProcessor : FileProcessor {
     
     companion object {
+        private val log = org.slf4j.LoggerFactory.getLogger(EncryptionProcessor::class.java)
         private val dataBufferFactory = DefaultDataBufferFactory.sharedInstance
         private const val ALGORITHM = "AES"
         private const val TRANSFORMATION = "AES/GCM/NoPadding"
@@ -87,6 +88,9 @@ class EncryptionProcessor : FileProcessor {
                         "processedContent" to Flux.just(dataBufferFactory.wrap(encryptedData))
                     )
                 )
+            }
+            .doOnError { ex ->
+                log.error("加密处理失败", ex)
             }
             .onErrorReturn(ProcessingResult(
                 success = false,
