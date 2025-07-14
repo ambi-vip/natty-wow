@@ -54,4 +54,40 @@ data class ProcessingOptions(
         
         return processors
     }
+
+    /**
+     * 创建默认的处理选项（无处理）
+     */
+    companion object {
+        fun none(): ProcessingOptions {
+            return ProcessingOptions()
+        }
+
+        /**
+         * 创建基础安全处理选项（只加密）
+         */
+        fun secureOnly(): ProcessingOptions {
+            return ProcessingOptions(requireEncryption = true)
+        }
+
+        /**
+         * 创建图片处理选项（加密+缩略图）
+         */
+        fun forImage(isPublic: Boolean): ProcessingOptions {
+            return ProcessingOptions(
+                requireEncryption = !isPublic,
+                generateThumbnail = isPublic
+            )
+        }
+
+        /**
+         * 创建文档处理选项（加密+压缩）
+         */
+        fun forDocument(isPublic: Boolean): ProcessingOptions {
+            return ProcessingOptions(
+                requireEncryption = !isPublic,
+                enableCompression = true
+            )
+        }
+    }
 }

@@ -8,6 +8,7 @@ import me.ahoo.wow.api.command.CommandResultAccessor
 import me.ahoo.wow.id.GlobalIdGenerator
 import reactor.core.publisher.Mono
 import site.weixing.natty.api.common.filestorage.file.FileUploaded
+import site.weixing.natty.api.common.filestorage.file.ProcessingOptions
 import site.weixing.natty.api.common.filestorage.file.UploadFile
 import site.weixing.natty.domain.common.filestorage.service.FileStorageService
 import java.time.Duration
@@ -108,30 +109,30 @@ class File(
     /**
      * 合并处理选项（命令参数 + 业务规则）
      */
-    private fun mergeProcessingOptions(command: UploadFile): site.weixing.natty.domain.common.filestorage.processing.ProcessingOptions {
+    private fun mergeProcessingOptions(command: UploadFile): ProcessingOptions {
         // 从命令中获取用户指定的选项
         val userOptions = command.processingOptions
         
         // 应用业务规则
-        return site.weixing.natty.domain.common.filestorage.processing.ProcessingOptions(
+        return ProcessingOptions(
             requireEncryption = userOptions.requireEncryption || shouldEncrypt(command),
             enableCompression = userOptions.enableCompression || shouldCompress(command),
             generateThumbnail = userOptions.generateThumbnail || shouldGenerateThumbnail(command),
             customProcessors = (userOptions.customProcessors + determineCustomProcessors(command)).distinct(),
-            maxProcessingTime = Duration.ofMinutes(userOptions.maxProcessingTimeMinutes)
+            maxProcessingTimeMinutes = userOptions.maxProcessingTimeMinutes
         )
     }
 
     /**
      * 根据业务规则决定处理需求
      */
-    fun determineProcessingNeeds(command: UploadFile): site.weixing.natty.domain.common.filestorage.processing.ProcessingOptions {
-        return site.weixing.natty.domain.common.filestorage.processing.ProcessingOptions(
+    fun determineProcessingNeeds(command: UploadFile): ProcessingOptions {
+        return ProcessingOptions(
             requireEncryption = shouldEncrypt(command),
             enableCompression = shouldCompress(command),
             generateThumbnail = shouldGenerateThumbnail(command),
             customProcessors = determineCustomProcessors(command),
-            maxProcessingTime = Duration.ofMinutes(5)
+            maxProcessingTimeMinutes = 5
         )
     }
 
@@ -272,7 +273,7 @@ class File(
     private data class ProcessingDecision(
         val storagePath: String,
         val metadata: FileMetadata,
-        val processingOptions: site.weixing.natty.domain.common.filestorage.processing.ProcessingOptions
+        val processingOptions: ProcessingOptions
     )
 }
 

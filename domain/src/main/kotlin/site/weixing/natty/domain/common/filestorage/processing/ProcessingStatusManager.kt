@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toMono
+import site.weixing.natty.api.common.filestorage.file.ProcessingOptions
 import java.time.LocalDateTime
 import java.util.concurrent.ConcurrentHashMap
 

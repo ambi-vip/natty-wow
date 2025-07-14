@@ -14,7 +14,8 @@ import site.weixing.natty.api.common.filestorage.file.ProcessingOptions
 @CommandRoute(
     method = CommandRoute.Method.POST,
     action = "/upload",
-    summary = "上传文件"
+    summary = "上传文件",
+    enabled = false
 )
 data class UploadFile(
     @field:NotBlank(message = "文件名不能为空")
