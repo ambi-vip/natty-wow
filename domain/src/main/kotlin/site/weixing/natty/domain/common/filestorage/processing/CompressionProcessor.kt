@@ -82,9 +82,9 @@ class CompressionProcessor : FileProcessor {
                         "originalSize" to originalData.size.toLong(),
                         "compressedSize" to compressedData.size.toLong(),
                         "compressionRatio" to compressionRatio,
-                        "algorithm" to "GZIP",
-                        "processedContent" to Flux.just(dataBufferFactory.wrap(compressedData))
-                    )
+                        "algorithm" to "GZIP"
+                    ),
+                    processedContent = Flux.just(dataBufferFactory.wrap(compressedData))
                 )
             }
             .onErrorReturn(ProcessingResult(

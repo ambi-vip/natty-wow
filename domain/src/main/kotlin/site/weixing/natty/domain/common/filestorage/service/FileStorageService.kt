@@ -72,8 +72,9 @@ open class FileStorageService(
         return processingCoordinator.processFile(content, processingOptions, metadata)
             .flatMap { processedResult ->
                 val storageMetadata = buildStorageMetadata(metadata, processedResult.metadata)
-                // 对于简化实现，直接使用原始内容进行存储
-                strategy.uploadFile(path, content, metadata.contentType, storageMetadata)
+                val processedContent = processedResult.processedContent
+                    ?: error("处理后内容不存在，无法上传")
+                strategy.uploadFile(path, processedContent, metadata.contentType, storageMetadata)
                     .map { storageInfo ->
                         StorageResult(
                             storagePath = storageInfo.storagePath,

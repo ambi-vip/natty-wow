@@ -16,6 +16,7 @@ import reactor.core.publisher.Mono
 import site.weixing.natty.domain.common.filestorage.service.FileStorageService
 import site.weixing.natty.domain.common.filestorage.strategy.FileInfo
 import site.weixing.natty.domain.common.filestorage.strategy.StorageUsage
+import org.springframework.core.io.buffer.DataBuffer
 
 @RestController
 @RequestMapping("/files")
@@ -28,18 +29,14 @@ class FileStorageController(
     @GetMapping("/download")
     fun downloadFile(
         @RequestParam filePath: String
-    ): ResponseEntity<Mono<Flux<ByteArray>>> {
-        val flux = fileStorageService.retrieveFile(filePath).map { dataBufferFlux ->
-            dataBufferFlux.map { dataBuffer ->
-                val bytes = ByteArray(dataBuffer.readableByteCount())
-                dataBuffer.read(bytes)
-                bytes
+    ): Mono<ResponseEntity<Flux<DataBuffer>>> {
+        return fileStorageService.retrieveFile(filePath)
+            .map { dataBufferFlux ->
+                ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"${filePath.substringAfterLast('/')}\"")
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(dataBufferFlux)
             }
-        }
-        return ResponseEntity.ok()
-            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"${filePath.substringAfterLast('/')}\"")
-            .contentType(MediaType.APPLICATION_OCTET_STREAM)
-            .body(flux)
     }
 
     /**

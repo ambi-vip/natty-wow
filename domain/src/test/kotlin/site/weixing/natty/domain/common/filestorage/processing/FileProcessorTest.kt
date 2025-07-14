@@ -52,7 +52,7 @@ class FileProcessorTest {
                 assertThat(compressionRatio).isBetween(0.01, 0.9) // 预期有显著压缩
 
                 // 校验压缩后解压内容与原始内容一致
-                val processedContentFlux = result.metadata["processedContent"] as Flux<DataBuffer>
+                val processedContentFlux = result.processedContent!!
                 val compressedBytes = processedContentFlux.collectList().block()!!.flatMap { buf ->
                     val bytes = ByteArray(buf.readableByteCount())
                     buf.read(bytes)

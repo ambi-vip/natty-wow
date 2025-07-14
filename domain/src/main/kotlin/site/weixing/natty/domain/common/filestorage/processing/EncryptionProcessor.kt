@@ -84,9 +84,9 @@ class EncryptionProcessor : FileProcessor {
                         "key" to encodedKey, // 注意：实际应用中不应该在元数据中存储密钥
                         "iv" to encodedIv,
                         "originalSize" to originalData.size.toLong(),
-                        "encryptedSize" to encryptedData.size.toLong(),
-                        "processedContent" to Flux.just(dataBufferFactory.wrap(encryptedData))
-                    )
+                        "encryptedSize" to encryptedData.size.toLong()
+                    ),
+                    processedContent = Flux.just(dataBufferFactory.wrap(encryptedData))
                 )
             }
             .doOnError { ex ->

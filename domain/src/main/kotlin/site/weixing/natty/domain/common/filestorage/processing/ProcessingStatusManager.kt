@@ -1,6 +1,8 @@
 package site.weixing.natty.domain.common.filestorage.processing
 
+import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.stereotype.Service
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toMono
 import java.time.LocalDateTime
@@ -278,7 +280,8 @@ data class ProcessingResult(
     val metadata: Map<String, Any> = emptyMap(),
     val artifacts: List<ProcessingArtifact> = emptyList(),
     val metrics: ProcessingMetrics? = null,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val processedContent: Flux<DataBuffer>? = null
 )
 
 /**
