@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.core.io.buffer.DataBufferUtils
 import reactor.core.publisher.Flux
@@ -17,6 +18,9 @@ import site.weixing.natty.domain.common.filestorage.service.FileStorageService
 import site.weixing.natty.domain.common.filestorage.strategy.FileInfo
 import site.weixing.natty.domain.common.filestorage.strategy.StorageUsage
 import org.springframework.core.io.buffer.DataBuffer
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+import site.weixing.natty.domain.common.filestorage.utils.FilenameUtils
 
 @RestController
 @RequestMapping("/files")
@@ -28,15 +32,21 @@ class FileStorageController(
      */
     @GetMapping("/download")
     fun downloadFile(
-        @RequestParam filePath: String
+        @RequestParam filePath: String,
+        @RequestHeader(value = "User-Agent", required = false, defaultValue = "") userAgent: String
     ): Mono<ResponseEntity<Flux<DataBuffer>>> {
-        return fileStorageService.retrieveFile(filePath)
-            .map { dataBufferFlux ->
-                ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"${filePath.substringAfterLast('/')}\"")
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .body(dataBufferFlux)
-            }
+         val filename = filePath.substringAfterLast('/')
+         val encodedFilename = FilenameUtils().getDownloadName(filename, userAgent)
+         return fileStorageService.retrieveFile(filePath)
+             .map { dataBufferFlux ->
+                 ResponseEntity.ok()
+                     .header(
+                         HttpHeaders.CONTENT_DISPOSITION,
+                         "attachment; filename=\"$encodedFilename\""
+                     )
+                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                     .body(dataBufferFlux)
+             }
     }
 
     /**
