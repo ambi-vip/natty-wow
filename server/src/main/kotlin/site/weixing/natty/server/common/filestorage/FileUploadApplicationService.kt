@@ -6,6 +6,8 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import site.weixing.natty.api.common.filestorage.file.UploadFile
+import site.weixing.natty.domain.common.filestorage.temp.TemporaryFileManager
+import site.weixing.natty.domain.common.filestorage.temp.TemporaryFileReference
 import site.weixing.natty.server.common.filestorage.controller.FileUploadResponse
 import java.util.*
 
@@ -15,7 +17,8 @@ import java.util.*
  */
 @Service
 class FileUploadApplicationService(
-    private val commandGateway: CommandGateway
+    private val commandGateway: CommandGateway,
+    private val temporaryFileManager: TemporaryFileManager,
 ) {
 
     companion object {
@@ -40,24 +43,41 @@ class FileUploadApplicationService(
             fileId
         }
             .flatMap { fileId ->
-                // 构建上传命令
-                val uploadCommand = buildUploadCommand(request)
 
-                // 发送命令到聚合根
-                commandGateway.sendAndWaitForSnapshot(uploadCommand.toCommandMessage(aggregateId = fileId))
-                    .map { snapshot ->
-                        // 构建响应
-                        FileUploadResponse(
-                            fileId = snapshot.aggregateId,
-                            fileName = snapshot.result["actualStoragePath"]?.toString() ?: request.fileName,
-                            fileSize = request.fileSize,
-                            uploadMethod = "stream",
-                            message = "文件上传成功",
-                            checksum = snapshot.result["checksum"]?.toString(),
-                            storagePath = snapshot.result["actualStoragePath"]?.toString(),
-                            processingRequired = request.processingOptions.requiresProcessing()
-                        )
-                    }
+                val beforeTemp = System.currentTimeMillis()
+                logger.info ("[uploadFile] 生成文件ID耗时: ${beforeTemp - start} ms")
+                temporaryFileManager.createTemporaryFile(
+                    originalFileName = request.fileName,
+                    fileSize = request.fileSize,
+                    contentType = request.contentType,
+                    dataBufferFlux = request.dataBufferFlux
+                ).flatMap {  tempFileRef ->
+                    val afterTemp = System.currentTimeMillis()
+                    logger.info ("[uploadFile] 创建临时文件耗时: ${afterTemp - beforeTemp} ms")
+                    // 构建上传命令
+                    val uploadCommand = buildUploadCommand(request, tempFileRef)
+
+                    // 发送命令到聚合根
+                    commandGateway.sendAndWaitForSnapshot(uploadCommand.toCommandMessage(aggregateId = fileId))
+                        .map { snapshot ->
+                            // 构建响应
+                            FileUploadResponse(
+                                fileId = snapshot.aggregateId,
+                                fileName = snapshot.result["actualStoragePath"]?.toString() ?: request.fileName,
+                                fileSize = tempFileRef.fileSize,
+                                uploadMethod = "stream",
+                                message = "文件上传成功",
+                                checksum = snapshot.result["checksum"]?.toString(),
+                                storagePath = snapshot.result["actualStoragePath"]?.toString(),
+                                processingRequired = request.processingOptions.requiresProcessing()
+                            )
+                        }
+                        .onErrorResume { error ->
+                            logger.warn("命令处理失败，清理临时文件: ${tempFileRef.referenceId}", error)
+                            temporaryFileManager.deleteTemporaryFile(tempFileRef.referenceId)
+                                .then(Mono.error(error))
+                        }
+                }
             }
             .doOnSuccess { response ->
                 val end = System.currentTimeMillis()
@@ -125,14 +145,14 @@ class FileUploadApplicationService(
     /**
      * 构建上传命令
      */
-    private fun buildUploadCommand(request: FileUploadRequest): UploadFile {
+    private fun buildUploadCommand(request: FileUploadRequest,tempFileRef: TemporaryFileReference): UploadFile {
         return UploadFile(
             fileName = request.fileName,
             folderId = request.folderId,
             uploaderId = request.uploaderId,
-            fileSize = request.fileSize,
+            fileSize = tempFileRef.fileSize,
             contentType = request.contentType,
-            content = request.content,
+            temporaryFileReference = tempFileRef.referenceId,
             isPublic = request.isPublic,
             tags = request.tags,
             customMetadata = request.customMetadata + mapOf(

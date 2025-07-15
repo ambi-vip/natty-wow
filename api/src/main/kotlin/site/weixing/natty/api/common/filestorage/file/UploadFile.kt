@@ -30,11 +30,11 @@ data class UploadFile(
     @field:Min(value = 1, message = "文件大小必须大于0")
     val fileSize: Long,
 
+    @field:NotBlank(message = "临时文件引用不能为空")
+    val temporaryFileReference: String,
+
     @field:NotBlank(message = "内容类型不能为空")
     val contentType: String,
-
-    @field:NotNull(message = "文件内容不能为空")
-    val content: Flux<DataBuffer>,
 
     val isPublic: Boolean = false,
 
