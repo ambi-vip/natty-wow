@@ -2,7 +2,6 @@ package site.weixing.natty.server.common.filestorage
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import me.ahoo.wow.api.annotation.OnEvent
-import me.ahoo.wow.command.CommandGateway
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
 import site.weixing.natty.api.common.filestorage.file.FileUploaded
@@ -20,7 +19,6 @@ import site.weixing.natty.domain.common.filestorage.strategy.FileStorageStrategy
 @Component
 class FileStorageEventHandler(
     private val fileStorageService: FileStorageService,
-    private val commandGateway: CommandGateway,
     private val strategyFactory: FileStorageStrategyFactory
 ) {
     
@@ -49,8 +47,6 @@ class FileStorageEventHandler(
         logger.info { "处理文件删除事件: ${event.fileName} -> ${event.storagePath}" }
         
         return try {
-            val storageConfig = getDefaultLocalStorageConfig()
-            val strategy = strategyFactory.createStrategy(StorageProvider.LOCAL, "1", storageConfig)
 
             fileStorageService.deleteFile(event.storagePath)
                 .doOnSuccess { deleted ->
@@ -74,9 +70,7 @@ class FileStorageEventHandler(
         logger.info { "处理文件移动事件: ${event.fileName} (${event.oldStoragePath} -> ${event.newStoragePath})" }
         
         return try {
-            val storageConfig = getDefaultLocalStorageConfig()
-            val strategy = strategyFactory.createStrategy(StorageProvider.LOCAL, "1",storageConfig)
-            
+
             // 使用存储策略的moveFile方法
             fileStorageService.moveFile(event.oldStoragePath, event.newStoragePath)
                 .doOnSuccess { moved ->
@@ -94,33 +88,6 @@ class FileStorageEventHandler(
             logger.error(e) { "处理文件移动事件失败: ${event.fileName}" }
             Mono.empty()
         }
-    }
-    
-    /**
-     * 获取默认的本地存储配置
-     * TODO: 这里应该从配置服务或存储配置聚合中获取
-     */
-    private fun getDefaultLocalStorageConfig(): Map<String, Any> {
-        // 获取当前项目根目录
-        val projectRoot = System.getProperty("user.dir")
-        
-        // 检查是否在测试环境
-        val isTestEnvironment = System.getProperty("spring.profiles.active")?.contains("test") == true ||
-                                System.getenv("SPRING_PROFILES_ACTIVE")?.contains("test") == true
-        
-        val baseDirectory = if (isTestEnvironment) {
-            "$projectRoot/storage/files-test"
-        } else {
-            "$projectRoot/storage/files"
-        }
-        
-        return mapOf(
-            "baseDirectory" to baseDirectory,
-            "maxFileSize" to (100 * 1024 * 1024L), // 100MB
-            "allowedContentTypes" to emptyList<String>(),
-            "enableChecksumValidation" to true,
-            "urlPrefix" to "file://"
-        )
     }
     
 

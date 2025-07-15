@@ -1,6 +1,5 @@
 package site.weixing.natty.server.common.filestorage.controller
 
-import io.github.oshai.kotlinlogging.KotlinLogging
 import org.slf4j.LoggerFactory
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -17,7 +16,7 @@ import site.weixing.natty.api.common.filestorage.file.ProcessingOptions
 
 /**
  * 简化的文件上传控制器
- * 
+ *
  * 统一接口，支持：
  * 1. 基础文件上传
  * 2. 带处理选项的上传（压缩、加密、缩略图）
@@ -28,7 +27,7 @@ import site.weixing.natty.api.common.filestorage.file.ProcessingOptions
 class FileUploadController(
     private val fileUploadApplicationService: FileUploadApplicationService
 ) {
-    
+
     companion object {
         private val logger = LoggerFactory.getLogger(FileUploadController::class.java)
     }
@@ -47,7 +46,7 @@ class FileUploadController(
         @RequestParam(value = "tags", required = false) tags: List<String> = emptyList()
     ): Mono<ResponseEntity<FileUploadResponse>> {
         logger.info("收到文件上传请求: ${file.filename()}")
-        
+
         val uploadRequest = FileUploadRequest(
             fileName = file.filename() ?: "unknown",
             folderId = folderId,
@@ -63,7 +62,7 @@ class FileUploadController(
             ),
             processingOptions = ProcessingOptions() // 默认不处理
         )
-        
+
         return fileUploadApplicationService.uploadFile(uploadRequest)
             .map { response -> ResponseEntity.ok(response) }
             .onErrorReturn(
@@ -78,7 +77,7 @@ class FileUploadController(
                 )
             )
     }
-    
+
     /**
      * 带处理选项的文件上传接口
      * 支持可选的压缩、加密、缩略图生成
@@ -95,13 +94,13 @@ class FileUploadController(
         @RequestParam(value = "generateThumbnail", required = false) generateThumbnail: Boolean = false
     ): Mono<ResponseEntity<FileUploadResponse>> {
         logger.info("收到增强上传请求: ${file.filename()}, 压缩:$enableCompression, 加密:$requireEncryption, 缩略图:$generateThumbnail")
-        
+
         val processingOptions = ProcessingOptions(
             requireEncryption = requireEncryption,
             enableCompression = enableCompression,
             generateThumbnail = generateThumbnail
         )
-        
+
         val uploadRequest = FileUploadRequest(
             fileName = file.filename() ?: "unknown",
             folderId = folderId,
@@ -118,7 +117,7 @@ class FileUploadController(
             ),
             processingOptions = processingOptions
         )
-        
+
         return fileUploadApplicationService.uploadFile(uploadRequest)
             .map { response -> ResponseEntity.ok(response) }
             .onErrorReturn(
@@ -133,7 +132,7 @@ class FileUploadController(
                 )
             )
     }
-    
+
 }
 
 /**
@@ -148,4 +147,4 @@ data class FileUploadResponse(
     val checksum: String? = null,
     val storagePath: String? = null,
     val processingRequired: Boolean = false
-) 
+)
