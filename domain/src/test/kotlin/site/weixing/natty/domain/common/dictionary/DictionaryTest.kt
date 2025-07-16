@@ -28,14 +28,14 @@ import site.weixing.natty.api.common.dictionary.UpdateDictionaryItem
  */
 class DictionaryTest {
 
+    val dictionaryPrepares  = DictionaryPrepares(TestPrepareKeyFactory.create());
+
     /**
      * 初始化测试环境
      */
     @BeforeEach
     fun setUp() {
         // 初始化PrepareKey工厂
-        val prepareKeyFactory = TestPrepareKeyFactory.create()
-        val dictionaryPrepares = DictionaryPrepares(prepareKeyFactory)
     }
 
     /**
@@ -50,6 +50,7 @@ class DictionaryTest {
         )
 
         aggregateVerifier<Dictionary, DictionaryState>()
+            .inject(dictionaryPrepares)
             .`when`(command)
             .expectNoError()
             .expectEventType(DictionaryCreated::class.java)
@@ -180,7 +181,6 @@ class DictionaryTest {
             )
         )
         val command = UpdateDictionaryItem(
-            dictionaryId = dictionaryId,
             itemCode = itemCode,
             itemName = "新项目名",
             itemValue = "新值",
@@ -226,7 +226,6 @@ class DictionaryTest {
             )
         )
         val command = ChangeDictionaryItemStatus(
-            dictionaryId = dictionaryId,
             itemCode = itemCode,
             status = DictionaryItemStatus.INACTIVE
         )
@@ -266,7 +265,6 @@ class DictionaryTest {
             )
         )
         val command = RemoveDictionaryItem(
-            dictionaryId = dictionaryId,
             itemCode = itemCode
         )
 

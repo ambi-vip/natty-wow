@@ -47,6 +47,7 @@ dependencies {
 
 //    implementation("me.ahoo.wow:wow-kafka")
     implementation("me.ahoo.wow:wow-mongo")
+    implementation("me.ahoo.wow:wow-redis")
 //    implementation("me.ahoo.wow:wow-elasticsearch")
     implementation("me.ahoo.wow:wow-mock")
     implementation("me.ahoo.wow:wow-opentelemetry")

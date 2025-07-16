@@ -1,28 +1,33 @@
 
 
 wow:
-  kafka:
-    enabled: false
   command:
     bus:
-      type: in_memory
+      type: redis
   event:
     bus:
-      type: in_memory
+      type: redis
   eventsourcing:
+    state:
+      bus:
+        type: redis
     store:
       storage: mongo
     snapshot:
       storage: mongo
-    state:
-      bus:
-        type: in_memory
+
+  kafka:
+    enabled: false
   mongo:
     enabled: true
     auto-init-schema: true
     event-stream-database: natty
     snapshot-database: natty
     prepare-database: natty
+  redis:
+    enabled: true
+  prepare:
+    storage: redis
 
 
 simba:

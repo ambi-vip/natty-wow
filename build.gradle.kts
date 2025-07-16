@@ -101,6 +101,8 @@ configure(libraryProjects) {
         }
         // fix logging missing code for JacocoPlugin
         jvmArgs = listOf("-Dlogback.configurationFile=${rootProject.rootDir}/config/logback.xml")
+        // 增加测试内存以支持大文件测试
+        maxHeapSize = "2g"
         retry {
             if (isInCI) {
                 maxRetries = 2

@@ -10,6 +10,9 @@ node_modules
 build/
 dist/**
 server/src/main/resources/**
+server/src/main/resources/compensation/**
+storage/**
+data/**
 # 匹配文件类型
 *.log
 *.txt
@@ -25,3 +28,4 @@ log*.json
 .DS_Store
 .npmrc
 .yarnrc
+style.svg

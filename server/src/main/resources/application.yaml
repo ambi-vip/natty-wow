@@ -14,6 +14,8 @@ management:
           - cosidStringGenerator
 springdoc:
   show-actuator: true
+#  api-docs:
+#    version: openapi-3-1
 
 spring:
   main:
@@ -64,7 +66,8 @@ spring:
 
 logging:
   level:
-    me.ahoo.wow: debug
+    me.ahoo.wow: info
+
 cosid:
   machine:
     enabled: true
@@ -74,23 +77,8 @@ cosid:
         machine-id: 1
   generator:
     enabled: true
-wow:
-  kafka:
-    enabled: false
-  command:
-    bus:
-      type: in_memory
-  event:
-    bus:
-      type: in_memory
-  eventsourcing:
-    store:
-      storage: in_memory
-    snapshot:
-      storage: in_memory
-    state:
-      bus:
-        type: in_memory
+
+
 
 cosec:
   authentication:

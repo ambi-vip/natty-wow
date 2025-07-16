@@ -1,0 +1,159 @@
+@startuml User Aggregate
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam linetype ortho
+
+package "User Domain" {
+    ' 聚合根
+    class UserAggregate {
+        +createUser(command: CreateUser)
+        +updateUser(command: UpdateUser)
+        +deleteUser(command: DeleteUser)
+        +changePassword(command: ChangeUserPassword)
+        +updateStatus(command: UpdateUserStatus)
+        +updateProfile(command: UpdateUserProfile)
+        +updateCustomData(command: UpdateUserCustomData)
+    }
+
+    ' 实体
+    class UserState {
+        +id: String
+        +name: String
+        +accountId: String
+        +username: String
+        +primaryEmail: String
+        +primaryPhone: String
+        +avatar: String
+        +status: UserStatus
+        +deptCode: String
+        +customData: Map
+        +identities: Map
+        +profile: UserProfile
+        +passwordEncrypted: String
+        +passwordEncryptionMethod: String
+        +lastSignInAt: Long
+    }
+
+    class UserProfile {
+        +nickname: String
+        +profile: String
+        +website: String
+        +gender: String
+        +birthdate: String
+        +locale: String
+        +address: Address
+    }
+
+    class Address {
+        +formatted: String
+        +streetAddress: String
+        +locality: String
+        +region: String
+        +postalCode: String
+        +country: String
+    }
+
+    ' 命令
+    class CreateUser {
+        +name: String
+        +accountId: String
+        +primaryEmail: String
+        +primaryPhone: String
+        +avatar: String
+        +username: String
+    }
+    class UpdateUser {
+        +name: String
+        +primaryEmail: String
+        +primaryPhone: String
+        +avatar: String
+    }
+    class DeleteUser {
+        +reason: String
+    }
+    class ChangeUserPassword {
+        +oldPassword: String
+        +newPassword: String
+    }
+    class UpdateUserStatus {
+        +status: UserStatus
+        +reason: String
+    }
+    class UpdateUserProfile {
+        +nickname: String
+        +profile: String
+        +website: String
+        +gender: String
+        +birthdate: String
+        +locale: String
+        +address: Address
+    }
+    class UpdateUserCustomData {
+        +customData: Map
+    }
+
+    ' 事件
+    class UserCreated {
+        +name: String
+        +accountId: String
+        +primaryEmail: String
+        +primaryPhone: String
+        +avatar: String
+        +username: String
+    }
+    class UserUpdated {
+        +name: String
+        +primaryEmail: String
+        +primaryPhone: String
+        +avatar: String
+    }
+    class UserDeleted {
+        +reason: String
+    }
+    class UserPasswordChanged {
+        +encryptedPassword: String
+        +encryptionMethod: String
+    }
+    class UserStatusUpdated {
+        +status: UserStatus
+        +reason: String
+    }
+    class UserProfileUpdated {
+        +nickname: String
+        +profile: String
+        +website: String
+        +gender: String
+        +birthdate: String
+        +locale: String
+        +address: Address
+    }
+    class UserCustomDataUpdated {
+        +customData: Map
+    }
+}
+
+' 关系定义
+UserAggregate "1" -- "1" UserState : 管理 >
+UserState "1" -- "1" UserProfile : 拥有 >
+UserProfile "1" -- "1" Address : 拥有 >
+
+' 命令与聚合根的关系
+CreateUser ..> UserAggregate : 触发 >
+UpdateUser ..> UserAggregate : 触发 >
+DeleteUser ..> UserAggregate : 触发 >
+ChangeUserPassword ..> UserAggregate : 触发 >
+UpdateUserStatus ..> UserAggregate : 触发 >
+UpdateUserProfile ..> UserAggregate : 触发 >
+UpdateUserCustomData ..> UserAggregate : 触发 >
+
+' 事件与聚合根的关系
+UserCreated ..> UserAggregate : 发布 >
+UserUpdated ..> UserAggregate : 发布 >
+UserDeleted ..> UserAggregate : 发布 >
+UserPasswordChanged ..> UserAggregate : 发布 >
+UserStatusUpdated ..> UserAggregate : 发布 >
+UserProfileUpdated ..> UserAggregate : 发布 >
+UserCustomDataUpdated ..> UserAggregate : 发布 >
+
+@enduml
