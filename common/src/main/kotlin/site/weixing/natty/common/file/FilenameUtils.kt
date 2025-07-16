@@ -1,8 +1,8 @@
-package site.weixing.natty.domain.common.filestorage.utils
+package site.weixing.natty.common.file
 
 import java.io.UnsupportedEncodingException
 import java.net.URLEncoder
-import java.util.*
+import java.util.Locale
 import java.util.regex.Pattern
 
 open class FilenameUtils {
