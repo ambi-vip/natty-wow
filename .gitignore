@@ -26,4 +26,4 @@ build
 
 logs
 
-config/
+config/.DS_Store
