@@ -110,7 +110,7 @@ private fun calculateChecksum(content: ByteArray): String {
 **具体问题：**
 ```kotlin
 // FileUploadController.kt:95-105 - 错误处理过于简单
-.onErrorReturn(
+x.onErrorReturn(
     ResponseEntity.badRequest().body(
         FileUploadResponse(
             fileId = null,
