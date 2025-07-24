@@ -7,6 +7,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.DependsOn
+import site.weixing.natty.domain.common.filestorage.file.FileCommandFactory
 import site.weixing.natty.server.common.filestorage.temp.LocalTemporaryFileManager
 import site.weixing.natty.domain.common.filestorage.temp.TemporaryFileManager
 import site.weixing.natty.domain.common.filestorage.temp.TemporaryFileTransaction
@@ -44,6 +45,14 @@ class FileStorageConfiguration(
 
         logger.info { "文件存储配置验证通过" }
         logger.info { temporaryFileConfig.printSummary() }
+    }
+
+    /**
+     * 文件命令工厂Bean
+     */
+    @Bean
+    fun fileCommandFactory(): FileCommandFactory {
+        return FileCommandFactory()
     }
 
     /**

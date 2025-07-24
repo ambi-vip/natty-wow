@@ -150,7 +150,7 @@ class TemporaryFileTransaction(
             }
             .flatMap { reference ->
                 val businessMono: Mono<Tuple2<TemporaryFileReference, T>> = businessOperation(reference.referenceId)
-                    .map { result -> Tuples.of<TemporaryFileReference, T>(reference, result) }
+                    .map { result -> Tuples.of(reference, result) }
 
                 // 使用单文件事务包装业务操作
                 executeWithCleanup(reference.referenceId) { businessMono }

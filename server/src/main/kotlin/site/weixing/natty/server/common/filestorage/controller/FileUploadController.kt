@@ -7,12 +7,19 @@ import reactor.core.publisher.Mono
 import org.springframework.http.codec.multipart.FilePart
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RequestPart
 import org.springframework.web.bind.annotation.RestController
 import site.weixing.natty.server.common.filestorage.FileUploadApplicationService
 import site.weixing.natty.server.common.filestorage.FileUploadRequest
 import site.weixing.natty.api.common.filestorage.file.ProcessingOptions
+import site.weixing.natty.api.common.filestorage.file.FileUploadResponse
+import org.springframework.http.HttpStatus
+import site.weixing.natty.server.common.filestorage.FileUploadBusinessException
+import site.weixing.natty.server.common.filestorage.FileUploadTechnicalException
+import site.weixing.natty.server.common.filestorage.FileValidationException
+import site.weixing.natty.server.common.filestorage.TemporaryFileException
 
 /**
  * 简化的文件上传控制器
@@ -43,39 +50,23 @@ class FileUploadController(
         @RequestParam("folderId") folderId: String,
         @RequestParam("uploaderId") uploaderId: String,
         @RequestParam(value = "isPublic", required = false) isPublic: Boolean = false,
-        @RequestParam(value = "tags", required = false) tags: List<String> = emptyList()
+        @RequestParam(value = "tags", required = false) tags: List<String> = emptyList(),
+        @RequestHeader(value = "Content-Length", required = false) contentLength: Long?
     ): Mono<ResponseEntity<FileUploadResponse>> {
         logger.info("收到文件上传请求: ${file.filename()}")
 
-        val uploadRequest = FileUploadRequest(
-            fileName = file.filename() ?: "unknown",
+        val fileSize = contentLength ?: 0L
+
+        return processUpload(
+            file = file,
             folderId = folderId,
             uploaderId = uploaderId,
-            fileSize = 1L, // WebFlux中无法预先获得大小
-            contentType = "application/octet-stream",
-            content = file.content(),
             isPublic = isPublic,
             tags = tags,
-            customMetadata = mapOf(
-                "originalFilename" to (file.filename() ?: "unknown"),
-                "uploadVia" to "basic"
-            ),
-            processingOptions = ProcessingOptions() // 默认不处理
+            processingOptions = ProcessingOptions(),
+            uploadMethod = "basic",
+            fileSize = fileSize
         )
-
-        return fileUploadApplicationService.uploadFile(uploadRequest)
-            .map { response -> ResponseEntity.ok(response) }
-            .onErrorReturn(
-                ResponseEntity.badRequest().body(
-                    FileUploadResponse(
-                        fileId = null,
-                        fileName = file.filename(),
-                        fileSize = -1L,
-                        uploadMethod = "basic",
-                        message = "文件上传失败"
-                    )
-                )
-            )
     }
 
     /**
@@ -91,7 +82,8 @@ class FileUploadController(
         @RequestParam(value = "tags", required = false) tags: List<String> = emptyList(),
         @RequestParam(value = "enableCompression", required = false) enableCompression: Boolean = false,
         @RequestParam(value = "requireEncryption", required = false) requireEncryption: Boolean = false,
-        @RequestParam(value = "generateThumbnail", required = false) generateThumbnail: Boolean = false
+        @RequestParam(value = "generateThumbnail", required = false) generateThumbnail: Boolean = false,
+        @RequestHeader(value = "Content-Length", required = false) contentLength: Long?
     ): Mono<ResponseEntity<FileUploadResponse>> {
         logger.info("收到增强上传请求: ${file.filename()}, 压缩:$enableCompression, 加密:$requireEncryption, 缩略图:$generateThumbnail")
 
@@ -101,50 +93,121 @@ class FileUploadController(
             generateThumbnail = generateThumbnail
         )
 
-        val uploadRequest = FileUploadRequest(
-            fileName = file.filename() ?: "unknown",
+        val fileSize = contentLength ?: 0L
+
+        return processUpload(
+            file = file,
             folderId = folderId,
             uploaderId = uploaderId,
-            fileSize = 0L,
-            contentType = "application/octet-stream",
-            content = file.content(),
             isPublic = isPublic,
             tags = tags,
-            customMetadata = mapOf(
-                "originalFilename" to (file.filename() ?: "unknown"),
-                "uploadVia" to "enhanced",
-                "processingRequested" to "true"
-            ),
-            processingOptions = processingOptions
+            processingOptions = processingOptions,
+            uploadMethod = "enhanced",
+            fileSize = fileSize
+        )
+    }
+
+    /**
+     * 统一的文件上传处理方法
+     * 消除重复代码，提高可维护性
+     */
+    private fun processUpload(
+        file: FilePart,
+        folderId: String,
+        uploaderId: String,
+        isPublic: Boolean,
+        tags: List<String>,
+        processingOptions: ProcessingOptions,
+        uploadMethod: String,
+        fileSize: Long
+    ): Mono<ResponseEntity<FileUploadResponse>> {
+        val uploadRequest = createUploadRequest(
+            file, folderId, uploaderId, isPublic, tags, processingOptions, uploadMethod, fileSize
         )
 
         return fileUploadApplicationService.uploadFile(uploadRequest)
             .map { response -> ResponseEntity.ok(response) }
-            .onErrorReturn(
-                ResponseEntity.badRequest().body(
-                    FileUploadResponse(
-                        fileId = null,
-                        fileName = file.filename(),
-                        fileSize = -1L,
-                        uploadMethod = "enhanced",
-                        message = "增强上传失败"
-                    )
-                )
-            )
+            .onErrorResume { error -> handleUploadError(error, file.filename(), uploadMethod) }
+    }
+
+    /**
+     * 创建文件上传请求对象
+     */
+    private fun createUploadRequest(
+        file: FilePart,
+        folderId: String,
+        uploaderId: String,
+        isPublic: Boolean,
+        tags: List<String>,
+        processingOptions: ProcessingOptions,
+        uploadMethod: String,
+        fileSize: Long
+    ): FileUploadRequest {
+        val fileName = file.filename() ?: "unknown"
+        val customMetadata = mutableMapOf(
+            "originalFilename" to fileName,
+            "uploadVia" to uploadMethod
+        )
+        
+        if (processingOptions.requiresProcessing()) {
+            customMetadata["processingRequested"] = "true"
+        }
+
+        return FileUploadRequest(
+            fileName = fileName,
+            folderId = folderId,
+            uploaderId = uploaderId,
+            fileSize = if (fileSize > 0) fileSize else 0L,
+            contentType = "application/octet-stream",
+            content = file.content(),
+            isPublic = isPublic,
+            tags = tags,
+            customMetadata = customMetadata,
+            processingOptions = processingOptions
+        )
+    }
+
+    /**
+     * 处理上传错误，根据异常类型返回不同的HTTP状态码和错误信息
+     */
+    private fun handleUploadError(
+        error: Throwable,
+        fileName: String?,
+        uploadMethod: String
+    ): Mono<ResponseEntity<FileUploadResponse>> {
+        logger.error("文件上传失败: fileName=$fileName, uploadMethod=$uploadMethod", error)
+        
+        val (httpStatus, errorMessage) = when (error) {
+            is FileValidationException -> {
+                HttpStatus.BAD_REQUEST to "文件验证失败: ${error.message}"
+            }
+            is FileUploadBusinessException -> {
+                HttpStatus.BAD_REQUEST to "业务规则验证失败: ${error.message}"
+            }
+            is TemporaryFileException -> {
+                HttpStatus.INTERNAL_SERVER_ERROR to "临时文件处理失败"
+            }
+            is FileUploadTechnicalException -> {
+                HttpStatus.INTERNAL_SERVER_ERROR to "系统异常，请稍后重试"
+            }
+            else -> {
+                HttpStatus.INTERNAL_SERVER_ERROR to when (uploadMethod) {
+                    "basic" -> "文件上传失败"
+                    "enhanced" -> "增强上传失败"
+                    else -> "文件上传失败"
+                }
+            }
+        }
+
+        val response = FileUploadResponse(
+            fileId = null,
+            fileName = fileName,
+            fileSize = -1L,
+            uploadMethod = uploadMethod,
+            message = errorMessage
+        )
+
+        return Mono.just(ResponseEntity.status(httpStatus).body(response))
     }
 
 }
-
-/**
- * 文件上传响应
- */
-data class FileUploadResponse(
-    val fileId: String?,
-    val fileName: String?,
-    val fileSize: Long,
-    val uploadMethod: String,
-    val message: String,
-    val checksum: String? = null,
-    val storagePath: String? = null,
-    val processingRequired: Boolean = false
-)

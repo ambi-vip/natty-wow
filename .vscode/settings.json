@@ -11,6 +11,7 @@
     "search.exclude": {
     },
     "java.configuration.updateBuildConfiguration": "interactive",
-    "java.compile.nullAnalysis.mode": "automatic"
+    "java.compile.nullAnalysis.mode": "automatic",
+    "bevel.java": "java"
 }
 
