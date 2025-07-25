@@ -1,0 +1,452 @@
+@startuml 文件上传系统DDD模型
+
+!define AGGREGATE_COLOR #E1F5FE
+!define ENTITY_COLOR #F3E5F5
+!define VALUE_OBJECT_COLOR #E8F5E8
+!define SERVICE_COLOR #FFF3E0
+!define EVENT_COLOR #FFEBEE
+
+title 文件上传系统 - DDD模型
+
+package "文件管理领域 (File Management Domain)" {
+    
+    ' 文件聚合根
+    package "文件聚合 (File Aggregate)" <<AGGREGATE_COLOR>> {
+        class File <<AggregateRoot>> {
+            - state: FileState
+            + onCommand(InitiateFileUpload): FileUploadInitiated
+            + onCommand(CompleteFileUpload): FileUploadCompleted
+            + onCommand(DeleteFile): FileDeleted
+            + onCommand(UpdateFileMetadata): FileMetadataUpdated
+        }
+        
+        class FileState <<Entity>> {
+            + id: String
+            + fileName: String
+            + fileSize: Long
+            + mimeType: String
+            + folderId: String
+            + tempFilePath: String
+            + localPath: String
+            + checksum: String
+            + status: FileStatus
+            + compressed: Boolean
+            + encrypted: Boolean
+            + uploadedAt: Instant
+            + completedAt: Instant
+            + onSourcing(FileUploadInitiated)
+            + onSourcing(FileUploadCompleted)
+            + onSourcing(FileStored)
+            + onSourcing(FileDeleted)
+        }
+        
+        enum FileStatus <<VALUE_OBJECT>> {
+            PENDING
+            UPLOADING
+            UPLOADED
+            PROCESSING
+            STORED
+            FAILED
+            DELETED
+        }
+        
+        class FileMetadata <<VALUE_OBJECT>> {
+            + fileName: String
+            + fileSize: Long
+            + mimeType: String
+            + checksum: String
+            + tags: Set<String>
+        }
+    }
+    
+    ' 文件夹聚合根
+    package "文件夹聚合 (Folder Aggregate)" <<AGGREGATE_COLOR>> {
+        class Folder <<AggregateRoot>> {
+            - state: FolderState
+            + onCommand(CreateFolder): FolderCreated
+            + onCommand(UpdateFolderConfig): FolderConfigUpdated
+            + onCommand(DeleteFolder): FolderDeleted
+        }
+        
+        class FolderState <<Entity>> {
+            + id: String
+            + name: String
+            + parentId: String
+            + path: String
+            + compressionEnabled: Boolean
+            + encryptionEnabled: Boolean
+            + encryptionAlgorithm: String
+            + maxFileSize: Long
+            + allowedMimeTypes: Set<String>
+            + createdAt: Instant
+            + onSourcing(FolderCreated)
+            + onSourcing(FolderConfigUpdated)
+        }
+        
+        class FolderConfig <<Value Object>> {
+            + compressionEnabled: Boolean
+            + encryptionEnabled: Boolean
+            + encryptionAlgorithm: String
+            + maxFileSize: Long
+            + allowedMimeTypes: Set<String>
+        }
+    }
+    
+    ' 存储策略聚合根
+    package "存储策略聚合 (Storage Policy Aggregate)" <<AGGREGATE_COLOR>> {
+        class StoragePolicy <<AggregateRoot>> {
+            - state: StoragePolicyState
+            + onCommand(CreateStoragePolicy): StoragePolicyCreated
+            + onCommand(UpdateStoragePolicy): StoragePolicyUpdated
+        }
+        
+        class StoragePolicyState <<Entity>> {
+            + id: String
+            + name: String
+            + basePath: String
+            + backupEnabled: Boolean
+            + backupPath: String
+            + retentionDays: Int
+            + compressionLevel: Int
+            + encryptionKey: String
+        }
+    }
+}
+
+package "命令 (Commands)" <<Service>> {
+    class InitiateFileUpload <<Command>> {
+        + uploadId: String
+        + fileName: String
+        + fileSize: Long
+        + mimeType: String
+        + folderId: String
+        + checksum: String
+    }
+    
+    class CompleteFileUpload <<Command>> {
+        + uploadId: String
+        + tempFilePath: String
+        + actualFileSize: Long
+        + actualChecksum: String
+    }
+    
+    class DeleteFile <<Command>> {
+        + fileId: String
+        + reason: String
+    }
+    
+    class UpdateFileMetadata <<Command>> {
+        + fileId: String
+        + fileName: String
+        + tags: Set<String>
+    }
+    
+    class CreateFolder <<Command>> {
+        + folderId: String
+        + name: String
+        + parentId: String
+        + config: FolderConfig
+    }
+    
+    class UpdateFolderConfig <<Command>> {
+        + folderId: String
+        + config: FolderConfig
+    }
+    
+    class ProcessUploadedFile <<Command>> {
+        + fileId: String
+        + tempFilePath: String
+        + fileName: String
+        + folderId: String
+        + compressionEnabled: Boolean
+        + encryptionEnabled: Boolean
+        + encryptionAlgorithm: String
+    }
+    
+    class DeleteLocalFile <<Command>> {
+        + fileId: String
+        + localPath: String
+    }
+    
+    class CleanupTempFile <<Command>> {
+        + tempFilePath: String
+        + uploadId: String
+    }
+}
+
+package "事件 (Events)" <<EVENT_COLOR>> {
+    class FileUploadInitiated <<Event>> {
+        + uploadId: String
+        + fileName: String
+        + fileSize: Long
+        + mimeType: String
+        + folderId: String
+        + checksum: String
+        + tempFilePath: String
+        + timestamp: Instant
+    }
+    
+    class FileUploadCompleted <<Event>> {
+        + uploadId: String
+        + tempFilePath: String
+        + actualFileSize: Long
+        + actualChecksum: String
+        + timestamp: Instant
+    }
+    
+    class FileProcessingStarted <<Event>> {
+        + fileId: String
+        + tempFilePath: String
+        + folderId: String
+        + timestamp: Instant
+    }
+    
+    class FileStored <<Event>> {
+        + fileId: String
+        + localPath: String
+        + finalSize: Long
+        + compressed: Boolean
+        + encrypted: Boolean
+        + timestamp: Instant
+    }
+    
+    class FileDeleted <<Event>> {
+        + fileId: String
+        + filePath: String
+        + timestamp: Instant
+    }
+    
+    class FileMetadataUpdated <<Event>> {
+        + fileId: String
+        + fileName: String
+        + tags: Set<String>
+        + timestamp: Instant
+    }
+    
+    class FolderCreated <<Event>> {
+        + folderId: String
+        + name: String
+        + parentId: String
+        + config: FolderConfig
+        + timestamp: Instant
+    }
+    
+    class FolderConfigUpdated <<Event>> {
+        + folderId: String
+        + config: FolderConfig
+        + timestamp: Instant
+    }
+    
+    class LocalFileDeleted <<Event>> {
+        + fileId: String
+        + success: Boolean
+        + error: String
+        + timestamp: Instant
+    }
+    
+    class TempFileCleanedUp <<Event>> {
+        + tempFilePath: String
+        + uploadId: String
+        + success: Boolean
+        + timestamp: Instant
+    }
+}
+
+package "领域服务 (Domain Services)" <<SERVICE_COLOR>> {
+    class FileValidationService <<DomainService>> {
+        + validateFileSize(fileSize: Long, maxSize: Long): Boolean
+        + validateMimeType(mimeType: String, allowed: Set<String>): Boolean
+        + calculateChecksum(content: ByteArray): String
+    }
+    
+    class FilePathService <<DomainService>> {
+        + generateFilePath(folderId: String, fileName: String): String
+        + createDirectoryStructure(path: String): Boolean
+        + resolveConflicts(path: String): String
+    }
+    
+    class CompressionService <<DomainService>> {
+        + compress(content: ByteArray): ByteArray
+        + decompress(content: ByteArray): ByteArray
+        + getCompressionRatio(original: Long, compressed: Long): Double
+    }
+    
+    class EncryptionService <<DomainService>> {
+        + encrypt(content: ByteArray, algorithm: String): ByteArray
+        + decrypt(content: ByteArray, algorithm: String): ByteArray
+        + generateKey(algorithm: String): String
+    }
+}
+
+package "应用服务 (Application Services)" <<SERVICE_COLOR>> {
+    class FileProcessingSaga <<Saga>> {
+        + onFileUploadCompleted(FileUploadCompleted): ProcessUploadedFile
+        + onFileDeleted(FileDeleted): DeleteLocalFile
+        + onFileStored(FileStored): CleanupTempFile
+    }
+    
+    class LocalFileStorageService <<ApplicationService>> {
+        + handle(ProcessUploadedFile): FileStored
+        + handle(DeleteLocalFile): LocalFileDeleted
+        + handle(CleanupTempFile): TempFileCleanedUp
+    }
+    
+    class FileUploadService <<ApplicationService>> {
+        + initiate(InitiateFileUpload): FileUploadInitiated
+        + complete(CompleteFileUpload): FileUploadCompleted
+        + saveTempFile(uploadId: String, content: ByteArray): String
+    }
+    
+    class FileDownloadService <<ApplicationService>> {
+        + download(fileId: String): FileContent
+        + getFileMetadata(fileId: String): FileMetadata
+        + streamFile(fileId: String): InputStream
+    }
+    
+    class DiskSpaceMonitor <<ApplicationService>> {
+        + checkDiskSpace(): DiskSpaceStatus
+        + cleanupOldFiles(): CleanupResult
+        + monitorStorageUsage(): StorageReport
+    }
+    
+    class TempFileManager <<ApplicationService>> {
+        + createTempFile(uploadId: String): String
+        + saveTempFile(tempPath: String, content: ByteArray): Boolean
+        + cleanupTempFile(tempPath: String): Boolean
+        + getTempFileSize(tempPath: String): Long
+    }
+}
+
+package "查询模型 (Query Models)" {
+    class FileQueryModel <<ReadModel>> {
+        + fileId: String
+        + fileName: String
+        + fileSize: Long
+        + mimeType: String
+        + folderId: String
+        + status: String
+        + uploadedAt: Instant
+    }
+    
+    class FolderQueryModel <<ReadModel>> {
+        + folderId: String
+        + name: String
+        + parentId: String
+        + fileCount: Int
+        + totalSize: Long
+        + createdAt: Instant
+    }
+    
+    class FileStatisticsQueryModel <<ReadModel>> {
+        + totalFiles: Long
+        + totalSize: Long
+        + compressionRatio: Double
+        + storageUsage: Long
+        + lastUpdated: Instant
+    }
+}
+
+package "值对象 (Value Objects)" <<VALUE_OBJECT_COLOR>> {
+    class FileContent <<ValueObject>> {
+        + fileId: String
+        + fileName: String
+        + mimeType: String
+        + content: ByteArray
+        + fileSize: Long
+    }
+    
+    class FilePath <<ValueObject>> {
+        + basePath: String
+        + relativePath: String
+        + fullPath: String
+        + extension: String
+    }
+    
+    class FileChecksum <<ValueObject>> {
+        + algorithm: String
+        + value: String
+        + calculatedAt: Instant
+    }
+    
+    class StorageQuota <<ValueObject>> {
+        + maxSize: Long
+        + usedSize: Long
+        + availableSize: Long
+        + usagePercentage: Double
+    }
+}
+
+' 聚合根内部关系
+File ||--|| FileState : contains
+File --> FileMetadata : uses
+Folder ||--|| FolderState : contains
+Folder --> FolderConfig : uses
+StoragePolicy ||--|| StoragePolicyState : contains
+
+FileState --> FileStatus : has
+FolderState --> FolderConfig : contains
+
+' 命令到聚合根的关系
+InitiateFileUpload --> File : triggers
+CompleteFileUpload --> File : triggers
+DeleteFile --> File : triggers
+UpdateFileMetadata --> File : triggers
+CreateFolder --> Folder : triggers
+UpdateFolderConfig --> Folder : triggers
+
+' 聚合根产生的事件
+File --> FileUploadInitiated : emits
+File --> FileUploadCompleted : emits
+File --> FileDeleted : emits
+File --> FileMetadataUpdated : emits
+Folder --> FolderCreated : emits
+Folder --> FolderConfigUpdated : emits
+
+' Saga 事件处理关系
+FileProcessingSaga --> FileUploadCompleted : listens
+FileProcessingSaga --> FileDeleted : listens
+FileProcessingSaga --> FileStored : listens
+FileProcessingSaga --> ProcessUploadedFile : produces
+FileProcessingSaga --> DeleteLocalFile : produces
+FileProcessingSaga --> CleanupTempFile : produces
+
+' 应用服务关系
+FileUploadService --> InitiateFileUpload : handles
+FileUploadService --> CompleteFileUpload : handles
+FileUploadService --> TempFileManager : uses
+
+LocalFileStorageService --> ProcessUploadedFile : handles
+LocalFileStorageService --> DeleteLocalFile : handles
+LocalFileStorageService --> CleanupTempFile : handles
+LocalFileStorageService --> FileStored : produces
+LocalFileStorageService --> LocalFileDeleted : produces
+LocalFileStorageService --> TempFileCleanedUp : produces
+LocalFileStorageService --> CompressionService : uses
+LocalFileStorageService --> EncryptionService : uses
+LocalFileStorageService --> FilePathService : uses
+
+FileDownloadService --> FileContent : produces
+FileDownloadService --> CompressionService : uses
+FileDownloadService --> EncryptionService : uses
+
+TempFileManager --> FileValidationService : uses
+
+' 查询模型投影关系
+FileUploadInitiated --> FileQueryModel : projects to
+FileUploadCompleted --> FileQueryModel : updates
+FileStored --> FileQueryModel : updates
+FolderCreated --> FolderQueryModel : projects to
+FolderConfigUpdated --> FolderQueryModel : updates
+
+' 值对象使用关系
+FileDownloadService --> FileContent : returns
+FileValidationService --> FileChecksum : creates
+DiskSpaceMonitor --> StorageQuota : monitors
+
+note top of File : 文件聚合根\n负责文件的生命周期管理\n支持两阶段上传流程
+note top of Folder : 文件夹聚合根\n管理文件夹配置和层次结构\n控制压缩和加密策略
+note top of FileProcessingSaga : 文件处理Saga\n协调文件存储和清理流程\n处理异步文件操作
+note top of FileValidationService : 文件验证服务\n验证文件大小、类型等\n计算文件校验和
+note top of TempFileManager : 临时文件管理器\n管理上传过程中的临时文件\n避免命令中传输大文件内容
+
+@enduml

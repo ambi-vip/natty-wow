@@ -3,12 +3,8 @@ package site.weixing.natty.api.common.filestorage.file
 import me.ahoo.wow.api.annotation.CreateAggregate
 import me.ahoo.wow.api.annotation.CommandRoute
 import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Min
 import me.ahoo.wow.api.command.validation.CommandValidator
-import org.springframework.core.io.buffer.DataBuffer
-import reactor.core.publisher.Flux
-import site.weixing.natty.api.common.filestorage.file.ProcessingOptions
 
 @CreateAggregate
 @CommandRoute(
@@ -21,8 +17,8 @@ data class UploadFile(
     @field:NotBlank(message = "文件名不能为空")
     val fileName: String,
 
-    @field:NotBlank(message = "文件夹ID不能为空")
-    val folderId: String,
+    @field:NotBlank(message = "存储桶ID不能为空")
+    val bucketId: String,
 
     @field:NotBlank(message = "上传者ID不能为空")
     val uploaderId: String,

@@ -25,14 +25,14 @@
 //    fun `should upload file successfully via basic endpoint`() {
 //        val fileName = "test-document.txt"
 //        val fileContent = "This is a test document for integration testing."
-//        val folderId = "integration-test-folder"
+//        val bucketId = "integration-test-folder"
 //        val uploaderId = "test-user-123"
 //
 //        val bodyBuilder = MultipartBodyBuilder()
 //        bodyBuilder.part("file", fileContent.toByteArray(StandardCharsets.UTF_8))
 //            .filename(fileName)
 //            .contentType(MediaType.TEXT_PLAIN)
-//        bodyBuilder.part("folderId", folderId)
+//        bodyBuilder.part("bucketId", bucketId)
 //        bodyBuilder.part("uploaderId", uploaderId)
 //        bodyBuilder.part("isPublic", "false")
 //        bodyBuilder.part("tags", "test,integration")
@@ -58,14 +58,14 @@
 //    fun `should upload file with processing options via enhanced endpoint`() {
 //        val fileName = "sensitive-document.txt"
 //        val fileContent = "This is sensitive content that requires encryption and compression."
-//        val folderId = "secure-folder"
+//        val bucketId = "secure-folder"
 //        val uploaderId = "admin-user"
 //
 //        val bodyBuilder = MultipartBodyBuilder()
 //        bodyBuilder.part("file", fileContent.toByteArray(StandardCharsets.UTF_8))
 //            .filename(fileName)
 //            .contentType(MediaType.TEXT_PLAIN)
-//        bodyBuilder.part("folderId", folderId)
+//        bodyBuilder.part("bucketId", bucketId)
 //        bodyBuilder.part("uploaderId", uploaderId)
 //        bodyBuilder.part("enableCompression", "true")
 //        bodyBuilder.part("requireEncryption", "true")
@@ -104,7 +104,7 @@
 //        bodyBuilder.part("file", imageContent)
 //            .filename(fileName)
 //            .contentType(MediaType.IMAGE_PNG)
-//        bodyBuilder.part("folderId", "images")
+//        bodyBuilder.part("bucketId", "images")
 //        bodyBuilder.part("uploaderId", "photographer")
 //
 //        webTestClient.post()
@@ -127,7 +127,7 @@
 //        val bodyBuilder = MultipartBodyBuilder()
 //        bodyBuilder.part("file", "content".toByteArray())
 //            .filename("test.txt")
-//        // 缺少必需的 folderId 和 uploaderId
+//        // 缺少必需的 bucketId 和 uploaderId
 //
 //        webTestClient.post()
 //            .uri("/files/upload")
@@ -149,7 +149,7 @@
 //        bodyBuilder.part("file", largeContent)
 //            .filename(fileName)
 //            .contentType(MediaType.TEXT_PLAIN)
-//        bodyBuilder.part("folderId", "test")
+//        bodyBuilder.part("bucketId", "test")
 //        bodyBuilder.part("uploaderId", "test-user")
 //
 //        // 注意：这个测试可能会成功或失败，取决于配置的文件大小限制
@@ -174,7 +174,7 @@
 //        val bodyBuilder = MultipartBodyBuilder()
 //        bodyBuilder.part("file", fileContent.toByteArray())
 //            .filename(fileName)
-//        bodyBuilder.part("folderId", "processing-test")
+//        bodyBuilder.part("bucketId", "processing-test")
 //        bodyBuilder.part("uploaderId", "test-user")
 //        bodyBuilder.part("enableCompression", "true")
 //
@@ -234,7 +234,7 @@
 //        bodyBuilder.part("file", executableContent)
 //            .filename(fileName)
 //            .contentType(MediaType.APPLICATION_OCTET_STREAM)
-//        bodyBuilder.part("folderId", "test")
+//        bodyBuilder.part("bucketId", "test")
 //        bodyBuilder.part("uploaderId", "test-user")
 //
 //        webTestClient.post()
@@ -264,7 +264,7 @@
 //            val bodyBuilder = MultipartBodyBuilder()
 //            bodyBuilder.part("file", fileContent.toByteArray())
 //                .filename(fileName)
-//            bodyBuilder.part("folderId", "concurrent-test")
+//            bodyBuilder.part("bucketId", "concurrent-test")
 //            bodyBuilder.part("uploaderId", "concurrent-user-$index")
 //
 //            webTestClient.post()
@@ -301,7 +301,7 @@
 //        val bodyBuilder = MultipartBodyBuilder()
 //        bodyBuilder.part("file", fileContent.toByteArray())
 //            .filename(fileName)
-//        bodyBuilder.part("folderId", "lifecycle")
+//        bodyBuilder.part("bucketId", "lifecycle")
 //        bodyBuilder.part("uploaderId", "lifecycle-user")
 //        bodyBuilder.part("enableCompression", "true")
 //

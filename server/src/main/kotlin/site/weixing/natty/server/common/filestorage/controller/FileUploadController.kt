@@ -47,7 +47,7 @@ class FileUploadController(
     @PostMapping("/upload", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun uploadFile(
         @RequestPart("file") file: FilePart,
-        @RequestParam("folderId") folderId: String,
+        @RequestParam("bucketId") folderId: String,
         @RequestParam("uploaderId") uploaderId: String,
         @RequestParam(value = "isPublic", required = false) isPublic: Boolean = false,
         @RequestParam(value = "tags", required = false) tags: List<String> = emptyList(),
@@ -76,7 +76,7 @@ class FileUploadController(
     @PostMapping("/upload/enhanced", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun uploadWithProcessing(
         @RequestPart("file") file: FilePart,
-        @RequestParam("folderId") folderId: String,
+        @RequestParam("bucketId") folderId: String,
         @RequestParam("uploaderId") uploaderId: String,
         @RequestParam(value = "isPublic", required = false) isPublic: Boolean = false,
         @RequestParam(value = "tags", required = false) tags: List<String> = emptyList(),
@@ -155,7 +155,7 @@ class FileUploadController(
 
         return FileUploadRequest(
             fileName = fileName,
-            folderId = folderId,
+            bucketId = folderId,
             uploaderId = uploaderId,
             fileSize = if (fileSize > 0) fileSize else 0L,
             contentType = "application/octet-stream",

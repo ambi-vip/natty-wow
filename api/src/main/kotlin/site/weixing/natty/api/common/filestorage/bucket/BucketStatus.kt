@@ -22,5 +22,8 @@ enum class BucketStatus {
     /**
      * 已删除状态 - 标记删除，等待物理清理
      */
-    DELETED
+    DELETED,
+    READONLY,
+
+    MAINTENANCE  // 维护中
 }

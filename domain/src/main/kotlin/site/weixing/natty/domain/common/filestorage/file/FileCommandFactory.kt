@@ -16,7 +16,7 @@ class FileCommandFactory {
      */
     fun buildUploadCommand(
         fileName: String,
-        folderId: String,
+        bucketId: String,
         uploaderId: String,
         contentType: String,
         isPublic: Boolean,
@@ -28,7 +28,7 @@ class FileCommandFactory {
     ): UploadFile {
         return UploadFile(
             fileName = fileName,
-            folderId = folderId,
+            bucketId = bucketId,
             uploaderId = uploaderId,
             fileSize = tempFileRef.fileSize,
             contentType = contentType,

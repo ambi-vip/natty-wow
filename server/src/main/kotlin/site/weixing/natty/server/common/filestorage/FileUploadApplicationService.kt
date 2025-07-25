@@ -8,6 +8,8 @@ import reactor.core.publisher.Mono
 import site.weixing.natty.domain.common.filestorage.temp.TemporaryFileManager
 import site.weixing.natty.domain.common.filestorage.temp.TemporaryFileReference
 import site.weixing.natty.api.common.filestorage.file.FileUploadResponse
+import site.weixing.natty.api.common.filestorage.file.UploadFile
+import site.weixing.natty.domain.common.filestorage.bucket.spec.StorageBucketSpec
 import site.weixing.natty.domain.common.filestorage.file.FileCommandFactory
 import java.util.*
 
@@ -19,7 +21,8 @@ import java.util.*
 class FileUploadApplicationService(
     private val commandGateway: CommandGateway,
     private val temporaryFileManager: TemporaryFileManager,
-    private val fileCommandFactory: FileCommandFactory
+    private val fileCommandFactory: FileCommandFactory,
+    private val storageBucketSpec: StorageBucketSpec,
 ) {
 
     companion object {
@@ -47,6 +50,7 @@ class FileUploadApplicationService(
         return Mono.fromCallable {
             val fileId = UUID.randomUUID().toString()
             validateUploadRequest(request)
+            storageBucketSpec.validateBucket(request.bucketId, request.fileSize, request.contentType,request.uploaderId)
             fileId
         }
     }
@@ -73,7 +77,7 @@ class FileUploadApplicationService(
      */
     private fun createTemporaryFileAndCommand(
         request: FileUploadRequest
-    ): Mono<Pair<TemporaryFileReference, site.weixing.natty.api.common.filestorage.file.UploadFile>> {
+    ): Mono<Pair<TemporaryFileReference, UploadFile>> {
         val beforeTemp = System.currentTimeMillis()
         
         return temporaryFileManager.createTemporaryFile(
@@ -87,7 +91,7 @@ class FileUploadApplicationService(
             
             val uploadCommand = fileCommandFactory.buildUploadCommand(
                 request.fileName,
-                request.folderId,
+                request.bucketId,
                 request.uploaderId,
                 request.contentType,
                 request.isPublic,
@@ -107,7 +111,7 @@ class FileUploadApplicationService(
      */
     private fun executeUploadCommand(
         fileId: String,
-        uploadCommand: site.weixing.natty.api.common.filestorage.file.UploadFile,
+        uploadCommand: UploadFile,
         tempFileRef: TemporaryFileReference,
         request: FileUploadRequest
     ): Mono<FileUploadResponse> {
@@ -186,7 +190,7 @@ class FileUploadApplicationService(
      */
     private fun validateUploadRequest(request: FileUploadRequest) {
         require(request.fileName.isNotBlank()) { "文件名不能为空" }
-        require(request.folderId.isNotBlank()) { "文件夹ID不能为空" }
+        require(request.bucketId.isNotBlank()) { "文件夹ID不能为空" }
         require(request.uploaderId.isNotBlank()) { "上传者ID不能为空" }
         require(request.contentType.isNotBlank()) { "文件类型不能为空" }
     }

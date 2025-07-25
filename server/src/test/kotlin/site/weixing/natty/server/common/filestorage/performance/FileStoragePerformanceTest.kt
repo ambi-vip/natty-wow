@@ -40,7 +40,7 @@ package site.weixing.natty.server.common.filestorage.performance
 //        bodyBuilder.part("file", fileContent.toByteArray(StandardCharsets.UTF_8))
 //            .filename(fileName)
 //            .contentType(MediaType.TEXT_PLAIN)
-//        bodyBuilder.part("folderId", "performance")
+//        bodyBuilder.part("bucketId", "performance")
 //        bodyBuilder.part("uploaderId", "perf-user")
 //
 //        val uploadTime = measureTimeMillis {
@@ -72,7 +72,7 @@ package site.weixing.natty.server.common.filestorage.performance
 //        bodyBuilder.part("file", largeContent)
 //            .filename(fileName)
 //            .contentType(MediaType.APPLICATION_OCTET_STREAM)
-//        bodyBuilder.part("folderId", "large-files")
+//        bodyBuilder.part("bucketId", "large-files")
 //        bodyBuilder.part("uploaderId", "perf-user")
 //
 //        val uploadTime = measureTimeMillis {
@@ -121,7 +121,7 @@ package site.weixing.natty.server.common.filestorage.performance
 //                        val bodyBuilder = MultipartBodyBuilder()
 //                        bodyBuilder.part("file", fileContent.toByteArray())
 //                            .filename(fileName)
-//                        bodyBuilder.part("folderId", "concurrent")
+//                        bodyBuilder.part("bucketId", "concurrent")
 //                        bodyBuilder.part("uploaderId", "perf-user-$index")
 //
 //                        val individualTime = measureTimeMillis {
@@ -173,7 +173,7 @@ package site.weixing.natty.server.common.filestorage.performance
 //        val bodyBuilder = MultipartBodyBuilder()
 //        bodyBuilder.part("file", fileContent.toByteArray())
 //            .filename(fileName)
-//        bodyBuilder.part("folderId", "processing-perf")
+//        bodyBuilder.part("bucketId", "processing-perf")
 //        bodyBuilder.part("uploaderId", "perf-user")
 //        bodyBuilder.part("enableCompression", "true")
 //        bodyBuilder.part("requireEncryption", "true")
@@ -214,7 +214,7 @@ package site.weixing.natty.server.common.filestorage.performance
 //            val bodyBuilder = MultipartBodyBuilder()
 //            bodyBuilder.part("file", content)
 //                .filename(fileName)
-//            bodyBuilder.part("folderId", "memory-test")
+//            bodyBuilder.part("bucketId", "memory-test")
 //            bodyBuilder.part("uploaderId", "perf-user")
 //
 //            Mono.fromCallable {
@@ -274,7 +274,7 @@ package site.weixing.natty.server.common.filestorage.performance
 //            val bodyBuilder = MultipartBodyBuilder()
 //            bodyBuilder.part("file", fileContent.toByteArray())
 //                .filename(fileName)
-//            bodyBuilder.part("folderId", "response-time")
+//            bodyBuilder.part("bucketId", "response-time")
 //            bodyBuilder.part("uploaderId", "perf-user")
 //
 //            val responseTime = measureTimeMillis {
@@ -330,7 +330,7 @@ package site.weixing.natty.server.common.filestorage.performance
 //            val bodyBuilder = MultipartBodyBuilder()
 //            bodyBuilder.part("file", fileContent.toByteArray())
 //                .filename(fileName)
-//            bodyBuilder.part("folderId", "status-query")
+//            bodyBuilder.part("bucketId", "status-query")
 //            bodyBuilder.part("uploaderId", "perf-user")
 //            bodyBuilder.part("enableCompression", "true")
 //
@@ -393,7 +393,7 @@ package site.weixing.natty.server.common.filestorage.performance
 //                        val bodyBuilder = MultipartBodyBuilder()
 //                        bodyBuilder.part("file", fileContent.toByteArray())
 //                            .filename(fileName)
-//                        bodyBuilder.part("folderId", "stability")
+//                        bodyBuilder.part("bucketId", "stability")
 //                        bodyBuilder.part("uploaderId", "perf-user-$threadIndex")
 //
 //                        webTestClient.post()

@@ -29,7 +29,7 @@ package site.weixing.natty.domain.common.filestorage.processing
 //        val metadata = FileMetadata(
 //            originalFileName = "test.txt",
 //            uploaderId = "user-123",
-//            folderId = "folder-456",
+//            bucketId = "folder-456",
 //            fileSize = originalContent.length.toLong(),
 //            contentType = "text/plain",
 //            isPublic = false,
@@ -78,7 +78,7 @@ package site.weixing.natty.domain.common.filestorage.processing
 //        val metadata = FileMetadata(
 //            originalFileName = "small.txt",
 //            uploaderId = "user-123",
-//            folderId = "folder-456",
+//            bucketId = "folder-456",
 //            fileSize = smallContent.length.toLong(),
 //            contentType = "text/plain",
 //            isPublic = false,
@@ -108,7 +108,7 @@ package site.weixing.natty.domain.common.filestorage.processing
 //        val metadata = FileMetadata(
 //            originalFileName = "secret.txt",
 //            uploaderId = "user-123",
-//            folderId = "folder-456",
+//            bucketId = "folder-456",
 //            fileSize = originalContent.length.toLong(),
 //            contentType = "text/plain",
 //            isPublic = false,
@@ -144,7 +144,7 @@ package site.weixing.natty.domain.common.filestorage.processing
 //        val metadata = FileMetadata(
 //            originalFileName = "photo.jpg",
 //            uploaderId = "user-123",
-//            folderId = "folder-456",
+//            bucketId = "folder-456",
 //            fileSize = imageContent.size.toLong(),
 //            contentType = "image/jpeg",
 //            isPublic = false,
@@ -181,7 +181,7 @@ package site.weixing.natty.domain.common.filestorage.processing
 //        val metadata = FileMetadata(
 //            originalFileName = "document.txt",
 //            uploaderId = "user-123",
-//            folderId = "folder-456",
+//            bucketId = "folder-456",
 //            fileSize = textContent.length.toLong(),
 //            contentType = "text/plain",
 //            isPublic = false,
@@ -223,7 +223,7 @@ package site.weixing.natty.domain.common.filestorage.processing
 //        val metadata = FileMetadata(
 //            originalFileName = "test.txt",
 //            uploaderId = "user-123",
-//            folderId = "folder-456",
+//            bucketId = "folder-456",
 //            fileSize = content.length.toLong(),
 //            contentType = "text/plain",
 //            isPublic = false,
@@ -301,7 +301,7 @@ package site.weixing.natty.domain.common.filestorage.processing
 //        val metadata = FileMetadata(
 //            originalFileName = "test.txt",
 //            uploaderId = "user-123",
-//            folderId = "folder-456",
+//            bucketId = "folder-456",
 //            fileSize = content.length.toLong(),
 //            contentType = "text/plain",
 //            isPublic = false,

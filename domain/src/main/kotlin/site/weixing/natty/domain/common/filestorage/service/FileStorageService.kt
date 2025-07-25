@@ -248,7 +248,7 @@ open class FileStorageService(
             // 基础文件元数据
             put("originalFileName", fileMetadata.originalFileName)
             put("uploaderId", fileMetadata.uploaderId)
-            put("folderId", fileMetadata.folderId)
+            put("bucketId", fileMetadata.folderId)
             put("contentType", fileMetadata.contentType)
             put("fileSize", fileMetadata.fileSize.toString())
             put("isPublic", fileMetadata.isPublic.toString())

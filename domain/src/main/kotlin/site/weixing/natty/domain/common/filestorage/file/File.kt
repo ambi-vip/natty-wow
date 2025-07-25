@@ -1,6 +1,7 @@
 package site.weixing.natty.domain.common.filestorage.file
 
 import io.github.oshai.kotlinlogging.KotlinLogging.logger
+import jdk.jfr.internal.handlers.EventHandler.timestamp
 import me.ahoo.wow.api.annotation.AggregateRoot
 import me.ahoo.wow.api.annotation.OnCommand
 import me.ahoo.wow.api.annotation.StaticTenantId
@@ -15,7 +16,9 @@ import site.weixing.natty.domain.common.filestorage.service.FileStorageService
 import site.weixing.natty.domain.common.filestorage.temp.TemporaryFileManager
 import site.weixing.natty.domain.common.filestorage.temp.TemporaryFileReference
 import site.weixing.natty.domain.common.filestorage.temp.TemporaryFileTransaction
-import java.time.Duration
+import java.time.LocalDateTime
+import java.util.UUID
+import kotlin.io.extension
 
 /**
  * 文件聚合根
@@ -48,14 +51,12 @@ class File(
 
         return temporaryFileTransaction.executeWithCleanup(command.temporaryFileReference) {
             Mono.fromCallable {
-                // 业务验证
-                validateUploadCommand(command)
 
                 // 决定处理需求（合并命令中的选项和业务规则）
                 val processingOptions = mergeProcessingOptions(command)
 
                 // 生成存储路径
-                val storagePath = generateStoragePath(command.folderId, command.fileName)
+                val storagePath = generateStoragePath(command.bucketId, command.fileName)
 
                 // 构建文件元数据
                 val metadata = buildFileMetadata(command)
@@ -83,7 +84,7 @@ class File(
                 .doOnNext { event ->
                     // 设置命令结果
                     commandResultAccessor.setCommandResult("actualStoragePath", event.actualStoragePath)
-                    commandResultAccessor.setCommandResult("folderId", event.folderId)
+                    commandResultAccessor.setCommandResult("bucketId", event.folderId)
                     commandResultAccessor.setCommandResult("checksum", event.checksum)
                 }
                 .doOnSuccess {
@@ -98,28 +99,6 @@ class File(
 
     }
 
-    /**
-     * 验证上传命令的业务规则
-     */
-    private fun validateUploadCommand(command: UploadFile) {
-        require(command.fileName.isNotBlank()) { "文件名不能为空" }
-        require(command.fileSize > 0) { "文件大小必须大于0" }
-        require(command.contentType.isNotBlank()) { "文件类型不能为空" }
-        require(command.folderId.isNotBlank()) { "文件夹ID不能为空" }
-        require(command.uploaderId.isNotBlank()) { "上传者ID不能为空" }
-
-        // 文件大小限制（业务规则）
-        val maxFileSize = 500 * 1024 * 1024L // 500MB
-        require(command.fileSize <= maxFileSize) {
-            "文件大小超过限制: ${formatFileSize(command.fileSize)} > ${formatFileSize(maxFileSize)}"
-        }
-
-        // 文件名格式验证
-        val forbiddenChars = setOf('/', '\\', ':', '*', '?', '"', '<', '>', '|')
-        require(!command.fileName.any { it in forbiddenChars }) {
-            "文件名包含非法字符: ${forbiddenChars.joinToString("")}"
-        }
-    }
 
     private fun fetchAndValidateTempFile(
         command: UploadFile,
@@ -226,15 +205,13 @@ class File(
     /**
      * 生成存储路径（业务规则）
      */
-    private fun generateStoragePath(folderId: String, fileName: String): String {
-        val timestamp = GlobalIdGenerator.generateAsString()
-        val fileExtension = fileName.substringAfterLast('.', "")
-        val baseFileName = fileName.substringBeforeLast('.')
+    private fun generateStoragePath(bucketId: String, fileName: String): String {
+        val datePath = LocalDateTime.now().let { "${it.year}/${it.monthValue}/${it.dayOfMonth}" }
+        val fileId = UUID.randomUUID().toString()
+        val extension = fileName.substringAfterLast('.', "")
+        val finalName = if (extension.isNotEmpty()) "$fileId.$extension" else fileId
 
-        // 清理文件名，移除特殊字符
-        val cleanFileName = baseFileName.replace(Regex("[^a-zA-Z0-9\\u4e00-\\u9fa5_-]"), "_")
-
-        return "folders/$folderId/${timestamp}_${cleanFileName}.${fileExtension}"
+        return "$bucketId/$datePath/$finalName"
     }
 
     /**
@@ -244,7 +221,7 @@ class File(
         return FileMetadata(
             originalFileName = command.fileName,
             uploaderId = command.uploaderId,
-            folderId = command.folderId,
+            folderId = command.bucketId,
             contentType = command.contentType,
             fileSize = command.fileSize,
             isPublic = command.isPublic,
@@ -263,7 +240,7 @@ class File(
     ): FileUploaded {
         return FileUploaded(
             fileName = command.fileName,
-            folderId = command.folderId,
+            folderId = command.bucketId,
             uploaderId = command.uploaderId,
             fileSize = command.fileSize,
             contentType = command.contentType,

@@ -32,7 +32,7 @@ package site.weixing.natty.server.common.filestorage
 //        val fileContent = "Test file content"
 //        val uploadRequest = FileUploadRequest(
 //            fileName = "test.txt",
-//            folderId = "folder-123",
+//            bucketId = "folder-123",
 //            uploaderId = "user-456",
 //            fileSize = fileContent.length.toLong(),
 //            contentType = "text/plain",
@@ -83,7 +83,7 @@ package site.weixing.natty.server.common.filestorage
 //        val fileContent = "Sensitive content"
 //        val uploadRequest = FileUploadRequest(
 //            fileName = "secret.txt",
-//            folderId = "secure",
+//            bucketId = "secure",
 //            uploaderId = "user-789",
 //            fileSize = fileContent.length.toLong(),
 //            contentType = "text/plain",
@@ -120,7 +120,7 @@ package site.weixing.natty.server.common.filestorage
 //    fun `should reject upload with invalid request`() {
 //        val uploadRequest = FileUploadRequest(
 //            fileName = "", // 空文件名
-//            folderId = "folder-123",
+//            bucketId = "folder-123",
 //            uploaderId = "user-456",
 //            fileSize = 100L,
 //            contentType = "text/plain",
@@ -141,7 +141,7 @@ package site.weixing.natty.server.common.filestorage
 //
 //        val uploadRequest = FileUploadRequest(
 //            fileName = "huge-file.bin",
-//            folderId = "folder-123",
+//            bucketId = "folder-123",
 //            uploaderId = "user-456",
 //            fileSize = tooLargeSize,
 //            contentType = "application/octet-stream",
@@ -160,7 +160,7 @@ package site.weixing.natty.server.common.filestorage
 //    fun `should handle command gateway errors`() {
 //        val uploadRequest = FileUploadRequest(
 //            fileName = "test.txt",
-//            folderId = "folder-123",
+//            bucketId = "folder-123",
 //            uploaderId = "user-456",
 //            fileSize = 100L,
 //            contentType = "text/plain",
@@ -219,7 +219,7 @@ package site.weixing.natty.server.common.filestorage
 //        // 测试缺少文件夹ID
 //        val requestMissingFolderId = FileUploadRequest(
 //            fileName = "test.txt",
-//            folderId = "", // 空文件夹ID
+//            bucketId = "", // 空文件夹ID
 //            uploaderId = "user-456",
 //            fileSize = 100L,
 //            contentType = "text/plain",
@@ -233,7 +233,7 @@ package site.weixing.natty.server.common.filestorage
 //        // 测试缺少上传者ID
 //        val requestMissingUploaderId = FileUploadRequest(
 //            fileName = "test.txt",
-//            folderId = "folder-123",
+//            bucketId = "folder-123",
 //            uploaderId = "", // 空上传者ID
 //            fileSize = 100L,
 //            contentType = "text/plain",
@@ -247,7 +247,7 @@ package site.weixing.natty.server.common.filestorage
 //        // 测试零文件大小
 //        val requestZeroSize = FileUploadRequest(
 //            fileName = "test.txt",
-//            folderId = "folder-123",
+//            bucketId = "folder-123",
 //            uploaderId = "user-456",
 //            fileSize = 0L, // 零大小
 //            contentType = "text/plain",
@@ -266,7 +266,7 @@ package site.weixing.natty.server.common.filestorage
 //    fun `should build upload command correctly`() {
 //        val uploadRequest = FileUploadRequest(
 //            fileName = "document.pdf",
-//            folderId = "documents",
+//            bucketId = "documents",
 //            uploaderId = "user-123",
 //            fileSize = 1024L,
 //            contentType = "application/pdf",
@@ -308,7 +308,7 @@ package site.weixing.natty.server.common.filestorage
 //            mockCommandGateway.sendAndWaitForSnapshot(match<CommandMessage<UploadFile>> { commandMessage ->
 //                val command = commandMessage.command
 //                command.fileName == "document.pdf" &&
-//                command.folderId == "documents" &&
+//                command.bucketId == "documents" &&
 //                command.uploaderId == "user-123" &&
 //                command.isPublic == true &&
 //                command.tags.contains("important") &&

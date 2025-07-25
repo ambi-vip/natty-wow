@@ -9,7 +9,7 @@ import site.weixing.natty.api.common.filestorage.file.ProcessingOptions
  */
 data class FileUploadRequest(
     val fileName: String,
-    val folderId: String,
+    val bucketId: String,
     val uploaderId: String,
     val fileSize: Long,
     val contentType: String,
